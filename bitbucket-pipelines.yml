@@ -5,8 +5,11 @@ pipelines:
     - step:
         name: Mirror to GitHub
         script:
-          - git init
-          - git remote add origin https://$BITBUCKET_GIT_HTTP_ORIGIN
+          # Add GitHub remote
           - git remote add github https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/Operator-Syn/peer-tutoring-platform.git
-          - git fetch origin --prune
+          
+          # Fetch everything from Bitbucket (origin)
+          - git fetch --all
+          
+          # Push everything (branches + tags) to GitHub
           - git push --mirror github
