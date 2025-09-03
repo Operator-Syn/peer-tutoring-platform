@@ -1,15 +1,16 @@
 image: alpine/git
 
 pipelines:
-  default:
-    - step:
-        name: Mirror to GitHub
-        script:
-          # Add GitHub remote
-          - git remote add github https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/Operator-Syn/peer-tutoring-platform.git
-          
-          # Fetch everything from Bitbucket (origin)
-          - git fetch --all
-          
-          # Push everything (branches + tags) to GitHub
-          - git push --mirror github
+  branches:
+    "**":
+      - step:
+          name: Mirror to GitHub
+          script:
+            # Add GitHub remote
+            - git remote add github https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/Operator-Syn/peer-tutoring-platform.git
+            
+            # Fetch everything from Bitbucket (origin)
+            - git fetch --all
+            
+            # Push everything (branches + tags) to GitHub
+            - git push --mirror github
