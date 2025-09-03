@@ -1,8 +1,8 @@
 image: alpine/git
 
 pipelines:
-  branches:
-    "**":
+  custom:
+    mirror-to-github:
       - step:
           name: Mirror to GitHub
           script:
