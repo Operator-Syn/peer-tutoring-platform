@@ -1,0 +1,20 @@
+Assets Folder
+-------------
+
+This folder contains static resources used by the application.
+These files are typically imported into React components or referenced in styles.
+
+What goes here:
+- Images (logos, icons, backgrounds)
+- Illustrations (SVGs, diagrams)
+- Media (audio, video)
+- Other static resources that are imported in code
+
+What does NOT go here:
+- Files that should be served directly without processing (put those in the "public" folder instead)
+- Large assets that don’t need to be hashed by Vite
+
+Notes:
+- Files in this folder are processed by Vite’s build system (optimized and hashed).
+- Keep only assets that are imported or referenced in your code.
+- Use the "public" folder for globally available raw files (e.g., robots.txt, favicon.ico).
