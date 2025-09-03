@@ -6,10 +6,10 @@ pipelines:
       - step:
           name: Mirror to GitHub
           script:
-            # Add GitHub remote using secrets
+            # Add GitHub remote
             - git remote add github https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/Operator-Syn/peer-tutoring-platform.git
             
-            # Fetch all branches and tags from Bitbucket
+            # Fetch all branches and tags
             - git fetch --all
             
             # Push all branches except main
@@ -19,15 +19,10 @@ pipelines:
                 fi;
               done
             
-            # Push main branch explicitly (no deletions)
-            - git push github main
+            # Push main if it exists locally
+            - if git show-ref --verify --quiet refs/heads/main; then
+                git push github main;
+              fi
             
             # Push all tags
             - git push github --tags
-            
-            # Delete branches in GitHub that were deleted in Bitbucket (excluding main)
-            - for branch in $(git ls-remote --heads github | awk '{print $2}' | sed 's|refs/heads/||'); do
-                if [ "$branch" != "main" ] && [ ! -d "$branch" ]; then
-                  git push github --delete "$branch";
-                fi;
-              done
