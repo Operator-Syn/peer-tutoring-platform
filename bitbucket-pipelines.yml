@@ -12,10 +12,12 @@ pipelines:
             # Fetch all branches and tags from Bitbucket
             - git fetch origin "+refs/heads/*:refs/remotes/origin/*" --tags
             
-            # Push all branches to GitHub
+            # Push all branches to GitHub, skip HEAD
             - for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/); do
-                branch_name=${branch#origin/};
-                git push github "$branch_name";
+                if [ "$branch" != "origin/HEAD" ]; then
+                  branch_name=${branch#origin/};
+                  git push github "$branch_name";
+                fi;
               done
             
             # Push all tags to GitHub
