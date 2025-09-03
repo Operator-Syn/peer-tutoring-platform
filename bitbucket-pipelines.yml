@@ -9,20 +9,14 @@ pipelines:
             # Add GitHub remote
             - git remote add github https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/Operator-Syn/peer-tutoring-platform.git
             
-            # Fetch all branches and tags
-            - git fetch --all
+            # Fetch all branches and tags from Bitbucket
+            - git fetch origin "+refs/heads/*:refs/remotes/origin/*" --tags
             
-            # Push all branches except main
-            - for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
-                if [ "$branch" != "main" ]; then
-                  git push github "$branch";
-                fi;
+            # Push all branches to GitHub
+            - for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/); do
+                branch_name=${branch#origin/};
+                git push github "$branch_name";
               done
             
-            # Push main if it exists locally
-            - if git show-ref --verify --quiet refs/heads/main; then
-                git push github main;
-              fi
-            
-            # Push all tags
+            # Push all tags to GitHub
             - git push github --tags
