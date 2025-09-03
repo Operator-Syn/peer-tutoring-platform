@@ -1,0 +1,46 @@
+services:
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - ./shared:/app/shared
+      - /app/node_modules
+    ports:
+      - "2005:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    container_name: the_hootline_frontend   # custom name for frontend container
+
+  backend:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - ./shared:/app/shared
+    ports:
+      - "2006:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/peer_tutoring
+    depends_on:
+      - db
+    container_name: the_hootline_backend    # custom name for backend container
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data        # persistent named volume
+      - ./db:/docker-entrypoint-initdb.d       # optional init.sql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: peer_tutoring
+    ports:
+      - "2007:5432"
+    container_name: the_hootline_db         # custom name for DB container
+
+volumes:
+  pgdata:  # named volume for persistent PostgreSQL data
