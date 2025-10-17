@@ -1,16 +1,15 @@
-import { useState } from 'react'
-import './App.css'
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import MasterLayout from "./Layouts/masterlayout";
+import Front_page from "./pages/Front_page";
+import Frontpage_route from "./routes/Frontpage_route"
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <h1>Yawa</h1>
-      </div>
-    </>
-  )
+    <BrowserRouter>
+      <Frontpage_route/>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

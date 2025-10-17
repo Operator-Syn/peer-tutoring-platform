@@ -1,0 +1,29 @@
+.Mainhead {
+  display: flex;
+  justify-content: space-between; /* logo left, nav right */
+  align-items: center;
+  padding: 2rem 2rem;
+  background: #4956AD;
+  color: white;
+}
+.buttoncon{
+    display: flex;
+   
+  align-items: center;
+  padding: 0rem 68rem;
+gap: 0rem;
+ 
+}
+
+.buttoncon button{
+  display:flex;
+    font-family: 'Inter', sans-serif;
+    padding: .5rem 1.5rem;
+    align-items: center;
+    font-weight: 800;
+    font-size: 16px;
+      border: none;
+   background: transparent;
+   color: #FFFFFF;
+}
+
