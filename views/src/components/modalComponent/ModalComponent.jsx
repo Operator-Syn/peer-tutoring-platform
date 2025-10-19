@@ -1,7 +1,7 @@
 import { Modal, Button } from "react-bootstrap";
 
-export default function ModalComponent({ show, onHide, title, body, footer, buttons }) {
-    // Use default button if none are provided
+export default function ModalComponent({ show, onHide, title, body, extraContent, footer, buttons }) {
+    // Default Close button if none provided
     const modalButtons = buttons && buttons.length > 0
         ? buttons
         : [{ text: "Close", variant: "secondary", onClick: onHide }];
@@ -14,24 +14,32 @@ export default function ModalComponent({ show, onHide, title, body, footer, butt
                 </Modal.Header>
             )}
 
-            {body && <Modal.Body>{body}</Modal.Body>}
+            <Modal.Body>
+                {/* Extra content above the card */}
+                {extraContent && (
+                    <div className="mb-3">
+                        {extraContent}
+                    </div>
+                )}
+
+                {/* Main card or modal body */}
+                {body}
+            </Modal.Body>
 
             {(footer || modalButtons.length > 0) && (
                 <Modal.Footer>
                     {footer}
-
-                    {modalButtons.map((btn, idx) => {
-                        // Explicitly define button props
-                        const variant = btn.variant || undefined;
-                        const className = btn.className || undefined;
-                        const onClick = btn.onClick;
-
-                        return (
-                            <Button key={idx} variant={variant} className={className} onClick={onClick}>
+                    {modalButtons.map((btn, idx) => (
+                        <div key={idx} className="d-flex">
+                            <Button
+                                variant={btn.variant || undefined}
+                                className={btn.className || undefined}
+                                onClick={btn.onClick}
+                            >
                                 {btn.text}
                             </Button>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </Modal.Footer>
             )}
         </Modal>
