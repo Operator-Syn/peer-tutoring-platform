@@ -1,11 +1,16 @@
 import { Modal, Button } from "react-bootstrap";
 
-export default function ModalComponent({ show, onHide, title, body, footer, buttons }) {
-    // Use default button if none are provided
-    const modalButtons = buttons && buttons.length > 0
-        ? buttons
-        : [{ text: "Close", variant: "secondary", onClick: onHide }];
-
+export default function ModalComponent({
+    show,
+    onHide,
+    title,
+    body,
+    extraContent,
+    footer,
+    leftButtons = [],
+    rightButtons = [],
+    spaceBetweenGroups = false
+}) {
     return (
         <Modal show={show} onHide={onHide} centered>
             {title && (
@@ -14,24 +19,45 @@ export default function ModalComponent({ show, onHide, title, body, footer, butt
                 </Modal.Header>
             )}
 
-            {body && <Modal.Body>{body}</Modal.Body>}
+            <Modal.Body>
+                {extraContent && <div className="mb-3">{extraContent}</div>}
+                {body}
+            </Modal.Body>
 
-            {(footer || modalButtons.length > 0) && (
-                <Modal.Footer>
-                    {footer}
-
-                    {modalButtons.map((btn, idx) => {
-                        // Explicitly define button props
-                        const variant = btn.variant || undefined;
-                        const className = btn.className || undefined;
-                        const onClick = btn.onClick;
-
-                        return (
-                            <Button key={idx} variant={variant} className={className} onClick={onClick}>
+            {(footer || leftButtons.length > 0 || rightButtons.length > 0) && (
+                <Modal.Footer
+                    className={`d-flex ${spaceBetweenGroups ? "justify-content-between" : ""}`}
+                >
+                    {/* Left group */}
+                    <div className="d-flex gap-1">
+                        {leftButtons.map((btn, idx) => (
+                            <Button
+                                key={idx}
+                                variant={btn.variant || "primary"}
+                                className={btn.className || ""}
+                                onClick={btn.onClick}
+                            >
                                 {btn.text}
                             </Button>
-                        );
-                    })}
+                        ))}
+                    </div>
+
+                    {/* Optional Footer content in the middle */}
+                    {footer && <div>{footer}</div>}
+
+                    {/* Right group */}
+                    <div className="d-flex gap-1">
+                        {rightButtons.map((btn, idx) => (
+                            <Button
+                                key={idx}
+                                variant={btn.variant || "primary"}
+                                className={btn.className || ""}
+                                onClick={btn.onClick}
+                            >
+                                {btn.text}
+                            </Button>
+                        ))}
+                    </div>
                 </Modal.Footer>
             )}
         </Modal>

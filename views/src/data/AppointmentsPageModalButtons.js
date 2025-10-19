@@ -18,3 +18,13 @@ export const CloseButton = [
         },
     },
 ]
+
+export const CancelAppointmentButton = [
+    {
+        text: "Cancel Appointment",
+        variant: "danger",
+        onClick: (closeModal) => {
+            closeModal();
+        }
+    }
+]
