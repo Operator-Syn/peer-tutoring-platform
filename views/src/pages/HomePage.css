@@ -1,0 +1,159 @@
+.left-column, .right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;
+
+    /* background-color: #808080; */
+    height: 100%;
+    padding-top: 70px;
+    padding-bottom: 70px;
+}
+
+/*
+        ------------------------------------------------- LEFT COLUMN SECTION
+
+        INTRODUCTION SECTION
+*/
+.home-top {
+    display: flex;
+    flex-direction: row;
+    height: auto;
+}
+.introduction {
+    width: 530px;
+}
+
+.introduction h1, .introduction p {
+    color: #4956AD;
+    width: auto;
+    margin-bottom: 50px;     /* need to adjust this based on parent height */
+}
+
+.introduction h1 {
+    font-size: 48px;
+    font-weight: bolder;
+}
+
+.introduction p {
+    text-align: justify;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+
+/*
+        STATS SECTION
+*/
+
+.stats {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 20px;
+
+    width: 530px;
+}
+
+.stat {
+
+    height: auto;
+    width: 100%;
+}
+
+.top-text, .bottom-text {
+    text-align: center;
+    color: #333C7B;
+    font-weight: 800;
+    margin: 0px;
+}
+
+.top-text {
+    font-size: 32px;
+}
+
+.bottom-text {
+    font-size: 20px;
+}
+
+
+/*
+        BUTTON SECTION
+*/
+
+.button-section {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    gap: 25px;
+    width: 100%;
+}
+
+/*
+        ------------------------------------------------- RIGHT COLUMN SECTION
+
+        TUTOR SCHED SECTION
+*/
+
+.tutor-sched {
+    display: flex;
+    flex-direction: row;
+}
+
+.tutor-sched img {
+    border-radius: 15px 0px 0px 15px;
+}
+
+.custom-border {
+    height: 100%;
+    background-color: #4956AD;
+    border-radius: 0px 15px 15px 0px;
+    width: 20px;
+}
+
+/*
+        ------------------------------------------------- CARD SECTION
+*/
+
+.home-bottom {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 50px;
+    /* background-color: #333C7B; */
+    height: auto;
+    max-height: 280px;
+}
+
+.card {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding-right: 20px;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border: none;
+    border-radius: 15px;
+    width: 425px;
+    height: 204px;
+}
+
+.card img {
+    width: 75px;
+    height: 75px;
+    margin-right: 10px;
+}
+
+.card-text {
+    text-align: justify;
+    width: 100%;
+    color: #4956AD;
+}
+
+.card-text h3 {
+    margin-top: 0px;
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: bolder;
+}
