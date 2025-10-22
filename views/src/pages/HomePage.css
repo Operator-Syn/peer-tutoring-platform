@@ -6,10 +6,6 @@
 
     /* background-color: #808080; */
     height: 100%;
-    padding-top: 70px;
-    padding-bottom: 70px;
-    padding-left: 0px;
-    padding-right: 0px;
 }
 
 /* div {
@@ -21,13 +17,13 @@
 
         INTRODUCTION SECTION
 */
-.home-top {
+/* .home-top {
     display: flex;
     flex-direction: row;
     height: auto;
     width: 80%;
     align-items: center;
-}
+} */
 .introduction {
     width: auto;
     max-width: 530px;
@@ -106,10 +102,20 @@
 */
 
 .custom-border {
-    height: 100%;
+    height: auto;
     background-color: #4956AD;
     border-radius: 0px 15px 15px 0px;
     width: 20px;
+}
+
+.tutor-sched img {
+    height: 100%;
+    width: 100%;
+    min-width: 365px;
+    max-width: 500px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
 }
 
 /*
@@ -158,4 +164,12 @@
     margin-bottom: 10px;
     font-size: 24px;
     font-weight: bolder;
+}
+
+
+
+@media (max-width: 1140px) {
+  .right-column {
+    margin-top: 30px;
+  }
 }

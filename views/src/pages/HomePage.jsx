@@ -11,8 +11,8 @@ export default function HomePage() {
     return (
         <>  
             <div className='home container-fluid column align-center height-100'>
-                <div className='row align-items-center justify-content-center height-auto mx-auto' style={{width: '80%'}}>
-                    <div className="left-column col-md-6 d-flex flex-column justify-content-center align-items-center">
+                <div className='home-top row align-items-center justify-content-center height-auto mx-auto gap-3' style={{width: '80%', paddingTop: '70px', paddingBottom: '70px'}}>
+                    <div className="left-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='introduction'>
                             <h1>Inspiring Excellence through Education</h1>
                             <p>
@@ -32,9 +32,9 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="right-column col-md-6 d-flex flex-column justify-content-center align-items-center">
+                    <div className="tutor-sched right-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='tutor-sched d-flex flex-row'>
-                            <img src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} />
+                            <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} />
                             <div className='custom-border' />
                         </div>
                     </div>
