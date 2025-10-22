@@ -12,7 +12,8 @@ const buttonStyle = {
   borderRadius: '5px',
   cursor: 'pointer',
   height: '54px',
-  width: '200px'
+  width: '200px',
+  whiteSpace: 'nowrap'
 };
 
     return (    
