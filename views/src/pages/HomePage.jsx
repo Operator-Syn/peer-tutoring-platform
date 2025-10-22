@@ -32,18 +32,18 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="tutor-sched right-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
-                        <div className='tutor-sched d-flex flex-row'>
+                    <div className="right-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
+                        <div className='tutor-sched d-flex flex-row' style={{borderRadius: '15px'}} >
                             <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} />
                             <div className='custom-border' />
                         </div>
                     </div>
                 </div>
 
-                <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '80%', maxWidth: '1500px', paddingTop: '50px', paddingBottom: '50px'}}>
+                <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '80%', maxWidth: '1500px', paddingBottom: '70px'}}>
                     <Card icon={searchSvg} title='Explore' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <Card icon={bookSvg} description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <Card icon={peopleSvg} description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <Card icon={bookSvg} title='Education' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <Card icon={peopleSvg} title='Diversity' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
                 </div>
             </div>
             

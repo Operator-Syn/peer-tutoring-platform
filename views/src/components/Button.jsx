@@ -13,7 +13,8 @@ const buttonStyle = {
   cursor: 'pointer',
   height: '54px',
   width: '200px',
-  whiteSpace: 'nowrap'
+  whiteSpace: 'nowrap',
+  boxShadow: '0 8px 20px rgba(0,0,0,0.25)'
 };
 
     return (    
