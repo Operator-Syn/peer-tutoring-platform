@@ -10,14 +10,14 @@ const buttonStyle = {
   fontSize: '20px',
   fontWeight: 'bold',
   borderRadius: '5px',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  height: '54px',
+  width: '200px'
 };
 
     return (    
-        <div>
-            <button onClick={onClick} style={buttonStyle}>
-                {children}
-            </button>
-        </div>
+        <button onClick={onClick} style={buttonStyle}>
+            {children}
+        </button>
     );
 }

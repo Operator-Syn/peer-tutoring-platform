@@ -10,33 +10,31 @@ export default function HomePage() {
 
     return (
         <>  
-            <div className='home'>
-                <div className='home-top'>
-                    <div className="col-6 left-column">
-                        <div>
-                            <div className='introduction'>
-                                <h1>Inspiring Excellence through Education</h1>
-                                <p>
-                                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknovhwn printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also
-                                </p>
-                            </div>
+            <div className='home container-fluid column align-center height-100'>
+                <div className='row align-items-center justify-content-center height-auto mx-auto' style={{width: '80%'}}>
+                    <div className="left-column col-md-6 d-flex flex-column justify-content-center align-items-center">
+                        <div className='introduction'>
+                            <h1>Inspiring Excellence through Education</h1>
+                            <p>
+                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknovhwn printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also
+                            </p>
+                        </div>
 
-                            <div className='stats'>
-                                <Stat top_text='100%' bottom_text='Effective' />
-                                <Stat top_text='60+' bottom_text='Offered Subjects' />
-                                <Stat top_text='Peer' bottom_text='Tutoring' />
-                            </div>
+                        <div className='d-flex flex-row justify-content-between gap-3'>
+                            <Stat top_text='100%' bottom_text='Effective' />
+                            <Stat top_text='60+' bottom_text='Offered Subjects' />
+                            <Stat top_text='Peer' bottom_text='Tutoring' />
+                        </div>
 
-                            <div className='button-section'>
-                                <Button>Start Learning</Button>
-                                <Button light={true}>Appointments</Button>
-                            </div>
+                        <div className='row gap-3 align-items-center justify-content-center mt-4'>
+                            <Button>Start Learning</Button>
+                            <Button light={true}>Appointments</Button>
                         </div>
                     </div>
 
-                    <div className="col-6 right-column">
-                        <div className='tutor-sched'>
-                            <img src={tutorSchedulesImg} alt="Homepage Illustration" />
+                    <div className="right-column col-md-6 d-flex flex-column justify-content-center align-items-center">
+                        <div className='tutor-sched d-flex flex-row'>
+                            <img src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} />
                             <div className='custom-border' />
                         </div>
                     </div>
