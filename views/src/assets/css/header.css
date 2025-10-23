@@ -2,17 +2,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.2rem 1rem;
+  width: 100%;
   background: #4956AD;
   color: white;
- height: 6rem;
-   
-  transform-origin: top left; 
+  height: 6rem;
+  max-width: 100%;
+    overflow-x: clip; 
 }
+
 
 .buttoncon {
   display: flex;
-  align-items: center;
+
   padding: 0;
 
  height: 100%;
@@ -20,17 +21,17 @@
 
 
 .nav-link {
-  display: flex;              /* make it fill container */
-  align-items: center;        /* vertical center */
-  justify-content: center;    /* horizontal center */
+  display: flex;              
+  align-items: center;        
+  justify-content: center;    
   padding: 1rem 1.2rem;
   font-family: 'Inter', sans-serif;
   font-weight: 800;
   font-size: 18px;
   color: white;
-  text-decoration: none;      /* remove underline */
+  text-decoration: none;     
   cursor: pointer;
-  user-select: none;         /* prevent drag selection */
+  user-select: none;         
   -webkit-user-drag: none;
   height: 100%;
 }
@@ -60,7 +61,7 @@
     margin-left: 3rem;
     margin-top: 1.2rem;
 
-    user-select: none;         /* prevent drag selection */
+    user-select: none;      
   -webkit-user-drag: none;
 
 }
@@ -89,8 +90,41 @@
   flex-shrink: 0;
    cursor: pointer;  
 }
+.circle{
+    width: 1.2rem;
+  height: 1.2rem;
+  background-color: #ffffff;
+  border-radius: 50%; 
+  display: flex;
+  justify-content: center; 
+  align-items: center;     
+  margin-right:-3rem; 
+  margin-top:3rem; 
+  flex-shrink: 0;
+   cursor: pointer;  
+   position:absolute
+}
 
 
+.profileimg {
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;  
+  object-fit: cover;   
+  pointer-events: none;
+      user-select: none;      
+  -webkit-user-drag: none;
+}
+
+.arrowimg{
+    width: 100%;
+  height: 100%;
+  border-radius: 50%; 
+  object-fit: cover;   
+  pointer-events: none; 
+      user-select: none;       
+  -webkit-user-drag: none;
+}
 
 .profilepopup {
   transition: 2s ease;
@@ -103,15 +137,18 @@
     padding: 0;
   border-radius: 0.2rem;
   box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-  z-index: 2;
+  z-index: 3;
   display: flex;
   max-width: 80vw;  
   word-wrap: break-word; 
    width: 15rem;       
   min-width: 10rem;  
   max-width: 80vw; 
-    flex-direction: column;
-     
+  flex-direction: column;
+
+     user-select: none;         /* prevent drag selection */
+  -webkit-user-drag: none;
+
 }
 
 .profilepopup p {
@@ -133,6 +170,214 @@
 }
 .profilepopup img {
   
-  user-select: none;         /* prevent drag selection */
+  user-select: none;        
   -webkit-user-drag: none;
+}
+
+@media screen and (max-width: 768px) {
+  .Mainhead {
+    flex-direction: row;      
+    align-items: flex-start;    
+                 
+    width: 100%;
+  }
+
+  .logo {
+     display: flex;            
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 1rem;
+    width: 4rem;              
+  }
+
+.buttoncon {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  gap: 1%;
+  width: 100%;
+  height: 100%;        
+ flex: 1; 
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;  
+
+  font-size: 2.5vw;
+  padding: 0 2%;          
+  height: 100%;            
+  text-decoration: none;
+  color: white;
+}
+
+.nav-link:hover {
+  background-color: #3c48a5;
+  transform: scale(1.05);
+}
+
+.profileimg {
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;  
+  object-fit: cover;  
+  pointer-events: none;
+      user-select: none;       
+  -webkit-user-drag: none;
+}
+
+
+.circle{
+    width: 0.8rem;
+  height: 0.8rem;
+  background-color: #ffffff;
+  border-radius: 50%; 
+  display: flex;
+  justify-content: center; 
+  align-items: center;     
+  margin-right:-2rem; 
+  margin-top:2rem; 
+  flex-shrink: 0;
+   cursor: pointer;  
+   position:absolute
+}
+.arrowimg{
+    width: 100%;
+  height: 100%;
+  border-radius: 50%;  
+  object-fit: cover;   
+  pointer-events: none; 
+      user-select: none;         
+  -webkit-user-drag: none;
+}
+
+
+  .right-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 2rem;
+
+    height: 100%;
+  }
+
+  .prof {
+    margin-right: 0;
+    width: 3rem;
+    height: 3rem;
+    top: -0.2.1rem;
+     position: relative;
+     left: -30%;
+  }
+
+  .profilepopup {
+    top: 120%; 
+    width: 12rem;
+    right: 1.9rem;
+    
+    transform: none; 
+  }
+}
+
+
+
+
+@media screen and (max-width: 480px) {
+  .Mainhead {
+    flex-direction: row;          
+    align-items: center;
+    justify-content: space-between;
+    padding: 0rem 0.7rem;
+    height: auto;
+   
+  }
+
+  .logo {
+    display: flex;            
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 1.3rem;
+    width: 3rem;  
+  }
+
+  .buttoncon {
+    display: flex;
+    flex-direction: row;          
+    align-items: center;
+    justify-content: flex-start;
+    width: auto;                 
+    gap: 0rem;    
+     height: 100%;             
+  }
+
+  .nav-link {
+    font-size: 12px;             
+    padding: 0.3rem 0.5rem;      
+    font-weight: 600;
+    height: 100%;
+  }
+  .profileimg {
+  width: 60%;
+  height: 60%;
+  border-radius: 50%; 
+  object-fit: cover;  
+  pointer-events: none; 
+      user-select: none;        
+  -webkit-user-drag: none;
+}
+
+  .right-group {
+    gap: 0.3rem;
+     height: 100%;
+      justify-content: space-between;
+      height: 100%;
+  }
+
+  .circle{
+    width: 0.6rem;
+  height: 0.6rem;
+  background-color: #ffffff;
+  border-radius: 50%; 
+  display: flex;
+  justify-content: center; 
+  align-items: center;     
+  margin-right:-1.5rem; 
+  margin-top:1.7rem; 
+  flex-shrink: 0;
+   cursor: pointer;  
+   position:absolute
+}
+
+  .prof {
+    width: 2.4rem;
+    height: 2.4rem;
+    margin-right: 0.5rem;
+    left: 1%;
+  }
+
+  .profilepopup {
+    width: 1rem;         
+    top: 115%;            
+    right: 0;
+    transform: none;
+    font-size: 12px;      
+    padding: 0rem 0.1rem;  
+  }
+
+  .profilepopup p {
+    position: relative;
+    padding: 0.4rem 0.5rem;  
+    font-size: 12px;
+     top: 0rem; 
+     
+  }
+  .profilepopup img {
+  width: 1rem;   
+  height: 1rem;
+  margin-right: 0.5rem; 
+  vertical-align: middle; 
+}
 }

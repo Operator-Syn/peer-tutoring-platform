@@ -9,6 +9,8 @@ import reportIcon from "../assets/images/M_layouts/Report.png";
 import applyIcon from "../assets/images/M_layouts/Apply.png";
 import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
+import profile from "../assets/images/M_layouts/profile.png";
+import arrow from "../assets/images/M_layouts/downarrow.png";
  
 function Header(){
  const [popup, showpopup] = useState(false);
@@ -43,8 +45,13 @@ function Header(){
     </div>
 
    <div className="profile-container">
-      <div className="prof" onClick={() => showpopup(!popup)}></div>
+      <div className="prof" onClick={() => showpopup(!popup)} > <img src = {profile} className="profileimg"/> 
+      <div className="circle">
+         <img src = {arrow} className="arrowimg"/>
+         </div>
+      </div>
       
+
       {popup && (
         <div className="profilepopup">
           <p>
