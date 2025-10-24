@@ -5,15 +5,32 @@
   width: 100%;
   background: #4956AD;
   color: white;
-  height: 6rem;
+  height: 30%;
   max-width: 100%;
     overflow-x: clip; 
-}
+     
 
+}
+.navbar-toggler {
+  background-color: #4956AD;  
+  border: 3px solid #ffffff; 
+  border-radius: 0.5rem;      
+  width: 4rem;             
+  height: 3rem;
+  padding: 0.25rem;
+  color:#ffffff;
+    color: white;                
+  outline: none !important;    
+  box-shadow: none !important; 
+}
+nav.navbar {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
 .buttoncon {
   display: flex;
-
+align-items: stretch;
   padding: 0;
 
  height: 100%;
@@ -37,7 +54,7 @@
 }
 
 .nav-link:hover {
-  background-color: #3c48a5;
+  
   transform: scale(1.05);
 }
 
@@ -59,7 +76,7 @@
 
   padding: 0; 
     margin-left: 3rem;
-    margin-top: 1.2rem;
+   
 
     user-select: none;      
   -webkit-user-drag: none;
@@ -89,6 +106,7 @@
   margin-right: 4rem; 
   flex-shrink: 0;
    cursor: pointer;  
+   
 }
 .circle{
     width: 1.2rem;
@@ -125,30 +143,33 @@
       user-select: none;       
   -webkit-user-drag: none;
 }
+nav.navbar {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.navbar-toggler {
+  margin-left: auto;  
+  margin-right: 0.5rem;
+}
 
 .profilepopup {
-  transition: 2s ease;
-    position: absolute;
-  top: 110%;            
-  transform: translateX(-50%);
+  position: absolute;
+  top: 110%; 
+  left: 0%;
+  transform: translateX(-50%); 
   background: #F8F9FF;
-  border: 1px solid#D6DAF2;
-  color: black; 
-    padding: 0;
+  border: 1px solid #D6DAF2;
+  color: black;
+  padding: 0;
   border-radius: 0.2rem;
   box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
   z-index: 3;
   display: flex;
-  max-width: 80vw;  
-  word-wrap: break-word; 
-   width: 15rem;       
-  min-width: 10rem;  
-  max-width: 80vw; 
   flex-direction: column;
-
-     user-select: none;         /* prevent drag selection */
+  width: 15rem;
+  min-width: 10rem;
+  user-select: none;
   -webkit-user-drag: none;
-
 }
 
 .profilepopup p {
@@ -174,210 +195,107 @@
   -webkit-user-drag: none;
 }
 
-@media screen and (max-width: 768px) {
-  .Mainhead {
-    flex-direction: row;      
-    align-items: flex-start;    
-                 
-    width: 100%;
-  }
 
-  .logo {
-     display: flex;            
-    align-items: center;
-    justify-content: center;
-    margin-left: 0;
-    margin-top: 1rem;
-    width: 4rem;              
-  }
+/* Adjust toggler position */
+.custom-toggler {
+  margin-right: auto;
+  margin-left: 0.5rem;
+}
 
-.buttoncon {
+/* Keep profile on the far right */
+.prof-container {
+  position: absolute;
+  right: 1rem;
+  top: 0.4rem;
   display: flex;
-  flex-direction: row;
-  justify-content: center;
   align-items: center;
-
-  gap: 1%;
-  width: 100%;
-  height: 100%;        
- flex: 1; 
 }
 
-.nav-link {
-  display: flex;
-  align-items: center;  
-
-  font-size: 2.5vw;
-  padding: 0 2%;          
-  height: 100%;            
-  text-decoration: none;
-  color: white;
-}
-
-.nav-link:hover {
-  background-color: #3c48a5;
-  transform: scale(1.05);
-}
-
-.profileimg {
-  width: 60%;
-  height: 60%;
-  border-radius: 50%;  
-  object-fit: cover;  
-  pointer-events: none;
-      user-select: none;       
-  -webkit-user-drag: none;
-}
-
-
-.circle{
-    width: 0.8rem;
-  height: 0.8rem;
-  background-color: #ffffff;
-  border-radius: 50%; 
-  display: flex;
-  justify-content: center; 
-  align-items: center;     
-  margin-right:-2rem; 
-  margin-top:2rem; 
-  flex-shrink: 0;
-   cursor: pointer;  
-   position:absolute
-}
-.arrowimg{
-    width: 100%;
-  height: 100%;
-  border-radius: 50%;  
-  object-fit: cover;   
-  pointer-events: none; 
-      user-select: none;         
-  -webkit-user-drag: none;
-}
-
-
-  .right-group {
-    width: 100%;
-    justify-content: space-between;
-    gap: 2rem;
-
-    height: 100%;
-  }
-
-  .prof {
-    margin-right: 0;
-    width: 3rem;
-    height: 3rem;
-    top: -0.2.1rem;
-     position: relative;
-     left: -30%;
-  }
-
-  .profilepopup {
-    top: 120%; 
-    width: 12rem;
-    right: 1.9rem;
-    
-    transform: none; 
-  }
-}
-
-
-
-
-@media screen and (max-width: 480px) {
+/* Make sure layout adapts nicely */
+@media screen and (max-width: 992px) {
   .Mainhead {
-    flex-direction: row;          
-    align-items: center;
-    justify-content: space-between;
-    padding: 0rem 0.7rem;
-    height: auto;
-   
+    position: relative;
   }
 
-  .logo {
-    display: flex;            
-    align-items: center;
-    justify-content: center;
-    margin-left: 0;
-    margin-top: 1.3rem;
-    width: 3rem;  
+  .custom-toggler {
+    position: absolute;
+    left: 1rem;
+    top: 0.8rem;
   }
 
-  .buttoncon {
-    display: flex;
-    flex-direction: row;          
-    align-items: center;
-    justify-content: flex-start;
-    width: auto;                 
-    gap: 0rem;    
-     height: 100%;             
+  .prof-container {
+    position: absolute;
+    right: 1rem;
+    top: 0.5rem;
   }
-
-  .nav-link {
-    font-size: 12px;             
-    padding: 0.3rem 0.5rem;      
-    font-weight: 600;
-    height: 100%;
-  }
-  .profileimg {
-  width: 60%;
-  height: 60%;
-  border-radius: 50%; 
-  object-fit: cover;  
-  pointer-events: none; 
-      user-select: none;        
-  -webkit-user-drag: none;
-}
-
-  .right-group {
-    gap: 0.3rem;
-     height: 100%;
-      justify-content: space-between;
-      height: 100%;
-  }
-
-  .circle{
-    width: 0.6rem;
-  height: 0.6rem;
-  background-color: #ffffff;
-  border-radius: 50%; 
-  display: flex;
-  justify-content: center; 
-  align-items: center;     
-  margin-right:-1.5rem; 
-  margin-top:1.7rem; 
-  flex-shrink: 0;
-   cursor: pointer;  
-   position:absolute
-}
-
-  .prof {
-    width: 2.4rem;
-    height: 2.4rem;
-    margin-right: 0.5rem;
-    left: 1%;
-  }
-
   .profilepopup {
-    width: 1rem;         
-    top: 115%;            
-    right: 0;
-    transform: none;
-    font-size: 12px;      
-    padding: 0rem 0.1rem;  
+    top: 115%;
+    left: 0%;
+    transform: translateX(-50%);
+    width: 12rem;
+  }
+
+   .profilepopup img {
+    width: 20px;
+    height: 20px;
+    margin-right: 0rem;
   }
 
   .profilepopup p {
-    position: relative;
-    padding: 0.4rem 0.5rem;  
-    font-size: 12px;
-     top: 0rem; 
-     
+    font-size: 16px;
+    padding: 0.5rem 0.6rem;
   }
-  .profilepopup img {
-  width: 1rem;   
-  height: 1rem;
-  margin-right: 0.5rem; 
-  vertical-align: middle; 
 }
+
+@media screen and (max-width: 480px) {
+  .Mainhead {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+
+
+  .navbar-toggler {
+    margin-right: 0rem;
+    
+  }
+
+
+  .prof {
+    order: 2;
+    margin-right: 1rem;
+  }
+
+
+  .logo {
+    order: 1;
+    margin-left: 1rem;
+  }
+
+
+  .navbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #4956AD;
+    z-index: 2;
+  }
+   .profilepopup img {
+    width: 18px;
+    height: 18px;
+    margin-right: 0rem;
+  }
+  .profilepopup {
+    top: 115%;
+    left: 0%;
+    transform: translateX(-50%);
+    width: 12rem;
+  }
+  .profilepopup p {
+    font-size: 14px;
+    padding: 0.4rem 0.5rem;
+  }
 }

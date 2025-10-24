@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "../assets/css/header.css"
-import logo from"../assets/images/M_layouts/LAV_logo.png"
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import "../assets/css/header.css";
+
+import logo from "../assets/images/M_layouts/LAV_logo.png";
 import notifIcon from "../assets/images/M_layouts/Notifications.png";
 import histIcon from "../assets/images/M_layouts/History.png";
 import feedIcon from "../assets/images/M_layouts/Feedback.png";
@@ -11,71 +12,153 @@ import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
 import profile from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
- 
-function Header(){
- const [popup, showpopup] = useState(false);
+
+function Header() {
+  const [popup, setPopup] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnimating, setMenuAnimating] = useState(false);
+  const location = useLocation();
 
 
+  useEffect(() => {
+    setPopup(false);
+  }, [location]);
 
-    return(
-        <div className="Mainhead"> 
+  const toggleMenu = () => setMenuOpen(!menuOpen);
 
-        <a href="https://www.facebook.com/lav.msuiit">
-    <img src={logo} alt="logo" className="logo"/>
-    <span className="tooltip">Home</span>
-  </a>
+  useEffect(() => {
+    const collapseEl = document.getElementById("navbarNav");
+    if (!collapseEl) return;
 
-  <div className="right-group">
-    <div className="buttoncon">
-          <Link to="/" className="nav-link">
-      Home
-    </Link>
-      <Link to="/About" className="nav-link">
-      About
-    </Link> 
-      <Link to="/Events" className="nav-link">
-      Events
-    </Link>
-      <Link to="/Messages" className="nav-link">
-      Messages
-    </Link>
-      <Link to="/Report" className="nav-link">
-      Report
-    </Link>
-    </div>
+    const handleShow = () => setMenuAnimating(true);
+    const handleShown = () => setMenuAnimating(false);
+    const handleHide = () => setMenuAnimating(true);
+    const handleHidden = () => {
+      setMenuAnimating(false);
+      setMenuOpen(false);
+    };
 
-   <div className="profile-container">
-      <div className="prof" onClick={() => showpopup(!popup)} > <img src = {profile} className="profileimg"/> 
-      <div className="circle">
-         <img src = {arrow} className="arrowimg"/>
-         </div>
-      </div>
+    collapseEl.addEventListener("show.bs.collapse", handleShow);
+    collapseEl.addEventListener("shown.bs.collapse", handleShown);
+    collapseEl.addEventListener("hide.bs.collapse", handleHide);
+    collapseEl.addEventListener("hidden.bs.collapse", handleHidden);
+
+    return () => {
+      collapseEl.removeEventListener("show.bs.collapse", handleShow);
+      collapseEl.removeEventListener("shown.bs.collapse", handleShown);
+      collapseEl.removeEventListener("hide.bs.collapse", handleHide);
+      collapseEl.removeEventListener("hidden.bs.collapse", handleHidden);
+    };
+  }, []);
+
+
+  const handleNavClick = () => {
+    const collapseEl = document.getElementById("navbarNav");
+    if (collapseEl && collapseEl.classList.contains("show")) {
+      const bsCollapse = window.bootstrap.Collapse.getInstance(collapseEl);
+      bsCollapse?.hide();
+    }
+    setMenuOpen(false);
+  };
+
+  return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+      <div className="container-fluid Mainhead">
+      
+          <a
+  href="https://www.facebook.com/lav.msuiit"
+  className="navbar-brand d-flex "
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <img src={logo} alt="logo" className="logo" />
+</a>
+
       
 
-      {popup && (
-        <div className="profilepopup">
-          <p>
-               <img src={notifIcon} className="notificationicon" alt="Notifications" />
-             Notifications</p>
+        <button
+          className="navbar-toggler"
+          type="button"
+          onClick={toggleMenu}
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded={menuOpen ? "true" : "false"}
+          aria-label="Toggle navigation"
+        >
+          More
+        </button>
 
-          <p><img src={histIcon} className="historyicon" alt="History" />
-            History</p>
-          <p><img src={applyIcon} className="applyicon" alt="Apply" />
-          Apply as tutor</p>
-          <p><img src={feedIcon} className="feedbackicon" alt="Feedback" />
-          Feedback</p>
-          <p><img src={webIcon} className="webicon" alt="Website" />
-          Myiit</p>
-          <p><img src={tutorsIcon} className="tutoricon" alt="Tutors" />
-          Tutors</p>
-          <p><img src={reportIcon} className="reporticon" alt="Reports" />Report a bug</p>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">
+            <li className="nav-item">
+              <Link to="/" className="nav-link" onClick={handleNavClick}>
+                Home
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/About" className="nav-link" onClick={handleNavClick}>
+                About
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/Events" className="nav-link" onClick={handleNavClick}>
+                Events
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
+                Messages
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to="/Report" className="nav-link" onClick={handleNavClick}>
+                Report
+              </Link>
+            </li>
+          </ul>
         </div>
-      )}
-    </div>
+
+    
+        {!menuOpen && !menuAnimating && (
+          <div className="position-relative ms-3">
+            <div className="prof" onClick={() => setPopup(!popup)}>
+              <img src={profile} className="profileimg" alt="profile" />
+              <div className="circle">
+                <img src={arrow} className="arrowimg" alt="dropdown arrow" />
+              </div>
             </div>
-            </div>
-            
-            
-    );
+
+            {popup && (
+              <div className="profilepopup">
+                <p>
+                  <img src={notifIcon} alt="Notifications" /> Notifications
+                </p>
+                <p>
+                  <img src={histIcon} alt="History" /> History
+                </p>
+                <p>
+                  <img src={applyIcon} alt="Apply" /> Apply as tutor
+                </p>
+                <p>
+                  <img src={feedIcon} alt="Feedback" /> Feedback
+                </p>
+                <p>
+                  <img src={webIcon} alt="Website" /> Myiit
+                </p>
+                <p>
+                  <img src={tutorsIcon} alt="Tutors" /> Tutors
+                </p>
+                <p>
+                  <img src={reportIcon} alt="Report a bug" /> Report a bug
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </nav>
+  );
 }
-export default Header
+
+export default Header;

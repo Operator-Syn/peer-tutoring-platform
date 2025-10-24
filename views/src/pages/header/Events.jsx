@@ -2,9 +2,9 @@ import React from "react";
 
 function Events() {
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "12rem" }}>
       <h2>Events</h2>
-      <p>This is the about page content.</p>
+      <p>This is the event page content.</p>
     </div>
   );
 }
