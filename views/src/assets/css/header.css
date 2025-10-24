@@ -1,16 +1,5 @@
-.Mainhead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  background: #4956AD;
-  color: white;
-  height: 30%;
-  max-width: 100%;
-    overflow-x: clip; 
-     
 
-}
+
 .navbar-toggler {
   background-color: #4956AD;  
   border: 3px solid #ffffff; 
@@ -196,13 +185,13 @@ nav.navbar {
 }
 
 
-/* Adjust toggler position */
+
 .custom-toggler {
   margin-right: auto;
   margin-left: 0.5rem;
 }
 
-/* Keep profile on the far right */
+
 .prof-container {
   position: absolute;
   right: 1rem;
@@ -211,7 +200,7 @@ nav.navbar {
   align-items: center;
 }
 
-/* Make sure layout adapts nicely */
+
 @media screen and (max-width: 992px) {
   .Mainhead {
     position: relative;

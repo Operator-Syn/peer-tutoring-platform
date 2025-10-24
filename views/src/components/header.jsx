@@ -24,7 +24,11 @@ function Header() {
     setPopup(false);
   }, [location]);
 
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const toggleMenu = () => {
+    if (window.innerWidth < 992) {
+      setMenuOpen(!menuOpen);
+    }
+  };
 
   useEffect(() => {
     const collapseEl = document.getElementById("navbarNav");
@@ -52,6 +56,21 @@ function Header() {
   }, []);
 
 
+  useEffect(() => {
+    const collapseEl = document.getElementById("navbarNav");
+
+    const handleResize = () => {
+      if (window.innerWidth >= 992) {
+        setMenuOpen(false);
+        setMenuAnimating(false);
+        collapseEl?.classList.remove("show");
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleNavClick = () => {
     const collapseEl = document.getElementById("navbarNav");
     if (collapseEl && collapseEl.classList.contains("show")) {
@@ -63,18 +82,29 @@ function Header() {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-      <div className="container-fluid Mainhead">
-      
-          <a
-  href="https://www.facebook.com/lav.msuiit"
-  className="navbar-brand d-flex "
-  target="_blank"
-  rel="noopener noreferrer"
->
-  <img src={logo} alt="logo" className="logo" />
-</a>
-
-      
+      <div
+        className="container-fluid Mainhead"
+        style={{
+          background: "#4956AD",
+          color: "white",
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          transition: "all 0.3s ease",
+          minHeight: menuOpen ? "0rem" : "1rem",
+          height: "auto",
+        }}
+      >
+        <a
+          href="https://www.facebook.com/lav.msuiit"
+          className="navbar-brand d-flex"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img src={logo} alt="logo" className="logo" />
+        </a>
 
         <button
           className="navbar-toggler"
@@ -119,7 +149,6 @@ function Header() {
           </ul>
         </div>
 
-    
         {!menuOpen && !menuAnimating && (
           <div className="position-relative ms-3">
             <div className="prof" onClick={() => setPopup(!popup)}>
