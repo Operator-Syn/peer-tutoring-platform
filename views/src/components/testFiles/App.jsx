@@ -1,12 +1,12 @@
 import "bootstrap/dist/css/bootstrap.min.css";
-import SmallCardComponent from "../smallCardComponent/CardComponent";
+import CardComponent from "../CardComponent/CardComponent";
 import {ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons"
 
 export default function App() {
     return (
         <div className="d-flex gap-4 p-4 flex-wrap align-items-start">
 
-            <SmallCardComponent
+            <CardComponent
                 title={{ label: "Subject Code:", value: "MAT 101" }}
                 modalTitle="Appointment Details"
                 leftAlignText="Tutor: Jazrel Xandrei Quinlob"
@@ -18,12 +18,12 @@ export default function App() {
                     { text: "Tutor: Jazrel Xandrei Quinlob", role: "Tutor", url: "https://example.com/tutor-profile" },
                     { text: "Tutee: John-Ronan Beira", role: "Tutee" }
                 ]}
-                tutorMessage="Please review chapters 1–3 before our next session."
+                tutorMessage="Please review chapters 1—3 before our next session."
                 modalButtonsRight={[...ConfirmButton, ...CloseButton]}
                 modalButtonsLeft={CancelAppointmentButton}
             />
 
-            <SmallCardComponent
+            <CardComponent
                 title="CCC 101"
                 modalTitle="Appointment Details"
                 leftAlignText="Tutor: Jazrel Xandrei Quinlob"
@@ -35,7 +35,7 @@ export default function App() {
                     { text: "Tutor: Jazrel Xandrei Quinlob", role: "Tutor", url: "https://example.com/tutor-profile" },
                     { text: "Tutee: John-Ronan Beira", role: "Tutee" }
                 ]}
-                tutorMessage="Please review chapters 1–3 before our next session."
+                tutorMessage="Please review chapters 1—3 before our next session."
                 modalButtonsRight={[...ConfirmButton, ...CloseButton]}
                 modalButtonsLeft={CancelAppointmentButton}
             />
