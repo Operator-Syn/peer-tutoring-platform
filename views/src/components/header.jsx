@@ -93,8 +93,8 @@ function Header() {
           alignItems: "center",
           flexWrap: "wrap",
           transition: "all 0.3s ease",
-          minHeight: menuOpen ? "0rem" : "1rem",
-          height: "auto",
+          minHeight: menuOpen ? "0rem" : "0rem",
+         
         }}
       >
         <a

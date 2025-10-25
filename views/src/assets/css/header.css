@@ -61,7 +61,7 @@ align-items: stretch;
 .logo {
   display: flex;
   align-items: center;
-  width: 6rem;
+  width: 5rem;
 
   padding: 0; 
     margin-left: 3rem;
@@ -85,8 +85,8 @@ align-items: stretch;
 }
 
 .prof {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 4rem;
+  height: 4rem;
   background-color: #616DBE;
   border-radius: 50%; 
   display: flex;
