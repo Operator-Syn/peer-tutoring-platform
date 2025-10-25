@@ -1,0 +1,105 @@
+.left-column, .right-column {
+    height: 100%;
+}
+
+/*
+        ------------------------------------------------- LEFT COLUMN SECTION
+*/
+
+.home-top {
+}
+
+.introduction {
+    width: auto;
+    max-width: 530px;
+}
+
+.introduction h1, .introduction p {
+    color: #4956AD;
+    width: auto;
+    margin-bottom: 50px;
+}
+
+.introduction h1 {
+    font-size: 48px;
+    font-weight: 900;
+}
+
+.introduction p {
+    text-align: justify;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.stats {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 20px;
+
+    width: 530px;
+}
+
+.stat {
+
+    height: auto;
+    width: auto;
+}
+
+.top-text, .bottom-text {
+    text-align: center;
+    color: #333C7B;
+    font-weight: 800;
+    margin: 0px;
+}
+
+.top-text {
+    font-size: 32px;
+}
+
+.bottom-text {
+    font-size: 20px;
+}
+
+.button-section {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    gap: 25px;
+    width: 100%;
+    max-width: 530px;
+}
+
+/*
+        ------------------------------------------------- RIGHT COLUMN SECTION
+*/
+
+.tutor-sched {
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.301);
+}
+
+.custom-border {
+    height: auto;
+    background-color: #4956AD;
+    border-radius: 0px 15px 15px 0px;
+    width: 20px;
+}
+
+.tutor-sched img {
+    height: 100%;
+    width: 100%;
+    min-width: 365px;
+    max-width: 500px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+
+
+
+@media (max-width: 1140px) {
+  .right-column {
+    margin-top: 30px;
+  }
+}

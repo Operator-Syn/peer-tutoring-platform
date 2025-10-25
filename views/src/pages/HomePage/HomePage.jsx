@@ -1,10 +1,11 @@
-import tutorSchedulesImg from '../assets/tutor_schedules.png';
-import searchSvg from '../assets/search_icon.svg';
-import bookSvg from '../assets/book_icon.svg';
-import peopleSvg from '../assets/people_icon.svg';
+import tutorSchedulesImg from '../../assets/tutor_schedules.png';
+import searchSvg from '../../assets/search_icon.svg';
+import bookSvg from '../../assets/book_icon.svg';
+import peopleSvg from '../../assets/people_icon.svg';
 
 import './HomePage.css';
-import Button from '../components/button';
+import Button from '../../components/button';
+import HomePageCard from '../../components/HomePageCard/HomePageCard';
 
 export default function HomePage() {
 
@@ -41,9 +42,9 @@ export default function HomePage() {
                 </div>
 
                 <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '80%', maxWidth: '1500px', paddingBottom: '70px'}}>
-                    <Card icon={searchSvg} title='Explore' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <Card icon={bookSvg} title='Education' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <Card icon={peopleSvg} title='Diversity' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <HomePageCard icon={searchSvg} title='Explore' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <HomePageCard icon={bookSvg} title='Education' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <HomePageCard icon={peopleSvg} title='Diversity' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
                 </div>
             </div>
             
@@ -63,40 +64,3 @@ function Stat({ top_text='Top', bottom_text='Bottom' }) {
     );
 }
 
-function Card({ title='Title', description='Description', icon=null }) {
-
-    const customBorder = {
-        display: 'flex',
-        flexDirection: 'row-reverse',
-        width: '30px',
-        backgroundColor: '#4956AD',
-        height: '100%',
-        borderRadius: '15px',
-        position: 'absolute',
-        left: '0px'
-    }
-
-    const customBorder2 = {
-        width: '15px',
-        backgroundColor: '#FFFFFF',
-        height: '100%',
-        borderRadius: '25px',
-    }
-
-    return (
-        <>
-
-            <div className='card'>
-                <div style={customBorder}>
-                    <div style={customBorder2} />
-                </div>
-                <img src={icon} alt="Icon" /> 
-                <div className='card-text'>
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                </div>
-            </div>        
-        </>
-
-    );
-}

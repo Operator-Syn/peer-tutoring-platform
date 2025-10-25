@@ -1,0 +1,42 @@
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding-right: 20px;
+
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border: none;
+    border-radius: 15px;
+    width: 425px;
+    height: 204px;
+}
+
+.card img {
+    width: 75px;
+    height: 75px;
+    margin-right: 10px;
+    margin-left: 10px;
+    z-index: 1;
+}
+
+.card-text {
+    text-align: justify;
+    width: 100%;
+    color: #4956AD;
+}
+
+.card-text h3 {
+    margin-top: 0px;
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: bolder;
+}
+
+.card-text p {
+    font-size: 16px;
+    font-weight: bolder;
+    max-height: 100px;
+    margin-bottom: 0px;
+}
