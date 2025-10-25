@@ -13,7 +13,7 @@ export default function App() {
                 rightAlignTop="October 19, 2025"
                 rightAlignBottom="1:00 PM — 3:00 PM"
                 footer="NN hours left before the appointment"
-                image="https://cdn.discordapp.com/attachments/1392833768959770624/1404304146785370142/FB_IMG_1754882557879.jpg?ex=68f50267&is=68f3b0e7&hm=7e5e81eed7b2ad817fd8b3a9e312c8131b0a2639494425b39b4f9ae934724507&"
+                image="https://cdn.discordapp.com/attachments/1392833768959770624/1404072835902869605/529905001_1182140307281774_2732309772554834092_n.png?ex=68fd657a&is=68fc13fa&hm=344f9c2d1360740dcc5f34614ab6482f895d85d97203ddfeeb1a3c8e01091bd5&"
                 modalContent={[
                     { text: "Tutor: Jazrel Xandrei Quinlob", role: "Tutor", url: "https://example.com/tutor-profile" },
                     { text: "Tutee: John-Ronan Beira", role: "Tutee" }
@@ -30,7 +30,7 @@ export default function App() {
                 rightAlignTop="October 19, 2025"
                 rightAlignBottom="1:00 PM — 3:00 PM"
                 footer="NN hours left before the appointment"
-                image="https://cdn.discordapp.com/attachments/1392833768959770624/1392872101127520348/a_pixie_dyed_here.gif?ex=68f59b7b&is=68f449fb&hm=ece4208b1b0af1c0dd6aa3a4a71173ee9ce2f858de8623d063e0662454767152&"
+                image="https://cdn.discordapp.com/attachments/1392833768959770624/1392872101127520348/a_pixie_dyed_here.gif?ex=68fd847b&is=68fc32fb&hm=1bba2f4cad6c30002adc71ea48ee48ac5f938777c0418b0e72e7a50f184ede5d&"
                 modalContent={[
                     { text: "Tutor: Jazrel Xandrei Quinlob", role: "Tutor", url: "https://example.com/tutor-profile" },
                     { text: "Tutee: John-Ronan Beira", role: "Tutee" }
