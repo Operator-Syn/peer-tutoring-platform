@@ -12,7 +12,7 @@ export default function HomePage() {
     return (
         <>  
             <div className='home container-fluid column align-center height-100'>
-                <div className='home-top row align-items-center justify-content-center height-auto mx-auto gap-3' style={{width: '80%', maxWidth: '1500px', paddingTop: '70px', paddingBottom: '70px'}}>
+                <div className='home-top row align-items-center justify-content-center height-auto mx-auto gap-3' style={{width: '90%', maxWidth: '1500px', paddingTop: '70px', paddingBottom: '70px'}}>
                     <div className="left-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='introduction'>
                             <h1>Inspiring Excellence through Education</h1>
@@ -43,7 +43,7 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '80%', maxWidth: '1500px', paddingBottom: '70px'}}>
+                <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '90%', maxWidth: '1500px', paddingBottom: '70px'}}>
                     <HomePageCard icon={searchSvg} title='Explore' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
                     <HomePageCard icon={bookSvg} title='Education' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
                     <HomePageCard icon={peopleSvg} title='Diversity' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
