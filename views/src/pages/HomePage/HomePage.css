@@ -95,6 +95,10 @@
     display: block;
 }
 
+.tutor-sched img:hover {
+    cursor: pointer;
+}
+
 
 
 

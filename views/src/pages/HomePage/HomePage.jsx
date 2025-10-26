@@ -35,7 +35,9 @@ export default function HomePage() {
 
                     <div className="right-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='tutor-sched d-flex flex-row' style={{borderRadius: '15px'}} >
-                            <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} />
+                            <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} onClick={() => {
+                                
+                                }} />
                             <div className='custom-border' />
                         </div>
                     </div>
