@@ -4,7 +4,7 @@ import bookSvg from '../../assets/book_icon.svg';
 import peopleSvg from '../../assets/people_icon.svg';
 
 import './HomePage.css';
-import Button from '../../components/button';
+import BasicButton from '../../components/BasicButton/BasicButton';
 import HomePageCard from '../../components/HomePageCard/HomePageCard';
 
 export default function HomePage() {
@@ -28,8 +28,8 @@ export default function HomePage() {
                         </div>
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
-                            <Button>Start Learning</Button>
-                            <Button light={true}>Appointments</Button>
+                            <BasicButton>Start Learning</BasicButton>
+                            <BasicButton light={true}>Appointments</BasicButton>
                         </div>
                     </div>
 
