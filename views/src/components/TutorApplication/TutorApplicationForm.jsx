@@ -9,6 +9,7 @@ const TutorApplicationForm = () => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -21,7 +22,7 @@ const TutorApplicationForm = () => {
       setLoadingCourses(true);
       const response = await fetch(`${API_BASE_URL}/courses`);
       const data = await response.json();
-
+      
       if (response.ok) {
         setAvailableCourses(data.courses);
       } else {
@@ -50,8 +51,23 @@ const TutorApplicationForm = () => {
     
     setError(null);
     setSuccess(null);
-    setLoading(true);
+    setValidationErrors([]);
 
+    const errors = [];
+    if (!studentId.trim()) {
+      errors.push('Student ID is required');
+    }
+    if (selectedCourses.length === 0) {
+      errors.push('Please select at least one course');
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setLoading(true);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/tutor-applications`, {
         method: 'POST',
@@ -71,14 +87,26 @@ const TutorApplicationForm = () => {
         setStudentId('');
         setSelectedCourses([]);
       } else {
-        setError(data.error || 'Failed to submit application');
+        if (data.errors) {
+          setValidationErrors(data.errors);
+        } else {
+          setError(data.error || 'Failed to submit application');
+        }
       }
     } catch (err) {
-      setError('Error connecting to server');
+      setError('Error connecting to server. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setStudentId('');
+    setSelectedCourses([]);
+    setError(null);
+    setSuccess(null);
+    setValidationErrors([]);
   };
 
   return (
@@ -124,6 +152,23 @@ const TutorApplicationForm = () => {
                     type="button" 
                     className="btn-close" 
                     onClick={() => setError(null)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+              )}
+
+              {validationErrors.length > 0 && (
+                <div className="alert alert-warning alert-dismissible fade show" role="alert">
+                  <strong>Please fix the following errors:</strong>
+                  <ul className="mb-0 mt-2">
+                    {validationErrors.map((err, index) => (
+                      <li key={index}>{err}</li>
+                    ))}
+                  </ul>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setValidationErrors([])}
                     aria-label="Close"
                   ></button>
                 </div>
@@ -192,7 +237,7 @@ const TutorApplicationForm = () => {
                   {selectedCourses.length > 0 && (
                     <div className="course-counter">
                       <p className="course-counter-text">
-                         {selectedCourses.length} course(s) selected
+                        ✓ {selectedCourses.length} course(s) selected
                       </p>
                     </div>
                   )}
@@ -217,12 +262,7 @@ const TutorApplicationForm = () => {
                   <button 
                     type="button" 
                     className="btn btn-secondary"
-                    onClick={() => {
-                      setStudentId('');
-                      setSelectedCourses([]);
-                      setError(null);
-                      setSuccess(null);
-                    }}
+                    onClick={handleReset}
                     disabled={loading}
                   >
                     Reset
@@ -232,10 +272,9 @@ const TutorApplicationForm = () => {
 
             </div>
           </div>
-
-          </div>
         </div>
       </div>
+    </div>
   );
 };
 
