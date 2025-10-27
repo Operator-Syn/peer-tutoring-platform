@@ -1,3 +1,5 @@
+import React from 'react';
+import TutorApplicationForm from './components/TutorApplication/TutorApplicationForm';
 import { useState } from 'react'
 import './App.css'
 
@@ -6,9 +8,9 @@ function App() {
 
   return (
     <>
-      <div>
-        <h1>Yawa</h1>
-      </div>
+      <div className="App">
+      <TutorApplicationForm />
+    </div>
     </>
   )
 }
