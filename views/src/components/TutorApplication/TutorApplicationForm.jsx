@@ -202,8 +202,8 @@ const TutorApplicationForm = () => {
                 </div>
 
                 <div className="file-upload">
-                  <label for="corFile" className="form-label-custom">Certificate of Registration (COR)</label>
-                  <div class="dropzone">
+                  <label htmlFor="corFile" className="form-label-custom">Certificate of Registration (COR)</label>
+                  <div className="dropzone">
                     <input type="file" className="form-input" id="corFile" accept=".pdf,.jpg,.png" />
                   </div>
                 </div>
