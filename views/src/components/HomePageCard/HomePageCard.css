@@ -40,3 +40,15 @@
     max-height: 100px;
     margin-bottom: 0px;
 }
+
+@media (max-width: 576px) {
+  .card {
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .card-text p {
+    max-height: none;
+  }
+}
