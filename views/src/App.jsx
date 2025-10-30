@@ -1,18 +1,15 @@
 import React from 'react';
 import TutorApplicationForm from './components/TutorApplication/TutorApplicationForm';
-import { useState } from 'react'
-import './App.css'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import MasterLayout from "./Layouts/masterlayout";
+import Frontpage_route from "./routes/Frontpage_route"
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div className="App">
-      <TutorApplicationForm />
-    </div>
-    </>
-  )
+    <BrowserRouter>
+      <Frontpage_route/>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
