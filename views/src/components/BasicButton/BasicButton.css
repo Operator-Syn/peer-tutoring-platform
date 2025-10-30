@@ -1,0 +1,45 @@
+.basic-button {
+    padding: 10px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 54px;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    width: auto;
+}
+
+
+/* Make sure this file is imported after bootstrap CSS in your build */
+.basic-button {
+  /* base look you want for primary */
+  --bs-btn-bg: #4956AD;
+  --bs-btn-border-color: #4956AD;
+  --bs-btn-color: #ffffff;
+
+  /* hover / active states (tweak as needed) */
+  --bs-btn-hover-bg: #3f47a6;
+  --bs-btn-hover-border-color: #3f47a6;
+  --bs-btn-active-bg: #373d97;
+  --bs-btn-active-border-color: #373d97;
+
+  /* focus ring color (optional) */
+  --bs-btn-focus-shadow-rgb: 73,86,173; /* rgb of #4956AD */
+}
+
+/* Outline version when using outline variant — keep text purple and white background */
+.basic-button.btn-outline-primary {
+  color: #4956AD; /* text */
+  background-color: #ffffff;
+  border-color: #4956AD;
+}
+
+/* If you want an explicit CSS class for the "brand" variant */
+.btn-brand {
+  --bs-btn-bg: #4956AD;
+  --bs-btn-border-color: #4956AD;
+  --bs-btn-color: #ffffff;
+  --bs-btn-hover-bg: #3f47a6;
+  --bs-btn-hover-border-color: #3f47a6;
+}
