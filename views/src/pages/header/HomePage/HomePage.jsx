@@ -1,14 +1,14 @@
-import tutorSchedulesImg from '../../assets/tutor_schedules.png';
-import searchSvg from '../../assets/search_icon.svg';
-import bookSvg from '../../assets/book_icon.svg';
-import peopleSvg from '../../assets/people_icon.svg';
-import caro1 from '../../assets/caro1.jpg';
-import caro2 from '../../assets/caro2.jpg';
-import caro3 from '../../assets/caro3.jpg';
+import tutorSchedulesImg from '../../../assets/tutor_schedules.png';
+import searchSvg from '../../../assets/search_icon.svg';
+import bookSvg from '../../../assets/book_icon.svg';
+import peopleSvg from '../../../assets/people_icon.svg';
+import caro1 from '../../../assets/caro1.jpg';
+import caro2 from '../../../assets/caro2.jpg';
+import caro3 from '../../../assets/caro3.jpg';
 
 import './HomePage.css';
-import BasicButton from '../../components/BasicButton/BasicButton';
-import HomePageCard from '../../components/HomePageCard/HomePageCard';
+import BasicButton from '../../../components/BasicButton/BasicButton';
+import HomePageCard from '../../../components/HomePageCard/HomePageCard';
 import Carousel from 'react-bootstrap/Carousel';
 
 export default function HomePage() {
@@ -16,7 +16,7 @@ export default function HomePage() {
     return (
         <>  
             <div className='home container-fluid column align-center height-100'>
-                <div className='home-top row align-items-center justify-content-center height-auto mx-auto gap-3' style={{width: '90%', maxWidth: '1500px', paddingTop: '70px', paddingBottom: '70px'}}>
+                <div className='home-top row align-items-center justify-content-center height-auto mx-auto gap-3' style={{width: '90%', maxWidth: '1500px', paddingTop: '130px', paddingBottom: '70px'}}>
                     <div className="left-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='introduction'>
                             <h1>Inspiring Excellence through Education</h1>
