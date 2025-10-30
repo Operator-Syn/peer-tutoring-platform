@@ -2,10 +2,14 @@ import tutorSchedulesImg from '../../assets/tutor_schedules.png';
 import searchSvg from '../../assets/search_icon.svg';
 import bookSvg from '../../assets/book_icon.svg';
 import peopleSvg from '../../assets/people_icon.svg';
+import caro1 from '../../assets/caro1.jpg';
+import caro2 from '../../assets/caro2.jpg';
+import caro3 from '../../assets/caro3.jpg';
 
 import './HomePage.css';
 import BasicButton from '../../components/BasicButton/BasicButton';
 import HomePageCard from '../../components/HomePageCard/HomePageCard';
+import Carousel from 'react-bootstrap/Carousel';
 
 export default function HomePage() {
 
@@ -35,9 +39,25 @@ export default function HomePage() {
 
                     <div className="right-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='tutor-sched d-flex flex-row' style={{borderRadius: '15px'}} >
-                            <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} onClick={() => {
-                                
-                                }} />
+
+                            <Carousel style={{width: ''}}>
+                                <Carousel.Item>
+                                    <img className='img-fluid' src={tutorSchedulesImg} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} onClick={() => {
+                                        
+                                        }} />                                    
+                                </Carousel.Item>
+                                <Carousel.Item>
+                                    <img className='img-fluid' src={caro1} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} onClick={() => {
+                                        
+                                        }} />                                    
+                                </Carousel.Item>
+                                <Carousel.Item>
+                                    <img className='img-fluid' src={caro2} alt="Homepage Illustration" style={{borderRadius: '15px 0px 0px 15px'}} onClick={() => {
+                                        
+                                        }} />                                    
+                                </Carousel.Item>
+                            </Carousel>
+                            
                             <div className='custom-border' />
                         </div>
                     </div>

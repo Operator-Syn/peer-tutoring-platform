@@ -76,6 +76,14 @@
 
 .tutor-sched {
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.301);
+
+    width: 500px;
+    max-width: 100%;
+    min-width: 365px;
+    aspect-ratio: 1/1;
+    border-radius: 15px;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .custom-border {
@@ -85,13 +93,18 @@
     width: 20px;
 }
 
-.tutor-sched img {
-    height: 100%;
+.tutor-sched .carousel,
+.tutor-sched .carousel-inner,
+.tutor-sched .carousel-item {
     width: 100%;
-    min-width: 365px;
-    max-width: 500px;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
+    height: 100%;
+}
+
+.tutor-sched img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover; 
     display: block;
 }
 
