@@ -20,9 +20,9 @@ export default function HomePage() {
                     <div className="left-column col d-flex flex-column justify-content-center align-items-center" style={{paddingLeft: '0px', paddingRight: '0px'}}>
                         <div className='introduction'>
                             <h1>Inspiring Excellence through Education</h1>
-                            <p>
-                                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknovhwn printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also
-                            </p>
+                            <p style={{textIndent: '60px'}}>
+                                We believe that every student possesses unique potential, and our mission is to unlock it through personalized learning experiences. Our tutoring booking connects you with dedicated educators who provide tailored support, helping you to grasp difficult concepts, build confidence, and achieve your academic goals. Whether you're looking to catch up, keep up, or get ahead, we offer a supportive environment where learning thrives and students are empowered to reach new heights. Invest in your education and discover the transformative power of dedicated, individualized guidance.                            
+                            </p>                 
                         </div>
 
                         <div className='d-flex flex-row justify-content-between gap-3'>
@@ -57,16 +57,22 @@ export default function HomePage() {
                                         }} />                                    
                                 </Carousel.Item>
                             </Carousel>
-                            
+
                             <div className='custom-border' />
                         </div>
                     </div>
                 </div>
 
                 <div className='home-bottom row gap-4 justify-content-center align-items-center mx-auto' style={{width: '90%', maxWidth: '1500px', paddingBottom: '70px'}}>
-                    <HomePageCard icon={searchSvg} title='Explore' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <HomePageCard icon={bookSvg} title='Education' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
-                    <HomePageCard icon={peopleSvg} title='Diversity' description='Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum text ever since the 1500s.' />
+                    <HomePageCard icon={searchSvg} title='Explore' description='
+                        Discover new worlds and spark your curiosity. Navigate subjects and expand your knowledge with our guidance.
+                    ' />
+                    <HomePageCard icon={bookSvg} title='Education' description='
+                        Empowering learners with strong foundations for success. Engage with content that fosters deep understanding and a love for learning.
+                    ' />
+                    <HomePageCard icon={peopleSvg} title='Diversity' description='
+                        Celebrating unique perspectives for a dynamic learning experience. We foster an inclusive and empowering environment for all.
+                    ' />
                 </div>
             </div>
             
