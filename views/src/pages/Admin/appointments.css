@@ -1,0 +1,7 @@
+.schedules {
+  min-height: 100px; /* or use 100vh for full screen */
+  background-color: #ffffff; /* optional background color */
+}
+html, body {
+  height: 135%;           /* make sure the page can grow */
+}
