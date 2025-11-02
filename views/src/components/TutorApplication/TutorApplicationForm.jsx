@@ -13,7 +13,7 @@ const TutorApplicationForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:5000/api';
+  const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
 
   useEffect(() => {
     fetchCourses();
@@ -58,31 +58,34 @@ const TutorApplicationForm = () => {
     setError(null);
     setSuccess(null);
     setLoading(true);
+    
+  const formData = new FormData();
+    formData.append("student_id", studentId);
+    selectedCourses.forEach(course => formData.append("courses", course));
+    
+    const fileInput = document.getElementById("corFile");
+    if (fileInput.files.length > 0) {
+      formData.append("corFile", fileInput.files[0]);
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/tutor-applications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          student_id: studentId,
-          courses: selectedCourses
-        })
+        method: "POST",
+        body: formData,
       });
-
       const data = await response.json();
 
       if (response.ok) {
         setSuccess(data);
-        setStudentId('');
+        setStudentId("");
         setSelectedCourses([]);
+        fileInput.value = "";
       } else {
-        setError(data.error || 'Failed to submit application');
+        setError(data.error || "Failed to submit application");
       }
     } catch (err) {
-      setError('Error connecting to server');
       console.error(err);
+      setError("Error connecting to server");
     } finally {
       setLoading(false);
     }

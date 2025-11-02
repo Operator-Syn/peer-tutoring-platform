@@ -8,6 +8,7 @@ flask = "*"
 python-dotenv = "*"
 flask-bcrypt = "*"
 psycopg2 = "*"
+colorama = "*"
 
 [dev-packages]
 
