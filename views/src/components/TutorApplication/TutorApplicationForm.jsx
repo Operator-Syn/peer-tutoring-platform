@@ -20,8 +20,10 @@ const TutorApplicationForm = () => {
   }, []);
 
   const fetchCourses = async () => {
+    let data = null;
     try {
       setLoadingCourses(true);
+      setError(null)
       const response = await fetch(`${API_BASE_URL}/courses`);
       const data = await response.json();
 
@@ -97,20 +99,29 @@ const TutorApplicationForm = () => {
         
         {success && (
           <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <h5 className="alert-heading">Application Submitted Successfully! </h5>
+            <h5 className="alert-heading">Application Submitted Successfully! ✓</h5>
             <hr />
             <div className="success-details">
               <p><strong>Application ID:</strong> {success.application_id}</p>
-              <p><strong>Student:</strong> {success.student.name}</p>
-              <p><strong>Status:</strong> <span className="badge bg-warning text-dark">{success.status}</span></p>
-              <p><strong>Courses Applied For:</strong></p>
-              <ul>
-                {success.courses.map(course => (
-                  <li key={course.course_code}>
-                    {course.course_code} - {course.course_name}
-                  </li>
-                ))}
-              </ul>
+              <p><strong>Message:</strong> {success.message}</p>
+              {success.student_id && <p><strong>Student ID:</strong> {success.student_id}</p>}
+
+              {success.courses && success.courses.length > 0 && (
+                <>
+                  <p><strong>Courses:</strong></p>
+                  <ul>
+                    {success.courses.map((course, idx) => (
+                      <li key={course.course_code || idx}>
+                        {course && course.course_code
+                          ? `${course.course_code} - ${course.course_name || ''}`
+                          : (typeof course === 'string' ? course : JSON.stringify(course))}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              <p><strong>Status:</strong> <span className="badge bg-warning text-dark">PENDING</span></p>
             </div>
             <button 
               type="button" 
@@ -136,6 +147,13 @@ const TutorApplicationForm = () => {
         <div className="form-card">
           <h2 className="form-title">Application Form</h2>
           
+          {loadingCourses && (
+            <div className="alert alert-info">
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Loading courses...
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <div className="form-content">
               <div className="form-left">
@@ -149,6 +167,7 @@ const TutorApplicationForm = () => {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={loading}
+                    required
                   />
                 </div>
 
@@ -161,6 +180,7 @@ const TutorApplicationForm = () => {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={loading}
+                    required
                   />
                 </div>
                 
@@ -173,6 +193,7 @@ const TutorApplicationForm = () => {
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                     disabled={loading}
+                    required
                   />
                 </div>
 
@@ -189,7 +210,11 @@ const TutorApplicationForm = () => {
                       }}
                       disabled={loading || loadingCourses}
                     >
-                      <option value="">Subject Code</option>
+                      <option value="">
+                        {loadingCourses ? 'Loading...' : 
+                         availableCourses.length === 0 ? 'No courses available' : 
+                         'Select Subject Code'}
+                      </option>
                       {availableCourses.map(course => (
                         <option 
                           key={course.course_code} 
@@ -202,35 +227,52 @@ const TutorApplicationForm = () => {
                     </select>
                     <span className="dropdown-icon">▼</span>
                   </div>
-                </div>
-
-                <div className="file-upload">
-                  <label htmlFor="corFile" className="form-label-custom">Certificate of Registration (COR)</label>
-                  <div className="dropzone">
-                    <input type="file" className="form-input" id="corFile" accept=".pdf,.jpg,.png" />
-                  </div>
+                  {availableCourses.length > 0 && (
+                    <small className="text-muted">
+                      {availableCourses.length} courses available
+                    </small>
+                  )}
                 </div>
 
                 {selectedCourses.length > 0 && (
-                  <div className="selected-courses">
-                    {selectedCourses.map(courseCode => {
-                      const course = availableCourses.find(c => c.course_code === courseCode);
-                      return (
-                        <span key={courseCode} className="course-tag">
-                          {course?.course_code || courseCode}
-                          <button
-                            type="button"
-                            className="course-tag-close"
-                            onClick={() => removeCourse(courseCode)}
-                            disabled={loading}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      );
-                    })}
+                  <div className="selected-courses mb-3">
+                    <label className="form-label-custom">Selected Courses:</label>
+                    <div className="d-flex flex-wrap gap-2">
+                      {selectedCourses.map(courseCode => {
+                        const course = availableCourses.find(c => c.course_code === courseCode);
+                        return (
+                          <span key={courseCode} className="course-tag">
+                            {course?.course_code || courseCode}
+                            <button
+                              type="button"
+                              className="course-tag-close"
+                              onClick={() => removeCourse(courseCode)}
+                              disabled={loading}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+
+                <div className="file-upload">
+                  <label htmlFor="corFile" className="form-label-custom">
+                    Certificate of Registration (COR) *
+                  </label>
+                  <div className="dropzone">
+                    <input 
+                      type="file" 
+                      className="form-input" 
+                      id="corFile" 
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      required
+                    />
+                  </div>
+                  <small className="text-muted">Accepted formats: PDF, JPG, PNG (Max 5MB)</small>
+                </div>
 
               </div>
             </div>
@@ -239,7 +281,7 @@ const TutorApplicationForm = () => {
               <button 
                 type="submit" 
                 className="submit-button"
-                disabled={loading || loadingCourses}
+                disabled={loading || loadingCourses || selectedCourses.length === 0}
               >
                 {loading ? (
                   <>

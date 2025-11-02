@@ -14,7 +14,7 @@ tutor_application_bp = Blueprint("tutor_application", __name__)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-@tutor_application_bp.route('/api/tutor-applications', methods=['POST'])
+@tutor_application_bp.route('/tutor-applications', methods=['POST'])
 def submit_tutor_application():
     try:
         student_id = request.form.get('student_id')
@@ -33,29 +33,43 @@ def submit_tutor_application():
         file.save(filepath)
 
         conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO tutor_application (student_id, status, date_submitted, cor_filename, cor_filepath)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING application_id
-        """, (student_id, 'PENDING', datetime.now(), filename, filepath))
-        app_id = cursor.fetchone()[0]
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO tutor_application (student_id, status, date_submitted, cor_filename, cor_filepath)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING application_id
+                """, (student_id, 'PENDING', datetime.now(), filename, filepath))
+                app_id = cursor.fetchone()['application_id']
 
-        for course_code in courses:
-            cursor.execute("""
-                INSERT INTO application_courses (application_id, course_code)
-                VALUES (%s, %s)
-            """, (app_id, course_code))
+                course_list = []
+                for course_code in courses:
+                    cursor.execute("""
+                        INSERT INTO application_courses (application_id, course_code)
+                        VALUES (%s, %s)
+                    """, (app_id, course_code))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+                    cursor.execute("""
+                        SELECT course_code, course_name 
+                        FROM course 
+                        WHERE course_code = %s
+                    """, (course_code,))
+                    course = cursor.fetchone()
+                    if course:
+                        course_list.append(course)
 
-        return jsonify({'message': 'Application submitted successfully', 'application_id': app_id}), 201
+        return jsonify({
+            'success': True,
+            'message': 'Application submitted successfully',
+            'application_id': app_id,
+            'student_id': student_id,
+            'status': 'PENDING',
+            'courses': course_list,
+            'cor_filename': filename
+        }), 201
 
     except Exception as e:
         if conn:
-            conn.rollback()
             conn.close()
         return jsonify({'error': str(e)}), 500
     
@@ -64,23 +78,18 @@ def submit_tutor_application():
 def get_courses():
     try:
         conn = get_connection()
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        cursor.execute("""
-            SELECT course_code, course_name 
-            FROM course 
-            ORDER BY course_code
-        """)
-        
-        courses = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        
-        courses_list = [dict(course) for course in courses]
-        
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT course_code, course_name 
+                    FROM course 
+                    ORDER BY course_code
+                """)
+                courses = cursor.fetchall()
+
         return jsonify({
-            'courses': courses_list,
-            'total': len(courses_list)
+            'courses': courses,
+            'total': len(courses)
         }), 200
         
     except Exception as e:
