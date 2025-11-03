@@ -3,7 +3,7 @@ import { Card } from "react-bootstrap";
 import ModalComponent from "../modalComponent/ModalComponent";
 import "./CardComponent.css";
 
-export default function SmallCardComponent({
+export default function CardComponent({
     title,
     modalTitle,
     leftAlignText,
@@ -128,7 +128,7 @@ export default function SmallCardComponent({
                     onHide={() => setShowModal(false)}
                     title={modalTitle || title}
                     body={
-                        <SmallCardComponent
+                        <CardComponent
                             title={title}
                             modalContent={modalContent}
                             tutorMessage={tutorMessage}
