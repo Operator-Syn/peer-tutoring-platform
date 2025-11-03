@@ -13,7 +13,7 @@ const TutorApplicationForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
+  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tutor-applications`;
 
   useEffect(() => {
     fetchCourses();
