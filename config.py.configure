@@ -1,0 +1,17 @@
+import os
+import secrets
+
+class Config:
+    # Base directory of the repository (config.py location)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    # Flask settings
+    REACT_DIST = os.path.join(BASE_DIR, "views", "dist")
+    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)  # 32-byte random key if not set
+
+    # PostgreSQL settings
+    DB_NAME = os.environ.get("DB_NAME", "")
+    DB_USER = os.environ.get("DB_USER", "")
+    DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
+    DB_HOST = os.environ.get("DB_HOST", "")
+    DB_PORT = int(os.environ.get("DB_PORT", 5432))
