@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import MasterLayout from "../Layouts/masterlayout";
-import Front_page from "../pages/header/Front_page";
+import HomePage from "../pages/header/HomePage/HomePage";
 import About from "../pages/header/About";
 import Events from "../pages/header/Events";
 import Messages from "../pages/header/Messages";
@@ -12,7 +12,7 @@ function Frontroute() {
     <Routes>
       
       <Route element={<MasterLayout />}>
-        <Route path = "/" element={<Front_page />} />
+        <Route path = "/" element={<HomePage />} />
         <Route path = "/About" element={<About />} />
         <Route path = "/Events" element={<Events />} />
         <Route path = "/Messages" element={<Messages />} />
