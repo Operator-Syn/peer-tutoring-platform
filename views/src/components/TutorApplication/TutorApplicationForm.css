@@ -1,0 +1,374 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.application-container {
+  padding: 0 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 45px;
+  margin-bottom: 20px;
+  min-height: auto;
+}
+
+.application-wrapper {
+  width: 100%;
+  max-width: 650px;
+  background: #F8F9FF;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(73, 86, 173, 0.1);
+  padding: 30px;
+}
+
+.form-card {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.form-title {
+  color: #4956AD;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.form-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.form-left,
+.form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.form-label-custom {
+  color: #2d3748;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4956AD;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(73, 86, 173, 0.1);
+}
+
+.form-input:disabled {
+  background-color: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-input::placeholder {
+  color: #a0aec0;
+}
+
+.dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.form-select-custom {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #f8fafc;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.2s ease;
+  color: #4a5568;
+}
+
+.form-select-custom:focus {
+  border-color: #4956AD;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(73, 86, 173, 0.1);
+}
+
+.form-select-custom:disabled {
+  background-color: #f7fafc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-select-custom option {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px;
+}
+
+.form-select-custom option:disabled {
+  color: #a0aec0;
+}
+
+.dropdown-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5a67d8;
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.selected-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.course-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #edf2f7;
+  color: #4956AD;
+  border: 1px solid #4956AD;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.course-tag:hover {
+  background: #e2e8f0;
+  border-color: #3a4589;
+}
+
+.course-tag-close {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.course-tag-close:hover {
+  background: #cbd5e0;
+  color: #2d3748;
+}
+
+.course-tag-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.submit-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #4956AD 0%, #3a4589 100%);
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  box-shadow: 0 4px 12px rgba(73, 86, 173, 0.2);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3a4589 0%, #2d3748 100%);
+  box-shadow: 0 6px 15px rgba(73, 86, 173, 0.3);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.submit-arrow {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.submit-button:hover:not(:disabled) .submit-arrow {
+  transform: translateX(4px);
+}
+
+.alert {
+  border-radius: 12px;
+  border: none;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  color: #22543d;
+  border-left: 4px solid #48bb78;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+  color: #742a2a;
+  border-left: 4px solid #f56565;
+}
+
+.alert-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.alert hr {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 15px 0;
+}
+
+.success-details p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.success-details strong {
+  font-weight: 600;
+}
+
+.success-details ul {
+  margin: 10px 0 0 20px;
+  padding: 0;
+  list-style: disc;
+}
+
+.success-details ul li {
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #2d3748;
+  font-weight: 400;
+}
+
+.success-details p,
+.success-details strong {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.placeholder-text {
+  color: #a0aec0;
+  font-size: 14px;
+  font-style: italic;
+  min-height: 100px;
+}
+
+@media (max-width:  768px) {
+  .form-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .form-card {
+    padding: 24px;
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .submit-wrapper {
+    justify-content: stretch;
+  }
+
+  .submit-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .application-container {
+    padding: 0 10px;
+    margin-top: 10px;
+  }
+  
+  .application-wrapper {
+    padding: 15px;
+  }
+
+  .form-card {
+    padding: 20px;
+  }
+
+  .form-title {
+    font-size: 20px;
+  }
+
+  .selected-courses {
+    gap: 6px;
+  }
+
+  .course-tag {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+}
