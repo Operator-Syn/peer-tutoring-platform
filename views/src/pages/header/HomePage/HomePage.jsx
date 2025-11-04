@@ -11,7 +11,11 @@ import BasicButton from '../../../components/BasicButton/BasicButton';
 import HomePageCard from '../../../components/HomePageCard/HomePageCard';
 import Carousel from 'react-bootstrap/Carousel';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function HomePage() {
+
+    const navigate = useNavigate();
 
     return (
         <>  
@@ -33,7 +37,7 @@ export default function HomePage() {
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
                             <BasicButton>Start Learning</BasicButton>
-                            <BasicButton light={true}>Appointments</BasicButton>
+                            <BasicButton onClick={() => navigate('/Appointments')} light={true}>Appointments</BasicButton>
                         </div>
                     </div>
 
