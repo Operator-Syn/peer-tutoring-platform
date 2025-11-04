@@ -219,3 +219,6 @@ config.py
 
 uploads/*
 !uploads/.gitkeep
+
+# OAuth2 credentials
+client_secret.json

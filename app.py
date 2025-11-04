@@ -4,6 +4,9 @@ from werkzeug.utils import safe_join
 import os
 from config import Config
 from api.tutor_application_api import tutor_application_bp
+from authlib.integrations.flask_client import OAuth
+from api.app_auth import auth_bp, oauth
+from datetime import timedelta
 
 # Existing controllers
 
@@ -11,11 +14,22 @@ from api.tutor_application_api import tutor_application_bp
 
 # ---------- Flask app setup ----------
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "views", "dist"))
-CORS(app)
+CORS(app, supports_credentials=True)
 app.secret_key = Config.SECRET_KEY  # required for session management
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+
+oauth.init_app(app)
+oauth.register(
+    name='google',
+    client_id=Config.GOOGLE_CLIENT_ID,
+    client_secret=Config.GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 
 # ---------- Register API routes ----------
 app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
+app.register_blueprint(auth_bp, url_prefix="/api/auth")
 # ---------- Protect all API routes ----------
 
 # @app.before_request
