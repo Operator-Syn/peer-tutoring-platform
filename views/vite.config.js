@@ -10,6 +10,10 @@ export default ({mode}) => {
 
   return defineConfig({
     plugins: [react()],
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true
+    },
     server: {
       host: true,
       allowedHosts, // use the array here

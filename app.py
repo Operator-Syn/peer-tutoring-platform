@@ -1,18 +1,21 @@
 from flask import Flask, send_from_directory, send_file, session, redirect, request, jsonify
+from flask_cors import CORS
 from werkzeug.utils import safe_join
 import os
 from config import Config
+from api.tutor_application_api import tutor_application_bp
 
 # Existing controllers
 
 # Authentication controller
 
 # ---------- Flask app setup ----------
-app = Flask(__name__, static_folder=Config.REACT_DIST)
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "views", "dist"))
+CORS(app)
 app.secret_key = Config.SECRET_KEY  # required for session management
 
 # ---------- Register API routes ----------
-
+app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
 # ---------- Protect all API routes ----------
 
 # @app.before_request

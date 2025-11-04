@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../assets/css/header.css";
 
 import logo from "../assets/images/M_layouts/LAV_logo.png";
@@ -18,6 +18,7 @@ function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnimating, setMenuAnimating] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -166,7 +167,14 @@ function Header() {
                 <p>
                   <img src={histIcon} alt="History" /> History
                 </p>
-                <p>
+                <p
+                  style={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate("/profile/apply");
+                  }}
+                >
                   <img src={applyIcon} alt="Apply" /> Apply as tutor
                 </p>
                 <p>
