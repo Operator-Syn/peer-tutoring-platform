@@ -2,10 +2,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
 import CardComponent from "../CardComponent/CardComponent";
 import {ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons"
+import "./TuteeAppointmentsPage.css"
 
-export default function App() {
+export default function TuteeAppointmentsPage() {
     return (
-        <div className="d-flex gap-4 p-4 flex-wrap align-items-start">
+        <div className="d-flex container gap-4 flex-wrap align-items-start large-padding">
 
             <CardComponent
                 title={{ label: "Subject Code:", value: "MAT 101" }}
