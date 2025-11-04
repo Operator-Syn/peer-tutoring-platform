@@ -1,7 +1,40 @@
 .schedules {
-  min-height: 100px; /* or use 100vh for full screen */
-  background-color: #ffffff; /* optional background color */
+  min-height: 100px; 
+  background-color: #ffffff; 
 }
-html, body {
-  height: 135%;           /* make sure the page can grow */
+.appointments_page{
+    min-height: 1400px;
+    padding-bottom:100px;
 }
+.requests {
+  background-color: #F8F9FF; /* your color here */
+  width: 95%;
+  border-radius: 12px; /* round corners */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* soft shadow */
+  padding: 20px; /* optional: adds space inside */
+}
+
+.requests .alert {
+  height: 10rem; 
+        /* adjust to what you want */
+  display: flex;       /* center content */
+  align-items: center; 
+  justify-content: center;
+ background-color: #F8F9FF;
+ border: solid 3px #791c1c;
+   width: 100%;
+}
+.boxes-wrapper {
+  height: 100%; /* take full screen height */
+  display: flex;
+  flex-direction: column;   /* stack Box 2 & Box 3 */
+  justify-content: end;  /* center vertically */
+  align-items: center;      /* center horizontally */
+  width: 100%;
+ padding-bottom: 5vh;
+}
+.last-box {
+  margin-bottom: 4rem; /* your custom value */
+}
+
+
