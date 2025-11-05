@@ -101,6 +101,17 @@
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
 }
+.form-control {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.form-control:focus {
+  box-shadow: none !important;
+  outline: none !important;
+    border-color: #ced4da !important; /* keep the normal border color */
+}
+
 
 /* Responsive: stack items on small screens */
 /* Buttons under card break to full width on small screens */
