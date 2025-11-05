@@ -1,0 +1,14 @@
+.card-fixed {
+    width: 24rem;
+    /* Fixed width for main cards */
+}
+
+.card-img-fixed {
+    height: 12.5rem;
+    /* Fixed image height for main cards */
+    object-fit: cover;
+}
+
+.card-clickable {
+    cursor: pointer;
+}

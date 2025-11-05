@@ -7,6 +7,7 @@ from api.tutor_application_api import tutor_application_bp
 from authlib.integrations.flask_client import OAuth
 from api.app_auth import auth_bp, oauth
 from datetime import timedelta
+from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
 
 # Existing controllers
 
@@ -29,6 +30,7 @@ oauth.register(
 
 # ---------- Register API routes ----------
 app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
+app.register_blueprint(bp_appointments)
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 # ---------- Protect all API routes ----------
 

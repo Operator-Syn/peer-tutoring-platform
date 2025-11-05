@@ -46,7 +46,7 @@ export default function HomePage() {
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
                             <BasicButton onClick={handleStartLearning}>Start Learning</BasicButton>
-                            <BasicButton light={true}>Appointments</BasicButton>
+                            <BasicButton onClick={() => navigate('/Appointments')} light={true}>Appointments</BasicButton>
                         </div>
                     </div>
 
