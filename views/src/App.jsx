@@ -8,7 +8,7 @@ import Messages from "./pages/header/Messages";
 import Report from "./pages/header/Report";
 import Apply from "./pages/profile/apply";
 import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppointmentsPage";
-
+import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 function App() {
   return (
     <BrowserRouter>
@@ -21,6 +21,7 @@ function App() {
           <Route path="Report" element={<Report />} />
           <Route path="profile/apply" element={<Apply />} />
           <Route path="Appointments" element={<TuteeAppointmentsPage />} />
+          <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

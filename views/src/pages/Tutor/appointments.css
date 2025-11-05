@@ -1,0 +1,119 @@
+/* General containers */
+.schedules {
+  min-height: 100px; 
+  background-color: #ffffff; 
+}
+
+.appointments_page {
+  min-height: 1400px;
+  padding-bottom: 100px;
+}
+
+.requests {
+  background-color: #F8F9FF;
+  width: 95%;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 20px;
+}
+
+.boxes-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 5vh;
+  
+  padding-top: 9rem; /* adjust */
+
+
+}
+
+/* Each row card */
+.custom-alert {
+  background-color: #F8F9FF;
+  border: 2px solid #4956AD;
+  border-radius: 12px;
+  width: 100%;
+  display: flex;
+  flex-direction: column; /* stack on mobile */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-top: 1rem;
+  transition: all 0.2s ease;
+}
+
+/* Avatar + info wrapper */
+.profile-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-right: 1rem; /* spacing from box name/message */
+}
+
+/* Profile avatar */
+
+
+/* Profile text under avatar */
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.profile-course {
+  font-size: 0.65rem;
+  color: #333;
+}
+
+.profile-placeholder {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: bold;
+}
+
+/* Box name next to avatar-wrapper */
+.box-name {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* Message area */
+.message-cell {
+  flex-grow: 1;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+/* Buttons container */
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Buttons styling (optional) */
+.actions-cell .btn {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Responsive: stack items on small screens */
+/* Buttons under card break to full width on small screens */
+@media (max-width: 768px) {
+  .action-buttons {
+    position: static !important;
+    margin-top: 1.5rem;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .action-buttons button {
+    width: 100%;
+    padding: 14px 0 !important;
+  }
+}

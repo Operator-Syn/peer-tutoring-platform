@@ -5,7 +5,7 @@ import About from "../pages/header/About";
 import Events from "../pages/header/Events";
 import Messages from "../pages/header/Messages";
 import Report from "../pages/header/Report";
-import Tutorappointments from "../pages/Admin/Appointments";
+import Tutorappointments from "../pages/Tutor/Appointments";
 
 function FrontpageRoute() {
   return (
