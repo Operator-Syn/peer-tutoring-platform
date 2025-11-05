@@ -4,6 +4,7 @@ from werkzeug.utils import safe_join
 import os
 from config import Config
 from api.tutor_application_api import tutor_application_bp
+from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
 
 # Existing controllers
 
@@ -16,6 +17,7 @@ app.secret_key = Config.SECRET_KEY  # required for session management
 
 # ---------- Register API routes ----------
 app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
+app.register_blueprint(bp_appointments)
 # ---------- Protect all API routes ----------
 
 # @app.before_request
