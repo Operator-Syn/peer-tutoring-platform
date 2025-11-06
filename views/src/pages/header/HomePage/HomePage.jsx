@@ -11,20 +11,11 @@ import BasicButton from '../../../components/BasicButton/BasicButton';
 import HomePageCard from '../../../components/HomePageCard/HomePageCard';
 import Carousel from 'react-bootstrap/Carousel';
 import { useNavigate } from 'react-router-dom';
+import { useLoginCheck } from '../../../hooks/useLoginCheck';
 
 export default function HomePage() {
     const navigate = useNavigate();
-
-    const handleStartLearning = async () => {
-        const res = await fetch("http://localhost:5000/api/auth/get_user", { credentials: "include" });
-        if (res.ok) {
-            // User is logged in, go to protected page
-            navigate("http://localhost:5000/About");
-        } else {
-            // Not logged in, go to login portal
-            window.location.href = "http://localhost:5000/api/auth/login";
-        }
-    };
+    const loginCheck = useLoginCheck({route: "/Appointments"});
 
     return (
         <>  
@@ -45,8 +36,12 @@ export default function HomePage() {
                         </div>
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
-                            <BasicButton onClick={handleStartLearning}>Start Learning</BasicButton>
-                            <BasicButton onClick={() => navigate('/Appointments')} light={true}>Appointments</BasicButton>
+                            <BasicButton onClick={() => {
+                                loginCheck();
+                            }}>Start Learning</BasicButton>
+                            <BasicButton onClick={() => {
+                                loginCheck();
+                            }} light={true}>Appointments</BasicButton>
                         </div>
                     </div>
 

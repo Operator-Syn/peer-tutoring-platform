@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLoginCheck } from "../hooks/useLoginCheck";
 import "../assets/css/header.css";
 
 import logo from "../assets/images/M_layouts/LAV_logo.png";
@@ -10,10 +11,24 @@ import reportIcon from "../assets/images/M_layouts/Report.png";
 import applyIcon from "../assets/images/M_layouts/Apply.png";
 import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
+import logoutIcon from "../assets/images/M_layouts/logout.png";
 import profile from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
 
 function Header() {
+
+  const [user, setUser] = useState(null);
+  const loginCheck = useLoginCheck({login: false});
+
+  useEffect(() => {
+    async function fetchUser() {
+      const user = await loginCheck();
+      setUser(user);
+      console.log("user.sub:", user?.sub); // This will print the user data
+    }
+    fetchUser();
+  }, []);
+
   const [popup, setPopup] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnimating, setMenuAnimating] = useState(false);
@@ -153,7 +168,7 @@ function Header() {
         {!menuOpen && !menuAnimating && (
           <div className="position-relative ms-3">
             <div className="prof" onClick={() => setPopup(!popup)}>
-              <img src={profile} className="profileimg" alt="profile" />
+              <img src={`/pfp/${user?.sub}.jpg`} onError={e => { e.target.src = profile; }} className="profileimg" alt="profile" />
               <div className="circle">
                 <img src={arrow} className="arrowimg" alt="dropdown arrow" />
               </div>
@@ -188,6 +203,15 @@ function Header() {
                 </p>
                 <p>
                   <img src={reportIcon} alt="Report a bug" /> Report a bug
+                </p>
+                <p
+                  onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`;
+                  }}
+                >
+                  <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
                 </p>
               </div>
             )}

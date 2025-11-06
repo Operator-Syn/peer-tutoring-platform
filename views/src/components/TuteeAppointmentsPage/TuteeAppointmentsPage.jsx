@@ -4,26 +4,41 @@ import placeholderImage from "../../assets/images/placeholders/placeholderImage.
 import CardComponent from "../CardComponent/CardComponent";
 import { ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons";
 import "./TuteeAppointmentsPage.css";
+import { useLoginCheck } from "../../hooks/useLoginCheck";
 
 export default function TuteeAppointmentsPage() {
+    // Protected route: Fetch appointments only if the user is logged in
+    const loginCheck = useLoginCheck({ login: true, route: null });
+    const [authChecked, setAuthChecked] = useState(false);
+
+    useEffect(() => {
+        async function checkAuthAndFetch() {
+            await loginCheck(); // Will redirect if not authenticated
+            setAuthChecked(true);
+        }
+        checkAuthAndFetch();
+    }, []);
+
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Fetch all appointments from the Flask API
-        fetch("/api/appointments")
-            .then((res) => res.json())
-            .then((data) => {
-                setAppointments(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Error fetching appointments:", err);
-                setLoading(false);
-            });
-    }, []);
+        if (authChecked) {
+            fetch("/api/appointments")
+                .then((res) => res.json())
+                .then((data) => {
+                    setAppointments(data);
+                    setLoading(false);
+                })
+                .catch((err) => {
+                    console.error("Error fetching appointments:", err);
+                    setLoading(false);
+                });
+        }
+    }, [authChecked]);
 
-    if (loading) {
+    if (!authChecked || loading) {
         return <div className="container">Loading appointments...</div>;
     }
 

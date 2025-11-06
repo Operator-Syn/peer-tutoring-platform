@@ -4,6 +4,7 @@ from config import Config
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
+import requests
 
 oauth = OAuth()
 auth_bp = Blueprint('auth', __name__)
@@ -17,7 +18,7 @@ def login():
     # The redirect URI must match one of the authorized URIs in your Google Cloud project.
     redirect_uri = url_for('auth.auth', _external=True)
     # The 'hd' parameter is crucial for directing to your university's login portal.
-    return oauth.google.authorize_redirect(redirect_uri, hd='g.msuiit.edu.ph')
+    return oauth.google.authorize_redirect(redirect_uri, hd='g.msuiit.edu.ph', prompt='login')
 
 @auth_bp.route('/callback')
 def auth():
@@ -33,10 +34,20 @@ def auth():
     # Enforce domain check
     if not user_info['email'].endswith('@g.msuiit.edu.ph'):
         return "Unauthorized: Please use your university email.", 403
-    # print("DEBUG USER_INFO:", user_info) 
+    print("DEBUG USER_INFO:", user_info) 
     # Store user information in the session.
     session.permanent = True
     session['user'] = user_info
+
+    # Download the user profile picture and store it locally
+    image_url = user_info['picture']
+    response = requests.get(image_url)
+
+    if response.status_code == 200:
+        with open(f"./views/public/pfp/{user_info['sub']}.jpg", "wb") as f:
+            f.write(response.content)
+    else:
+        print("Failed to download image:", response.status_code)
 
     # DATABASE
     try:
@@ -49,6 +60,13 @@ def auth():
                 if existing_user:
                     # print("DEBUG :Google ID in user_account table already exists")
                     # User exists: update info or just proceed
+
+                    # Update last login of user
+                    cursor.execute("""
+                        UPDATE user_account 
+                        SET last_login = %s 
+                        WHERE google_id = %s
+                    """, (datetime.now(), user_info['sub']))
                     pass
                 else:
                     # cursor.execute("""
@@ -90,6 +108,6 @@ def logout():
     session.pop('user', None)
     # Redirect back to the frontend after logout.
     response = redirect(Config.FRONTEND_URL)
-    response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"))
+    response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"), path='/', domain='localhost')
 
     return response

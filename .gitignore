@@ -219,6 +219,7 @@ config.py
 
 uploads/*
 !uploads/.gitkeep
+views/public/pfp/
 
 # OAuth2 credentials
 client_secret.json
