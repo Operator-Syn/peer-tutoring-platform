@@ -1,21 +1,100 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./appointments.css";
 
 function Appointments() {
-  const [rows, setRows] = useState([
-    { id: 1, box: "CCS", message: "No issues found" },
-    { id: 2, box: "Box 3", message: "No issues found." }
-  ]);
+  const [rows, setRows] = useState([]);
 
-  const handleDelete = (id) => {
-    setRows(rows.filter((row) => row.id !== id));
-  };
-  const [showFilter, setShowFilter] = useState(false); // toggle filter frame
+  const [searchTerm, setSearchTerm] = useState("");
+
+useEffect(() => {
+  const tutorId = "2023-0639"; // or dynamically set this
+  fetch(`/api/requests/pending/${tutorId}`)
+    .then((res) => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.json();
+    })
+    .then((data) => setRows(data))
+    .catch((err) => console.error("Error fetching requests:", err));
+}, []);
+
+ 
+
+
+const handleSearch = async () => {
+  try {
+    const query = searchTerm.trim();
+
+    // If empty, reload pending requests for the tutor
+    if (!query) {
+      const tutorId = "2023-0639";
+      const res = await fetch(`/api/requests/pending/${tutorId}`);
+      const data = await res.json();
+      setRows(data);
+      return;
+    }
+
+    // Otherwise, perform search
+    const res = await fetch(`/api/requests/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error("Failed to fetch search results");
+    const data = await res.json();
+    setRows(data);
+  } catch (err) {
+    console.error("Search error:", err);
+    alert("Error searching appointments. Check console for details.");
+  }
+};
+
+
+
+
+
+const handleAccept = async (id) => {
+  try {
+    const res = await fetch(`/api/requests/update-status/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "APPROVED" }),
+    });
+
+    const body = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      console.error("Update failed:", res.status, body);
+      alert(body?.error || `Failed to accept request (${res.status})`);
+      return;
+    }
+
+    
+    setRows((prev) => prev.filter((r) => r.request_id !== id));
+  } catch (err) {
+    console.error("Network error updating status:", err);
+    alert("Network error. Check console for details.");
+  }
+};
+
+
+const handleDecline = (id) => {
+  fetch(`/api/requests/delete/${id}`, {
+    method: "DELETE",
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Deleted:", data);
+      
+      setRows((prev) => prev.filter((r) => r.request_id !== id));
+    })
+    .catch((err) => console.error("Error deleting request:", err));
+};
+
+
+
+ 
+
   return (
     <div className="appointments_page">
       <div
   className="container d-flex flex-column align-items-center requests py-4"
-  style={{ minHeight: "600px", marginTop: "120px"}} // add margin-top
+  style={{ minHeight: "600px", marginTop: "180px"}} 
 >
   
 {/* Search & Filter */}
@@ -24,52 +103,26 @@ function Appointments() {
   style={{ marginTop: "10px", marginBottom: "200px" }}
 >
 
-{/* Filter Button + Popup */}
+
 <div style={{ position: "relative", display: "inline-block" }}>
- <div style={{ minWidth: "200px" }}>
-  <button
-    type="button"
-    className="btn btn-primary"
-    style={{
-      fontSize: "1.5rem",
-      width: "100%",
-      height: "60px",
-      backgroundColor: "#4956AD",
-      borderRadius: "8px"
+</div>
+
+
+
+ 
+{/* Search Input + Enter Button */}
+{/* Search Input + Enter Button */}
+<div 
+  className="d-flex justify-content-center w-100 px-3 px-md-5"
+  style={{ marginBottom: "1rem" }}
+>
+  <div 
+    className="d-flex w-100" 
+    style={{ 
+      maxWidth: "700px", 
+      marginLeft: "auto", // pushes slightly to the right
     }}
-    onClick={() => setShowFilter(!showFilter)}
   >
-    Filter
-  </button>
-</div>
-
-
-  {showFilter && (
-    <div
-      className="filter-popup shadow-sm"
-      style={{
-        position: "absolute",
-        top: "70px", 
-        left: 0,
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        padding: "1rem",
-        zIndex: 1000,
-        width: "200px"
-      }}
-    >
-      <p style={{ cursor: "pointer", marginBottom: "0.5rem" }}>Sort by Date</p>
-      <p style={{ cursor: "pointer", marginBottom: "0.5rem" }}>Sort by Name</p>
-      <p style={{ cursor: "pointer", marginBottom: "0.5rem" }}>Sort by College</p>
-    </div>
-  )}
-</div>
-
-
-
-  {/* Search Input + Enter Button */}
-  <div className="d-flex w-100" style={{ maxWidth: "700px" }}>
     <input
       type="text"
       className="form-control"
@@ -78,15 +131,18 @@ function Appointments() {
         flex: 1,
         padding: "12px 16px",
         height: "60px",
-       
         fontSize: "1.1rem",
         borderTopRightRadius: 0,
         borderBottomRightRadius: 0,
         borderTopLeftRadius: 40,
         borderBottomLeftRadius: 40,
-         outline: "none",
+        outline: "none",
       }}
-      onChange={(e) => console.log("Search:", e.target.value)}
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") handleSearch();
+      }}
     />
     <button
       className="btn btn-success"
@@ -97,9 +153,9 @@ function Appointments() {
         borderBottomLeftRadius: 0,
         borderTopRightRadius: 40,
         borderBottomRightRadius: 40,
-        backgroundColor: "#4956AD"
+        backgroundColor: "#4956AD",
       }}
-      onClick={() => console.log("Enter/Search clicked")}
+      onClick={handleSearch}
     >
       Enter
     </button>
@@ -107,124 +163,162 @@ function Appointments() {
 </div>
 
 
+
+
+</div>
+
+
         {/* Appointment Cards */}
-       
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className="alert custom-alert d-flex flex-column flex-md-row align-items-center justify-content-between mt-4 last-box p-3"
-               style={{ marginTop: "10rem", marginLeft: "5rem", marginRight: "5rem", marginBottom: "5rem" }}
-            >
-              {/* Avatar + College Code */}
-              <div className="d-flex align-items-center mb-5 mb-md-0">
-                <div className="text-center me-5">
-                  <div
-                    className="text-white d-flex justify-content-center align-items-center"
-                    style={{
-                      width: "10rem",
-                      height: "6rem",
-                      fontWeight: "bold",
-                      borderRadius: "5%",
-                      marginBottom: "0.6rem",
-                      backgroundColor: "#4956AD",
-                    }}
-                  >
-                    {row.initials}
-                  </div>
-                  <div>
-                    <span className="d-block small text-muted">College Code</span>
-                    <span className="d-block fw-bold">CCS</span>
-                  </div>
-                </div>
-
-                {/* Box Name */}
-                <span className="fw-bold md-5"></span>
-              </div>
-
-              {/* Message */}
-              <div className="d-flex flex-column flex-grow-1 mt-0 mt-md-n4 ms-md-1">
-                {/* Program */}
-                <div className="mb-1">
-                  <span className="d-block small text-muted">Program Code</span>
-                  <span className="d-block small fw-semibold">BSCS</span>
-                </div>
-
-                {/* Name */}
-                <div className="mb-1">
-                  <span className="d-block small text-muted">Name</span>
-                  <span className="d-block small fw-semibold">Jazrel Xandrei Quinlob</span>
-                </div>
-
-                {/* School Year + Gender side by side */}
-                <div className="d-flex align-items-baseline gap-4 mt-2">
-                  <div className="d-flex flex-column" style={{ minWidth: "20px" }}>
-                    <span className="d-block small text-muted">School Year</span>
-                    <span className="d-block small fw-semibold">3rd Year</span>
-                  </div>
-
-                  <div className="d-flex flex-column">
-                    <span className="d-block small text-muted">Gender</span>
-                    <span className="d-block small fw-semibold">Male</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date and Time */}
-              <div className="d-flex flex-column flex-md-column flex-grow-1 mt-0 mt-md-n1 ms-4 ms-md-n1">
-                {/* Date */}
-                <div className="mb-1">
-                  <span className="d-block small text-muted">Date</span>
-                  <span className="d-block small fw-semibold">October 6, 2025</span>
-                </div>
-
-                {/* Time */}
-                <div className="mb-1">
-                  <span className="d-block small text-muted">Time</span>
-                  <span className="d-block small fw-semibold">11:24 AM</span>
-                </div>
-              </div>
-
-              {/* Buttons */}
-              <div
-                className="position-absolute d-flex gap-4 action-buttons"
-                style={{ bottom: "-3rem", right: "5rem" }}
-              >
-                <button
-                  className="btn fw-semibold"
-                  style={{
-                    backgroundColor: "#F8F9FF",
-                    color: "#4956AD",
-                    border: "2px solid #4956AD",
-                    fontSize: "1.1rem",
-                    padding: "14px 95px",
-                    borderRadius: "6px",
-                  }}
-                >
-                  Decline
-                </button>
-
-                <button
-                  className="btn fw-semibold"
-                  style={{
-                    backgroundColor: "#4956AD",
-                    color: "white",
-                    border: "none",
-                    fontSize: "1.1rem",
-                    padding: "14px 95px",
-                    borderRadius: "6px",
-                  }}
-                  onClick={() => handleDelete(row.id)}
-                >
-                  Accept
-                </button>
-              </div>
-            </div>
-          ))}
+     <div
+  className="appointments-scroll"
+  style={{
+    position: "relative",
+    maxHeight: "60vh",
+    overflowY: "auto",
+    overflowX: "hidden",
+    width: "100%",
+    paddingRight: "9rem",
+    marginTop: "2rem",
+    marginBottom: "2rem",
+    boxSizing: "border-box",
+  }}
+>
+  {rows.length === 0 ? (
+    <div
+      className="text-center py-5"
+      style={{
+        color: "#4956AD",
+        fontWeight: "500",
+        fontSize: "1rem",
+        backgroundColor: "#F8F9FF",
+        borderRadius: "12px",
+        padding: "2rem 3rem",
+        margin: "1rem auto",
+        maxWidth: "600px",
+        width: "100%",
         
+        transform: "translateX(5rem)",
+      }}
+    >
+  Sorry unavailable...
+</div>
+
+  ) : (
+    rows.map((row) => (
+      <div
+        key={row.request_id}
+        className="alert custom-alert d-flex flex-column flex-md-row align-items-center justify-content-between mt-4 last-box p-3"
+        style={{
+          marginTop: "102rem",
+          marginLeft: "5rem",
+          marginRight: "5rem",
+          marginBottom: "5rem",
+        }}
+      >
+        {/* Avatar + College Code */}
+        <div className="d-flex align-items-center mb-5 mb-md-0">
+          <div className="text-center ">
+            <div
+              className="text-white d-flex justify-content-center align-items-center"
+              style={{
+                width: "9rem",
+                height: "6rem",
+                fontWeight: "bold",
+                borderRadius: "5%",
+                marginBottom: "0.6rem",
+                backgroundColor: "#4956AD",
+              }}
+            >
+              {row.initials}
+            </div>
+            <div>
+              <span className="d-block small text-muted">Subject Code</span>
+              <span className="d-block fw-bold" style={{ color: "#4956AD" }}>
+                {row.course_code}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="info-section flex-grow-1">
+          <div className="mb-1">
+            <span className="d-block small text-muted">Name</span>
+            <span className="d-block small fw-semibold">{row.name}</span>
+          </div>
+          <div className="mb-1">
+            <span className="d-block small text-muted">ID Number</span>
+            <span className="d-block small fw-semibold">{row.tutee_id}</span>
+          </div>
+          <div className="d-flex flex-column">
+            <span className="d-block small text-muted">Program Code</span>
+            <span className="d-block small fw-semibold">{row.program_code || "N/A"}</span>
+          </div>
+        </div>
+
+        <div className="datetime-section">
+          
+          <div className="mb-1">
+            <span className="d-block small text-muted">Date</span>
+            <span className="d-block small fw-semibold">
+              {row.appointment_date}
+            </span>
+          </div>
+          <div className="mb-1">
+            <span className="d-block small text-muted">Day of Week</span>
+            <span className="d-block small fw-semibold">
+              {row.day_of_week|| "N/A"}
+            </span>
+          </div>
+          <div className="mb-1">
+            <span className="d-block small text-muted">Preferred Time</span>
+            <span className="d-block small fw-semibold">
+              {row.start_time} - {row.end_time}
+            </span>
+          </div>
+           
+        </div>
+
+        <div
+          className="position-absolute d-flex gap-4 action-buttons"
+          style={{ bottom: "-3rem", right: "1rem" }}
+        >
+          <button
+            className="btn fw-semibold"
+            style={{
+              backgroundColor: "#F8F9FF",
+              color: "#4956AD",
+              border: "2px solid #4956AD",
+              fontSize: "1.1rem",
+              padding: "14px 80px",
+              borderRadius: "6px",
+            }}
+            onClick={() => handleDecline(row.request_id)}
+          >
+            Decline
+          </button>
+
+          <button
+            className="btn fw-semibold"
+            style={{
+              backgroundColor: "#4956AD",
+              color: "white",
+              border: "none",
+              fontSize: "1.1rem",
+              padding: "14px 80px",
+              borderRadius: "6px",
+            }}
+            onClick={() => handleAccept(row.request_id)}
+          >
+            Accept
+          </button>
+        </div>
       </div>
-      
+    ))
+  )}
+</div>
 
 
+</div>
 
       {/* No Issues Found */}
       <div
@@ -236,7 +330,8 @@ function Appointments() {
         </div>
       </div>
     </div>
-  );
+  )
+  ;
 }
 
 export default Appointments;

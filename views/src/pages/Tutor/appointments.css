@@ -128,3 +128,137 @@
     padding: 14px 0 !important;
   }
 }
+
+/* Default (desktop/tablet): stacked layout stays unchanged */
+/* Info + Date/Time responsive alignment */
+.info-section,
+.datetime-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0.5rem 1rem;
+}
+
+/* Desktop layout: side by side */
+@media (min-width: 768px) {
+  .alert.custom-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .info-section {
+    flex: 1;
+    min-width: 250px;
+    margin-right: 2rem;
+  }
+
+  .datetime-section {
+    flex: 0 0 220px;
+    text-align: left;
+  }
+}
+
+/* Mobile layout: stack nicely */
+@media (max-width: 767px) {
+  .alert.custom-alert {
+    flex-direction: column;
+    align-items: center; /* center everything */
+    text-align: center;  /* prevent weird text wrapping */
+    padding: 1rem;       /* reduce inner spacing */
+  }
+
+  .info-section,
+  .datetime-section {
+    width: 100%;
+    margin: 0.5rem 0;
+    text-align: center;  /* prevent text from hugging sides */
+  }
+
+  .datetime-section {
+    border-top: 1px solid #e5e5e5;
+    padding-top: 1rem;
+  }
+
+  /* Ensure avatar boxes scale properly */
+  .custom-alert .text-center.me-52 {
+    margin-right: 0 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Fix wide buttons overlapping */
+  .action-buttons {
+    position: static !important; /* no absolute position on mobile */
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    align-items: center;
+  }
+
+  .action-buttons .btn {
+    width: 90%; /* fit nicely in small screens */
+    padding: 12px 0 !important;
+  }
+}
+/* MOBILE FIX FOR SMALL SCREENS (≤ 480px) */
+@media (max-width: 480px) {
+  .requests {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .boxes-wrapper {
+    padding-top: 6rem;
+    align-items: center; /* center all cards */
+  }
+
+  .alert.custom-alert {
+    flex-direction: column !important;
+    align-items: center !important; /* center all children horizontally */
+    justify-content: center !important;
+    text-align: center !important;  /* center text content */
+    width: 100%;
+    padding: 1rem !important;
+  }
+
+  .profile-wrapper {
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    width: 100%;
+    margin: 0 0 1rem 0 !important;
+  }
+
+  .info-section,
+  .datetime-section {
+    width: 100% !important;
+    margin: 0.5rem 0 !important;
+    text-align: center !important;
+    padding: 0.25rem 0 !important;
+  }
+
+  .datetime-section {
+    border-top: 1px solid #e5e5e5;
+    padding-top: 0.75rem;
+  }
+
+  .action-buttons {
+    flex-direction: column !important;
+    align-items: center !important; /* center buttons */
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .action-buttons .btn {
+    width: 80% !important; /* slightly smaller than full width for visual balance */
+    font-size: 0.9rem !important;
+    padding: 12px 0 !important;
+  }
+}
+
+
+
