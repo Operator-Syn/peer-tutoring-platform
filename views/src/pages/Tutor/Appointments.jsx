@@ -3,6 +3,8 @@ import "./appointments.css";
 
 function Appointments() {
   const [rows, setRows] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -15,9 +17,21 @@ useEffect(() => {
     })
     .then((data) => setRows(data))
     .catch((err) => console.error("Error fetching requests:", err));
+     fetchAppointments(); // ✅ call it here so appointments load too
 }, []);
 
  
+const fetchAppointments = async () => {
+  try {
+    const tutorId = "2023-0639";
+    const res = await fetch(`/api/requests/appointments/${tutorId}`);
+    if (!res.ok) throw new Error("Failed to fetch appointments");
+    const data = await res.json();
+    setAppointments(data);
+  } catch (err) {
+    console.error("Error fetching appointments:", err);
+  }
+};
 
 
 const handleSearch = async () => {
@@ -320,15 +334,65 @@ const handleDecline = (id) => {
 
 </div>
 
+   
       {/* No Issues Found */}
+<div
+  className="container d-flex flex-column align-items-center justify-content-center py-4"
+  style={{
+   minHeight: "600px", marginTop: "180px",
+    backgroundColor: "#F8F9FF",
+    borderRadius: "5px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)", // subtle shadow
+  }}
+>
+  <div className="container my-5">
+    {appointments.length === 0 ? (
+      <p style={{ color: "white", textAlign: "center" }}>No appointments available.</p>
+    ) : (
       <div
-        className="container d-flex justify-content-center requests"
-        style={{ marginTop: "140px", height: "700px" }}
+        className="d-flex flex-wrap justify-content-center"
+        style={{ gap: "3rem" }}
       >
-        <div className="alert alert-success text-center w-100 w-md-75 w-lg-50 mx-auto shadow-sm p-3">
-          No issues found. We're good to move to the next state.
-        </div>
+        {appointments.map((app) => (
+          <div
+            className="card"
+            style={{ width: "23rem", minHeight: "400px" }}
+            key={app.request_id}
+          >
+            <img
+              className="card-img-top"
+              src="https://via.placeholder.com/150x250"
+              alt="Card image cap"
+              style={{ objectFit: "cover", height: "250px" }}
+            />
+            <div className="card-body">
+              <h5 className="card-title">Subject Code: {app.course_code}</h5>
+              <p className="card-text">Tutee:{app.name}</p>
+
+
+              <div className="card px-2 px-sm-3 px-md-1"  style={{ border: "none", boxShadow: "none" }}>
+  <div className="card-body text-end">
+    <p className="card-text mb-1">{app.appointment_date}</p>
+    <p className="card-text">{app.start_time} - {app.end_time}</p>
+  </div>
+</div>
+
+            </div>
+            <div className="card-footer d-flex justify-content-between">
+              <small className="text-muted">{app.appointment_date}</small> {/*This will check if the appoint is starting or not*/}
+              <div>
+                
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
+    )}
+  </div>
+</div>
+
+
+
     </div>
   )
   ;

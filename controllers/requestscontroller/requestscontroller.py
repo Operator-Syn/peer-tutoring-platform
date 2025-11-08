@@ -256,3 +256,36 @@ def search_requests():
     finally:
         cur.close()
         conn.close()
+
+@requests_bp.route("/appointments/<tutor_id>", methods=["GET"])
+def get_appointments(tutor_id):
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        SELECT 
+            a.appointment_id AS request_id,
+            t.name,
+            a.course_code,
+            a.appointment_date,
+            av.start_time,
+            av.end_time
+        FROM appointment a
+        JOIN availability av ON a.vacant_id = av.vacant_id
+        JOIN tutee t ON a.tutee_id = t.id_number
+        WHERE av.tutor_id = %s
+        ORDER BY a.appointment_date ASC, av.start_time ASC
+    """, (tutor_id,))
+
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    for row in results:
+        row["appointment_date"] = row["appointment_date"].isoformat()
+        row["start_time"] = row["start_time"].strftime("%H:%M")
+        row["end_time"] = row["end_time"].strftime("%H:%M")
+
+    return jsonify(results)
+
+
