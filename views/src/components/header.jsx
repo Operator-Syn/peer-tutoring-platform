@@ -24,7 +24,6 @@ function Header() {
     async function fetchUser() {
       const user = await loginCheck();
       setUser(user);
-      console.log("user.sub:", user?.sub); // This will print the user data
     }
     fetchUser();
   }, []);
@@ -152,16 +151,20 @@ function Header() {
                 Events
               </Link>
             </li>
-            <li className="nav-item">
-              <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
-                Messages
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link to="/Report" className="nav-link" onClick={handleNavClick}>
-                Report
-              </Link>
-            </li>
+            {user && (
+              <>
+                <li className="nav-item">
+                  <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
+                    Messages
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/Report" className="nav-link" onClick={handleNavClick}>
+                    Report
+                  </Link>              
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
@@ -204,15 +207,15 @@ function Header() {
                 <p>
                   <img src={reportIcon} alt="Report a bug" /> Report a bug
                 </p>
-                <p
-                  onClick={() => {
+                {user && (
+                  <p onClick={() => {
                     setPopup(false);
                     handleNavClick();
                     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`;
-                  }}
-                >
-                  <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
-                </p>
+                  }}>
+                    <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
+                  </p>
+                )}
               </div>
             )}
           </div>

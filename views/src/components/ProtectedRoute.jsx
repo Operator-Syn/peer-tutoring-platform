@@ -17,7 +17,6 @@ export default function ProtectedRoute() {
             setAuthChecked(true);
             if (user && user.registered_tutee === false) {
                 navigate("/AccountCreation");
-				console.log("Navigating to AccountCreation");
             }
         }
         check();
