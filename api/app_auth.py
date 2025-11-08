@@ -17,7 +17,6 @@ def login():
     """
     # The redirect URI must match one of the authorized URIs in your Google Cloud project.
     redirect_uri = url_for('auth.auth', _external=True)
-    # The 'hd' parameter is crucial for directing to your university's login portal.
     return oauth.google.authorize_redirect(redirect_uri, hd='g.msuiit.edu.ph', prompt='login')
 
 @auth_bp.route('/callback')
@@ -58,7 +57,6 @@ def auth():
                 cursor.execute("SELECT user_id FROM user_account WHERE google_id = %s", (user_info['sub'],))
                 existing_user = cursor.fetchone()
                 if existing_user:
-                    # print("DEBUG :Google ID in user_account table already exists")
                     # User exists: update info or just proceed
 
                     # Update last login of user
@@ -69,12 +67,6 @@ def auth():
                     """, (datetime.now(), user_info['sub']))
                     pass
                 else:
-                    # cursor.execute("""
-                    #     INSERT INTO tutee(first_name, last_name, year_level, program_code)
-                    #     VALUES (%s, %s, %s, %s)
-                    # """, (user_info['given_name'], user_info['family_name'], 1, 'BSCS'))
-
-
                     cursor.execute("""
                         INSERT INTO user_account (google_id, email, role, last_login)
                         VALUES (%s, %s, %s, %s)
