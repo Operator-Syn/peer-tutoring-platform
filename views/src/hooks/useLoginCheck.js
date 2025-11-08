@@ -14,11 +14,14 @@ export function useLoginCheck({ login=true, route=null } = {}) {
 
     return async function loginCheck() {
         const res = await fetch(`${backendUrl}/api/auth/get_user`, { credentials: "include" });
+        const user = await res.json();
         if (res.ok) {
-            if (route) {
+            if (!user.registered_tutee) {
+                navigate("/AccountCreation");
+            } else if (route) {
                 navigate(route);
             }
-            return res.json();
+            return user;
         } else {
             if (login) {
                 window.location.href = `${backendUrl}/api/auth/login`;

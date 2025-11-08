@@ -9,6 +9,7 @@ import Report from "./pages/header/Report";
 import Apply from "./pages/profile/apply";
 import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppointmentsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AccountCreation from "./pages/AccountCreation";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="Report" element={<Report />} />
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
+            <Route path="AccountCreation" element={<AccountCreation />} />
           </Route>
         </Route>
       </Routes>

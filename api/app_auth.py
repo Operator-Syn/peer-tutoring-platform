@@ -98,7 +98,58 @@ def get_user():
     user = session.get('user')
     if not user:
         return jsonify({'error': 'User not logged in'}), 401
-    return jsonify(user)
+    # Example logic: check if user is registered in your database
+    registered = False
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
+                if cursor.fetchone():
+                    registered = True
+    except Exception as e:
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+    # Add the key to the user dict
+    user_with_status = dict(user)
+    user_with_status['registered_tutee'] = registered
+
+    return jsonify(user_with_status)
+
+@auth_bp.route('/register_tutee', methods=['POST'])
+def register_tutee():
+    """
+    An API endpoint to register the logged-in user as a tutee.
+    Expects JSON data with additional tutee information.
+    """
+    user = session.get('user')
+    if not user:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    data = request.json
+    first_name = data.get('first_name')
+    middle_name = data.get('middle_name')
+    last_name = data.get('last_name')
+    year_level = data.get('year_level')
+    program_code = data.get('program_code')
+    id_number = data.get('id_number')
+
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO tutee (id_number, first_name, middle_name, last_name, year_level, program_code, google_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (id_number, first_name, middle_name, last_name, year_level, program_code, user['sub'],))
+    except Exception as e:
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'message': 'Tutee registered successfully'})
 
 @auth_bp.route('/logout')
 def logout():
