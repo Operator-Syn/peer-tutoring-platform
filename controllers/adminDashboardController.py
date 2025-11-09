@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 
 admin_dashboard_bp = Blueprint("admin_dashboard", __name__)
 
-@admin_dashboard_bp.route("api/admin/dashboard", methods=["GET"])
+@admin_dashboard_bp.route("/api/admin/dashboard", methods=["GET"])
 def get_admin_dashboard():
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -18,7 +18,7 @@ def get_admin_dashboard():
     cursor.execute("SELECT COUNT(*) FROM tutor_application WHERE status = 'PENDING';")
     pending_applications = cursor.fetchone()
 
-    cursor.execute("SELECT COUNT(*) FROM appointments WHERE status = 'BOOKED';")
+    cursor.execute("SELECT COUNT(*) FROM appointment WHERE status = 'BOOKED';")
     booked_appointments = cursor.fetchone()
 
     cursor.close()
