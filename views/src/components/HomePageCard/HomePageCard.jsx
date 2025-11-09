@@ -30,7 +30,7 @@ export default function BasicCard({
                 <div style={customBorder}>
                     <div style={customBorder2} />
                 </div>
-                <img src={icon} alt="Icon" /> 
+                {icon && <img src={icon} alt="Icon" />}
                 <div className='card-text'>
                     <h3>{title}</h3>
                     <p>{description}</p>
