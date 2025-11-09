@@ -8,6 +8,8 @@ import Messages from "./pages/header/Messages";
 import Report from "./pages/header/Report";
 import Apply from "./pages/profile/apply";
 import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppointmentsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AccountCreation from "./pages/AccountCreation";
 
 function App() {
   return (
@@ -17,10 +19,13 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
           <Route path="Events" element={<Events />} />
-          <Route path="Messages" element={<Messages />} />
-          <Route path="Report" element={<Report />} />
-          <Route path="profile/apply" element={<Apply />} />
-          <Route path="Appointments" element={<TuteeAppointmentsPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="Messages" element={<Messages />} />
+            <Route path="Report" element={<Report />} />
+            <Route path="profile/apply" element={<Apply />} />
+            <Route path="Appointments" element={<TuteeAppointmentsPage />} />
+            <Route path="AccountCreation" element={<AccountCreation />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

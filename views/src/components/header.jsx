@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLoginCheck } from "../hooks/useLoginCheck";
 import "../assets/css/header.css";
 
 import logo from "../assets/images/M_layouts/LAV_logo.png";
@@ -10,10 +11,23 @@ import reportIcon from "../assets/images/M_layouts/Report.png";
 import applyIcon from "../assets/images/M_layouts/Apply.png";
 import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
+import logoutIcon from "../assets/images/M_layouts/logout.png";
 import profile from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
 
 function Header() {
+
+  const [user, setUser] = useState(null);
+  const loginCheck = useLoginCheck({login: false});
+
+  useEffect(() => {
+    async function fetchUser() {
+      const user = await loginCheck();
+      setUser(user);
+    }
+    fetchUser();
+  }, []);
+
   const [popup, setPopup] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnimating, setMenuAnimating] = useState(false);
@@ -137,16 +151,20 @@ function Header() {
                 Events
               </Link>
             </li>
-            <li className="nav-item">
-              <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
-                Messages
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link to="/Report" className="nav-link" onClick={handleNavClick}>
-                Report
-              </Link>
-            </li>
+            {user && (
+              <>
+                <li className="nav-item">
+                  <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
+                    Messages
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/Report" className="nav-link" onClick={handleNavClick}>
+                    Report
+                  </Link>              
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
@@ -189,6 +207,15 @@ function Header() {
                 <p>
                   <img src={reportIcon} alt="Report a bug" /> Report a bug
                 </p>
+                {user && (
+                  <p onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`;
+                  }}>
+                    <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
+                  </p>
+                )}
               </div>
             )}
           </div>

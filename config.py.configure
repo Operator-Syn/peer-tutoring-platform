@@ -1,5 +1,6 @@
 import os
 import secrets
+import json
 
 class Config:
     # Base directory of the repository (config.py location)
@@ -15,3 +16,21 @@ class Config:
     DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
     DB_HOST = os.environ.get("DB_HOST", "")
     DB_PORT = int(os.environ.get("DB_PORT", 5432))
+
+    # OAuth2 settings for Google
+    FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        try:
+            with open("client_secret.json", "r", encoding="utf-8") as f:
+                _g = json.load(f)
+            _creds = _g.get("web")
+            if _creds.get("client_id"):
+                GOOGLE_CLIENT_ID = _creds.get("client_id")
+            if _creds.get("client_secret"):
+                GOOGLE_CLIENT_SECRET = _creds.get("client_secret")
+        except Exception as e:
+            print(f"Error loading OAuth2 credentials: {e}")
+            pass
