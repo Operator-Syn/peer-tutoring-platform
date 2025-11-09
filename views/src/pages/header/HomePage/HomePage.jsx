@@ -10,8 +10,12 @@ import './HomePage.css';
 import BasicButton from '../../../components/BasicButton/BasicButton';
 import HomePageCard from '../../../components/HomePageCard/HomePageCard';
 import Carousel from 'react-bootstrap/Carousel';
+import { useNavigate } from 'react-router-dom';
+import { useLoginCheck } from '../../../hooks/useLoginCheck';
 
 export default function HomePage() {
+    const navigate = useNavigate();
+    const loginCheck = useLoginCheck({route: "/Appointments"});
 
     return (
         <>  
@@ -32,8 +36,12 @@ export default function HomePage() {
                         </div>
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
-                            <BasicButton>Start Learning</BasicButton>
-                            <BasicButton light={true}>Appointments</BasicButton>
+                            <BasicButton onClick={() => {
+                                loginCheck();
+                            }}>Start Learning</BasicButton>
+                            <BasicButton onClick={() => {
+                                loginCheck();
+                            }} light={true}>Appointments</BasicButton>
                         </div>
                     </div>
 

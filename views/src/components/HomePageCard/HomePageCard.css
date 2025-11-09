@@ -1,4 +1,4 @@
-.card {
+.home-page-card {
     position: relative;
     display: flex;
     flex-direction: row;
@@ -13,20 +13,20 @@
     height: 204px;
 }
 
-.card img {
+.home-page-card img {
     width: 75px;
     height: 75px;
     margin-left: 10px;
     z-index: 1;
 }
 
-.card-text {
+.home-page-card-text {
     text-align: justify;
     width: 100%;
     color: #4956AD;
 }
 
-.card-text h3 {
+.home-page-card-text h3 {
     margin-top: 0px;
     margin-bottom: 10px;
     margin-left: 25px;
@@ -34,7 +34,7 @@
     font-weight: bolder;
 }
 
-.card-text p {
+.home-page-card-text p {
     font-size: 16px;
     font-weight: bolder;
     max-height: 100px;
@@ -43,13 +43,13 @@
 }
 
 @media (max-width: 576px) {
-  .card {
+  .home-page-card {
     height: auto;
     padding-top: 10px;
     padding-bottom: 10px;
   }
 
-  .card-text p {
+  .home-page-card-text p {
     max-height: none;
   }
 }

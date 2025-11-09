@@ -26,7 +26,7 @@ export default function BasicCard({
 
     return (
         <>
-            <div className='card' style={style}>
+            <div className='home-page-card' style={style}>
                 <div style={customBorder}>
                     <div style={customBorder2} />
                 </div>
