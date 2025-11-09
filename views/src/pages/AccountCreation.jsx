@@ -5,12 +5,18 @@ import { useLoginCheck } from "../hooks/useLoginCheck";
 export default function AccountCreation() {
     // Get User Info
     const [user, setUser] = useState(null);
+    const navigate = useNavigate();
     const loginCheck = useLoginCheck({ login: false });
 
     useEffect(() => {
         async function fetchUser() {
             const userData = await loginCheck();
-            setUser(userData);
+
+            if (userData && userData.registered_tutee) {
+                navigate("/");
+            } else {
+                return setUser(userData);
+            }
         }
         fetchUser();
     }, []);
@@ -39,7 +45,6 @@ export default function AccountCreation() {
         setForm({ ...form, [e.target.name]: e.target.value }); 
     };
 
-    const navigate = useNavigate();
     const handleSubmit = async (e) => {
         e.preventDefault();
         const res = await fetch("/api/auth/register_tutee", {
