@@ -300,5 +300,55 @@ const AdminDashboard = () => {
   );
 };
 
+// mock data for testing
+const getMockApplications = () => [
+  {
+    application_id: 1,
+    student_id: 'STU001',
+    student_name: 'Jazrel Xandrei Quinlob',
+    college: 'CCS',
+    gender: 'Male',
+    school_year: '3rd year',
+    date_submitted: '2025-01-15T10:30:00',
+    status: 'PENDING',
+    cor_filename: 'jazrel_cor.pdf',
+    cor_filepath: '/uploads/cor/STU001_jazrel_cor.pdf',
+    courses: ['CS101', 'CS102', 'MAT101']
+  },
+  {
+    application_id: 2,
+    student_id: 'STU002',
+    student_name: 'John-Ronan Biera',
+    college: 'CCS',
+    gender: 'Male',
+    school_year: '3rd year',
+    date_submitted: '2025-01-14T14:20:00',
+    status: 'PENDING',
+    cor_filename: 'jazrel_cor.pdf',
+    cor_filepath: '/uploads/cor/STU002_ronan_cor.pdf',
+    courses: ['CSC151', 'MAT51']
+  },
+  {
+    application_id: 3,
+    student_id: 'STU003',
+    student_name: 'Neil Anthony Balbutin',
+    college: 'CCS',
+    gender: 'Male',
+    school_year: '3rd year',
+    date_submitted: '2025-01-13T09:15:00',
+    status: 'APPROVED',
+    cor_filename: 'jarzel_cor.pdf',
+    cor_filepath: '/uploads/cor/STU003_neil_cor.pdf',
+    courses: ['MAT61', 'STT101']
+  }
+];
+
+const getMockStatistics = () => ({
+  total_applications: 67,
+  total_tutors: 10,
+  total_tutees: 69,
+  total_courses: 15,
+  active_sessions: 24
+});
 
 export default AdminDashboard;
