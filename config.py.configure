@@ -1,5 +1,6 @@
 import os
 import secrets
+import json
 
 class Config:
     # Base directory of the repository (config.py location)
