@@ -171,7 +171,7 @@ function Header() {
         {!menuOpen && !menuAnimating && (
           <div className="position-relative ms-3">
             <div className="prof" onClick={() => setPopup(!popup)}>
-              <img src={`/pfp/${user?.sub}.jpg`} onError={e => { e.target.src = profile; }} className="profileimg" alt="profile" />
+              <img src={profile} className="profileimg" alt="profile" />
               <div className="circle">
                 <img src={arrow} className="arrowimg" alt="dropdown arrow" />
               </div>
