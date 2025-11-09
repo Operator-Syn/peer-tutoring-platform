@@ -31,7 +31,7 @@ export default function BasicCard({
                     <div style={customBorder2} />
                 </div>
                 {icon && <img src={icon} alt="Icon" />}
-                <div className='card-text'>
+                <div className='home-page-card-text'>
                     <h3>{title}</h3>
                     <p>{description}</p>
                 </div>

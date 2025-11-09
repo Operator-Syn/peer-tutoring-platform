@@ -16,6 +16,7 @@
 .home-page-card img {
     width: 75px;
     height: 75px;
+    margin-right: 10px;
     margin-left: 10px;
     z-index: 1;
 }
