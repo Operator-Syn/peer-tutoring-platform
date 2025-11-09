@@ -38,16 +38,6 @@ def auth():
     session.permanent = True
     session['user'] = user_info
 
-    # Download the user profile picture and store it locally, only if 'picture' exists
-    image_url = user_info.get('picture')
-    if image_url:
-        response = requests.get(image_url)
-        if response.status_code == 200:
-            with open(f"./views/public/pfp/{user_info['sub']}.jpg", "wb") as f:
-                f.write(response.content)
-        else:
-            print("Failed to download image:", response.status_code)
-
     # DATABASE
     try:
         conn = get_connection()
@@ -71,6 +61,16 @@ def auth():
                         INSERT INTO user_account (google_id, email, role, last_login)
                         VALUES (%s, %s, %s, %s)
                     """, (user_info['sub'], user_info['email'], 'TUTEE', datetime.now()))
+
+                    # Download the user profile picture and store it locally, only if 'picture' exists
+                    image_url = user_info.get('picture')
+                    if image_url:
+                        response = requests.get(image_url)
+                        if response.status_code == 200:
+                            with open(f"./views/public/pfp/{user_info['sub']}.jpg", "wb") as f:
+                                f.write(response.content)
+                        else:
+                            print("Failed to download image:", response.status_code)
 
 
     except Exception as e:
