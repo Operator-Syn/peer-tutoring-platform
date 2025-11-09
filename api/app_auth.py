@@ -38,15 +38,15 @@ def auth():
     session.permanent = True
     session['user'] = user_info
 
-    # Download the user profile picture and store it locally
-    image_url = user_info['picture']
-    response = requests.get(image_url)
-
-    if response.status_code == 200:
-        with open(f"./views/public/pfp/{user_info['sub']}.jpg", "wb") as f:
-            f.write(response.content)
-    else:
-        print("Failed to download image:", response.status_code)
+    # Download the user profile picture and store it locally, only if 'picture' exists
+    image_url = user_info.get('picture')
+    if image_url:
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            with open(f"./views/public/pfp/{user_info['sub']}.jpg", "wb") as f:
+                f.write(response.content)
+        else:
+            print("Failed to download image:", response.status_code)
 
     # DATABASE
     try:
