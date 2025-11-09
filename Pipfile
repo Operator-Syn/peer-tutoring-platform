@@ -10,6 +10,8 @@ flask-bcrypt = "*"
 psycopg2 = "*"
 colorama = "*"
 flask-cors = "*"
+authlib = "*"
+requests = "*"
 
 [dev-packages]
 

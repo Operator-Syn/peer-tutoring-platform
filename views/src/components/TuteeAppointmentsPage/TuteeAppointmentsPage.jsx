@@ -21,6 +21,7 @@ export default function TuteeAppointmentsPage() {
                 console.error("Error fetching appointments:", err);
                 setLoading(false);
             });
+
     }, []);
 
     if (loading) {
