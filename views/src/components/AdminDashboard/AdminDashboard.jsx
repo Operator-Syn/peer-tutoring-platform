@@ -13,6 +13,10 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date_desc');
   const [processingId, setProcessingId] = useState(null);
 
   const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
@@ -21,6 +25,9 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
+    useEffect(() => {
+    applyFiltersAndSort();
+  }, [applications, searchQuery, sortBy]);
 
   const fetchData = async () => {
     try {
@@ -57,6 +64,39 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFiltersAndSort = () => {
+    let filtered = [...applications];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(app =>
+        app.student_id?.toLowerCase().includes(query) ||
+        app.student_name?.toLowerCase().includes(query) ||
+        app.college?.toLowerCase().includes(query) ||
+        (app.courses && app.courses.some(c => c.toLowerCase().includes(query)))
+      );
+    }
+
+    switch (sortBy) {
+      case 'date_desc':
+        filtered.sort((a, b) => new Date(b.date_submitted) - new Date(a.date_submitted));
+        break;
+      case 'date_asc':
+        filtered.sort((a, b) => new Date(a.date_submitted) - new Date(b.date_submitted));
+        break;
+      case 'name_asc':
+        filtered.sort((a, b) => (a.student_name || a.student_id).localeCompare(b.student_name || b.student_id));
+        break;
+      case 'name_desc':
+        filtered.sort((a, b) => (b.student_name || b.student_id).localeCompare(a.student_name || a.student_id));
+        break;
+      default:
+        break;
+    }
+
+    setFilteredApplications(filtered);
   };
 
   const formatDate = (dateString) => {
@@ -127,7 +167,122 @@ const AdminDashboard = () => {
           </div>
         )}
 
+          <div className="controls-section">
+          <div className="sort-dropdown">
+            <select
+              className="form-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="date_desc">Sort by: Newest First</option>
+              <option value="date_asc">Sort by: Oldest First</option>
+              <option value="name_asc">Sort by: Name (A-Z)</option>
+              <option value="name_desc">Sort by: Name (Z-A)</option>
+            </select>
+          </div>
+
+          <div className="search-box">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button className="search-btn">
+              <i className="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+
         <div className="applications-list">
+          {filteredApplications.length === 0 ? (
+            <div className="empty-state">
+              <i className="bi bi-inbox fs-1 text-muted"></i>
+              <p className="text-muted mt-3">No applications found</p>
+            </div>
+          ) : (
+            filteredApplications.map((app) => (
+              <div key={app.application_id} className="application-card">
+                <div className="card-header-row">
+                  <span className="header-label">College</span>
+                  <span className="header-label">Name</span>
+                  <span className="header-label">Gender</span>
+                  <span className="header-label">School year</span>
+                  <span className="header-label">Documents</span>
+                </div>
+
+                <div className="card-content-row">
+                  <div className="avatar-section">
+                    <div className="avatar-circle">
+                      <i className="bi bi-person-fill"></i>
+                    </div>
+                    <span className="college-text">{app.college || 'CCS'}</span>
+                  </div>
+
+                  <div className="name-section">
+                    <span className="name-text">{app.student_name || app.student_id}</span>
+                  </div>
+
+                  <div className="gender-section">
+                    <span className="gender-text">{app.gender || 'Male'}</span>
+                  </div>
+
+                  <div className="year-section">
+                    <span className="year-text">{app.school_year || '3rd year'}</span>
+                  </div>
+
+                  <div className="documents-section">
+                    {app.cor_filename && (
+                      <div className="document-icon" title={app.cor_filename}>
+                        <i className="bi bi-file-earmark-text-fill"></i>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="actions-section">
+                    <button
+                      className="btn btn-accept"
+                      disabled={processingId === app.application_id || app.status === 'APPROVED'}
+                    >
+                      {processingId === app.application_id ? (
+                        <span className="spinner-border spinner-border-sm"></span>
+                      ) : (
+                        'Accept'
+                      )}
+                    </button>
+                    <button
+                      className="btn btn-decline"
+                      disabled={processingId === app.application_id || app.status === 'REJECTED'}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+
+                {app.courses && app.courses.length > 0 && (
+                  <div className="courses-section">
+                    <strong className="courses-label">Courses:</strong>
+                    <div className="courses-tags">
+                      {app.courses.map((course, idx) => (
+                        <span key={idx} className="course-tag">
+                          {course}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {app.status && app.status !== 'PENDING' && (
+                  <div className="status-badge-container">
+                    <span className={`status-badge status-${app.status.toLowerCase()}`}>
+                      {app.status}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))
+          )}  
         </div>
 
         <div className="statistics-grid">
