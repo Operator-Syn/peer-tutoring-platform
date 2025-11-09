@@ -47,6 +47,8 @@ def get_pending_requests(tutor_id):
     return jsonify(results)
 
 
+
+
 @requests_bp.route("/update-status/<int:request_id>", methods=["PUT"])
 def update_request_status(request_id):
     data = request.get_json(silent=True) or {}
@@ -145,6 +147,21 @@ def update_request_status(request_id):
             SET status = 'APPROVED'
             WHERE request_id = %s
         """, (request_id,))
+
+
+        # ✅ Insert into history
+        cur.execute("""
+            INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (tutor_id, tutee_id, start_time, end_time, course_code))
+
+        # ✅ Insert into notifications
+        cur.execute("""
+            INSERT INTO notifications (tutor_id, tutee_id)
+            VALUES (%s, %s)
+        """, (tutor_id, tutee_id))
+
+
 
         conn.commit()
         return jsonify({"message": f"Appointment {appointment_id} created successfully!"}), 200
@@ -288,4 +305,52 @@ def get_appointments(tutor_id):
 
     return jsonify(results)
 
+@requests_bp.route("/update-status-and-log/<id>", methods=["PUT"])
+def update_request_status_and_log(id):
+    data = request.get_json(silent=True) or {}
+    new_status = data.get("status")
 
+    if not new_status:
+        return jsonify({"error": "Missing status"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # 1️⃣ Update status and fetch important details
+        cur.execute("""
+            UPDATE request
+            SET status = %s
+            WHERE request_id = %s
+            RETURNING tutor_id, tutee_id, start_time, end_time, course_code;
+        """, (new_status, request_id))
+
+        result = cur.fetchone()
+        if not result:
+            return jsonify({"error": "Request not found"}), 404
+
+        tutor_id, tutee_id, start_time, end_time, course_code = result
+
+        # 2️⃣ When approved, insert to history + notifications
+        if new_status == "APPROVED":
+            cur.execute("""
+                INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (tutor_id, tutee_id, start_time, end_time, course_code))
+
+            cur.execute("""
+                INSERT INTO notifications (tutor_id, tutee_id)
+                VALUES (%s, %s)
+            """, (tutor_id, tutee_id))
+
+        conn.commit()
+        return jsonify({"message": f"Request {new_status} successfully!"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error in update_request_status:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()

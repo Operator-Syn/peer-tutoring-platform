@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./appointments.css";
-
+import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
 function Appointments() {
   const [rows, setRows] = useState([]);
   const [appointments, setAppointments] = useState([]);
-
+  const [selectedApp, setSelectedApp] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -61,7 +61,6 @@ const handleSearch = async () => {
 
 
 
-
 const handleAccept = async (id) => {
   try {
     const res = await fetch(`/api/requests/update-status/${id}`, {
@@ -78,13 +77,22 @@ const handleAccept = async (id) => {
       return;
     }
 
-    
+    // Remove request from pending requests
     setRows((prev) => prev.filter((r) => r.request_id !== id));
+
+    // Fetch updated appointments
+    const tutorId = "2023-0639"; // replace with current tutor
+    const apptRes = await fetch(`/api/requests/appointments/${tutorId}`);
+    const appointments = await apptRes.json();
+
+    // Update appointments state
+    setAppointments(appointments); // assuming you have useState for appointments
   } catch (err) {
     console.error("Network error updating status:", err);
     alert("Network error. Check console for details.");
   }
 };
+
 
 
 const handleDecline = (id) => {
@@ -337,61 +345,128 @@ const handleDecline = (id) => {
    
       {/* No Issues Found */}
 <div
-  className="container d-flex flex-column align-items-center justify-content-center py-4"
-  style={{
-   minHeight: "600px", marginTop: "180px",
-    backgroundColor: "#F8F9FF",
-    borderRadius: "5px",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)", // subtle shadow
-  }}
->
-  <div className="container my-5">
-    {appointments.length === 0 ? (
-      <p style={{ color: "white", textAlign: "center" }}>No appointments available.</p>
-    ) : (
-      <div
-        className="d-flex flex-wrap justify-content-center"
-        style={{ gap: "3rem" }}
-      >
-        {appointments.map((app) => (
+      className="container d-flex flex-column align-items-center justify-content-center py-4"
+      style={{
+        minHeight: "600px",
+        marginTop: "180px",
+        backgroundColor: "#F8F9FF",
+        borderRadius: "5px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+      }}
+    >
+      <div className="container my-5">
+        {appointments.length === 0 ? (
+          <p style={{ color: "white", textAlign: "center" }}>
+            No appointments available.
+          </p>
+        ) : (
+          <div
+            className="d-flex flex-wrap justify-content-center"
+            style={{ gap: "3rem" }}
+          >
+            {appointments.map((app) => (
+              <div
+                className="card"
+                style={{ width: "23rem", minHeight: "400px", cursor: "pointer" }}
+                key={app.request_id}
+                onClick={() => setSelectedApp(app)}
+              >
+                <img
+                  className="card-img-top"
+                   src={placeholderImage}
+                  alt="Card image cap"
+                  style={{ objectFit: "cover", height: "250px" }}
+                />
+                <div className="card-body">
+                  <h5 className="card-title">Subject Code: {app.course_code}</h5>
+                  <p className="card-text">Tutee: {app.name}</p>
+
+                  <div
+                    className="card px-2 px-sm-3 px-md-1"
+                    style={{ border: "none", boxShadow: "none" }}
+                  >
+                    <div className="card-body text-end">
+                      <p className="card-text mb-1">{app.appointment_date}</p>
+                      <p className="card-text">
+                        {app.start_time} - {app.end_time}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="card-footer d-flex justify-content-between">
+                  <small className="text-muted">Session started</small>
+                  <div></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal overlay */}
+      {selectedApp && (
+        <div
+          onClick={() => setSelectedApp(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
           <div
             className="card"
-            style={{ width: "23rem", minHeight: "400px" }}
-            key={app.request_id}
+            style={{
+              width: "40rem",
+              minHeight: "500px",
+              padding: "1rem",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()} // prevent modal close on inner click
           >
+            <button
+              onClick={() => setSelectedApp(null)}
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                border: "none",
+                background: "transparent",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+              }}
+            >
+              &times;
+            </button>
             <img
               className="card-img-top"
-              src="https://via.placeholder.com/150x250"
+                src={placeholderImage}
               alt="Card image cap"
-              style={{ objectFit: "cover", height: "250px" }}
+              style={{ objectFit: "cover", height: "300px" }}
             />
             <div className="card-body">
-              <h5 className="card-title">Subject Code: {app.course_code}</h5>
-              <p className="card-text">Tutee:{app.name}</p>
-
-
-              <div className="card px-2 px-sm-3 px-md-1"  style={{ border: "none", boxShadow: "none" }}>
-  <div className="card-body text-end">
-    <p className="card-text mb-1">{app.appointment_date}</p>
-    <p className="card-text">{app.start_time} - {app.end_time}</p>
-  </div>
-</div>
-
-            </div>
-            <div className="card-footer d-flex justify-content-between">
-              <small className="text-muted">{app.appointment_date}</small> {/*This will check if the appoint is starting or not*/}
-              <div>
-                
-              </div>
+              <h5 className="card-title">
+                Subject Code: {selectedApp.course_code}
+              </h5>
+              <p className="card-text">Tutee: {selectedApp.name}</p>
+              <p className="card-text">
+                {selectedApp.start_time} - {selectedApp.end_time}
+              </p>
+              <p className="card-text">Date: {selectedApp.appointment_date}</p>
+              <p className="card-text">Course: {selectedApp.course_code}</p>
             </div>
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
+        </div>
+      )}
 
 
+    </div>
 
     </div>
   )
