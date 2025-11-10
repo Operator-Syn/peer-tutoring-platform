@@ -142,4 +142,3 @@ function Stat({ top_text='Top', bottom_text='Bottom' }) {
         </>
     );
 }
-

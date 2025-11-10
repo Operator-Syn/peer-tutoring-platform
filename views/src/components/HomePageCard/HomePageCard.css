@@ -30,6 +30,7 @@
 .home-page-card-text h3 {
     margin-top: 0px;
     margin-bottom: 10px;
+    margin-left: 25px;
     font-size: 24px;
     font-weight: bolder;
 }
@@ -38,6 +39,7 @@
     font-size: 16px;
     font-weight: bolder;
     max-height: 100px;
+    margin-left: 25px;
     margin-bottom: 0px;
 }
 
