@@ -170,14 +170,21 @@ def delete_request(request_id):
 
 
 # ✅ SEARCH requests
+# ✅ SEARCH requests (Filtered by Tutor)
 @requests_bp.route("/search", methods=["GET"])
 def search_requests():
     query = request.args.get("q", "").strip()
+    tutor_id = request.args.get("tutor_id", "").strip()  # 👈 Add tutor_id filter
+
+    if not tutor_id:
+        return jsonify({"error": "Missing tutor_id"}), 400
+
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
         if not query:
+            # If no search term, just return all pending requests for this tutor
             sql = """
                 SELECT 
                     r.request_id,
@@ -191,11 +198,12 @@ def search_requests():
                     r.end_time,
                     r.status
                 FROM request r
+                WHERE r.tutor_id = %s
                 ORDER BY r.appointment_date, r.start_time
-                LIMIT 20
             """
-            cur.execute(sql)
+            cur.execute(sql, (tutor_id,))
         else:
+            # Filter by tutor_id + match query
             sql = """
                 SELECT 
                     r.request_id,
@@ -209,20 +217,20 @@ def search_requests():
                     r.end_time,
                     r.status
                 FROM request r
-                WHERE (
+                WHERE r.tutor_id = %s
+                  AND (
                     r.first_name || ' ' || COALESCE(r.middle_name,'') || ' ' || r.last_name ILIKE %s OR
                     r.tutee_id::TEXT ILIKE %s OR
-                    r.request_id::TEXT ILIKE %s OR
                     r.course_code ILIKE %s OR
                     r.program_code ILIKE %s OR
                     r.status ILIKE %s OR
                     TO_CHAR(r.appointment_date, 'YYYY-MM-DD') ILIKE %s OR
                     TO_CHAR(r.appointment_date, 'Day') ILIKE %s
-                )
+                  )
                 ORDER BY r.appointment_date, r.start_time
             """
             like = f"%{query}%"
-            cur.execute(sql, (like, like, like, like, like, like, like, like))
+            cur.execute(sql, (tutor_id, like, like, like, like, like, like, like))
 
         results = cur.fetchall()
 

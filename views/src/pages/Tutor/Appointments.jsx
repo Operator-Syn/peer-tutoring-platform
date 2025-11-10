@@ -9,49 +9,122 @@ function Appointments() {
   const [searchTerm, setSearchTerm] = useState("");
 
 useEffect(() => {
-  const tutorId = "2023-3984"; // or dynamically set this
-  fetch(`/api/requests/pending/${tutorId}`)
-    .then((res) => {
-      if (!res.ok) throw new Error("Network response was not ok");
-      return res.json();
-    })
-    .then((data) => setRows(data))
-    .catch((err) => console.error("Error fetching requests:", err));
-     fetchAppointments(); // ✅ call it here so appointments load too
+  async function fetchData() {
+    try {
+      console.log("🔹 Fetching logged-in user...");
+      const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
+      if (!resUser.ok) {
+        console.warn("❌ Not logged in, redirecting...");
+        window.location.href = "/api/auth/login";
+        return;
+      }
+      const loggedInUser = await resUser.json();
+      console.log("✅ Logged in user:", loggedInUser);
+
+      const googleId = loggedInUser.sub;
+
+      console.log("🔹 Fetching all tutees...");
+      const resTutees = await fetch("/api/tutee/all");
+      const tutees = await resTutees.json();
+      console.log("✅ Tutees:", tutees);
+
+      const currentTutee = tutees.find(t => t.google_id === googleId);
+      if (!currentTutee) {
+        console.error("❌ No tutee found for Google ID:", googleId);
+        return;
+      }
+      console.log("✅ Found tutee:", currentTutee);
+
+      const tuteeId = currentTutee.id_number;
+
+      console.log("🔹 Fetching tutors...");
+      const resTutors = await fetch("/api/tutor/all");
+      const tutors = await resTutors.json();
+      console.log("✅ Tutors:", tutors);
+
+      const currentTutor = tutors.find(t => t.tutor_id === tuteeId);
+      if (!currentTutor) {
+        console.error("❌ This user is not registered as a tutor.");
+        return;
+      }
+      console.log("✅ Found tutor:", currentTutor);
+
+      const tutorId = currentTutor.tutor_id;
+
+      console.log("🔹 Fetching pending requests...");
+      const resPending = await fetch(`/api/requests/pending/${tutorId}`);
+      const pendingData = await resPending.json();
+      console.log("✅ Pending requests:", pendingData);
+      setRows(pendingData);
+
+      console.log("🔹 Fetching appointments...");
+      const resAppointments = await fetch(`/api/requests/appointments/${tutorId}`);
+      const appointmentsData = await resAppointments.json();
+      console.log("✅ Appointments:", appointmentsData);
+      setAppointments(appointmentsData);
+    } catch (err) {
+      console.error("💥 Error in fetchData:", err);
+    }
+  }
+
+  fetchData();
 }, []);
 
+
  
-const fetchAppointments = async () => {
-  try {
-    const tutorId = "2023-3984";
-    const res = await fetch(`/api/requests/appointments/${tutorId}`);
-    if (!res.ok) throw new Error("Failed to fetch appointments");
-    const data = await res.json();
-    setAppointments(data);
-  } catch (err) {
-    console.error("Error fetching appointments:", err);
-  }
-};
+
 
 
 const handleSearch = async () => {
   try {
     const query = searchTerm.trim();
 
-    // If empty, reload pending requests for the tutor
+    // Get the logged-in user dynamically
+    const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
+    if (!resUser.ok) throw new Error("User not authenticated");
+    const loggedInUser = await resUser.json();
+    const googleId = loggedInUser.sub;
+
+    // Fetch tutees to find their ID number
+    const resTutees = await fetch("/api/tutee/all");
+    const tutees = await resTutees.json();
+    const currentTutee = tutees.find(t => t.google_id === googleId);
+
+    if (!currentTutee) {
+      console.error("No tutee found for this user");
+      return;
+    }
+
+    const tuteeId = currentTutee.id_number;
+
+    // Fetch tutors and match by tuteeId
+    const resTutors = await fetch("/api/tutor/all");
+    const tutors = await resTutors.json();
+    const currentTutor = tutors.find(t => t.tutor_id === tuteeId);
+
+    if (!currentTutor) {
+      console.error("Tutor not found for this user");
+      return;
+    }
+
+    const tutorId = currentTutor.tutor_id;
+
+    // If search bar empty → reload all pending requests
     if (!query) {
-      const tutorId = "2023-3984";
       const res = await fetch(`/api/requests/pending/${tutorId}`);
       const data = await res.json();
       setRows(data);
       return;
     }
 
-    // Otherwise, perform search
-    const res = await fetch(`/api/requests/search?q=${encodeURIComponent(query)}`);
+    // Otherwise, perform filtered search
+    const res = await fetch(
+      `/api/requests/search?tutor_id=${tutorId}&q=${encodeURIComponent(query)}`
+    );
     if (!res.ok) throw new Error("Failed to fetch search results");
     const data = await res.json();
     setRows(data);
+
   } catch (err) {
     console.error("Search error:", err);
     alert("Error searching appointments. Check console for details.");
@@ -81,7 +154,7 @@ const handleAccept = async (id) => {
     setRows((prev) => prev.filter((r) => r.request_id !== id));
 
     // Fetch updated appointments
-    const tutorId = "023-3984"; // replace with current tutor
+    const tutorId = "2023-3984"; // replace with current tutor
     const apptRes = await fetch(`/api/requests/appointments/${tutorId}`);
     const appointments = await apptRes.json();
 
@@ -373,7 +446,7 @@ const handleDecline = (id) => {
               >
                 <img
                   className="card-img-top"
-                  src="placeholderImage"
+                  src={placeholderImage}
                   alt="Card image cap"
                   style={{ objectFit: "cover", height: "250px" }}
                 />
@@ -449,7 +522,7 @@ const handleDecline = (id) => {
             </button>
             <img
               className="card-img-top"
-              src="placeholderImage"
+              src={placeholderImage}
               alt="Card image cap"
               style={{ objectFit: "cover", height: "300px" }}
             />
