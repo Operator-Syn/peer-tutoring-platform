@@ -140,11 +140,11 @@ const AdminDashboard = () => {
             </div>
           </div>
           <nav className="header-nav">
-            <a href="/" className="nav-link">Home</a>
-            <a href="/about" className="nav-link">About</a>
-            <a href="/events" className="nav-link">Events</a>
-            <a href="/messages" className="nav-link">Messages</a>
-            <a href="/reports" className="nav-link">Reports</a>
+            <a href="/" className="custom-nav-link">Home</a>
+            <a href="/about" className="custom-nav-link">About</a>
+            <a href="/events" className="custom-nav-link">Events</a>
+            <a href="/messages" className="custom-nav-link">Messages</a>
+            <a href="/reports" className="custom-nav-link">Reports</a>
           </nav>
           <div className="user-section">
             <div className="user-avatar">
@@ -160,7 +160,7 @@ const AdminDashboard = () => {
         </div>
 
         {error && (
-          <div className="alert alert-warning alert-dismissible fade show" role="alert">
+          <div className="alert alert-warning alert-dismissible fade show custom-alert-style" role="alert">
             <i className="bi bi-exclamation-triangle me-2"></i>
             {error}
             <button type="button" className="btn-close" onClick={() => setError(null)}></button>
