@@ -1,0 +1,18 @@
+.border-label-group {
+    position: relative;
+}
+
+.border-label-group .border-label {
+    position: absolute;
+    top: -0.6em;
+    left: 0.75rem;
+    background-color: var(--bs-body-bg);
+    padding: 0 0.4em;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+}
+
+.border-label-group .form-control {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
