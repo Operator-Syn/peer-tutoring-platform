@@ -21,10 +21,11 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
           <Route path="Events" element={<Events />} />
-          <Route path="admin" element={<AdminDashboard />} />
+
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
             <Route path="Report" element={<Report />} />
+            <Route path="admin" element={<AdminDashboard />} />  
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
