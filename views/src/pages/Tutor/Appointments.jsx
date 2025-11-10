@@ -5,6 +5,7 @@ function Appointments() {
   const [rows, setRows] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
+const [selectedTuteeName, setSelectedTuteeName] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -97,7 +98,7 @@ const handleSearch = async () => {
 
     const tuteeId = currentTutee.id_number;
 
-    // Fetch tutors and match by tuteeId
+
     const resTutors = await fetch("/api/tutor/all");
     const tutors = await resTutors.json();
     const currentTutor = tutors.find(t => t.tutor_id === tuteeId);
@@ -109,7 +110,7 @@ const handleSearch = async () => {
 
     const tutorId = currentTutor.tutor_id;
 
-    // If search bar empty → reload all pending requests
+
     if (!query) {
       const res = await fetch(`/api/requests/pending/${tutorId}`);
       const data = await res.json();
@@ -117,7 +118,7 @@ const handleSearch = async () => {
       return;
     }
 
-    // Otherwise, perform filtered search
+   
     const res = await fetch(
       `/api/requests/search?tutor_id=${tutorId}&q=${encodeURIComponent(query)}`
     );
@@ -136,25 +137,24 @@ const handleSearch = async () => {
 
 const handleAccept = async (id) => {
   try {
-    // 🔹 Get logged-in user info
+   
     const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
     if (!resUser.ok) throw new Error("User not authenticated");
     const loggedInUser = await resUser.json();
     const googleId = loggedInUser.sub;
 
-    // 🔹 Fetch all tutees
+
     const resTutees = await fetch("/api/tutee/all");
     const tutees = await resTutees.json();
     const currentTutee = tutees.find((t) => t.google_id === googleId);
 
     if (!currentTutee) {
-      console.error("❌ No tutee found for this user");
+      console.error(" No tutee found for this user");
       return;
     }
 
     const tuteeId = currentTutee.id_number;
 
-    //  Fetch tutors and find matching tutor_id
     const resTutors = await fetch("/api/tutor/all");
     const tutors = await resTutors.json();
     const currentTutor = tutors.find((t) => t.tutor_id === tuteeId);
@@ -166,7 +166,6 @@ const handleAccept = async (id) => {
 
     const tutorId = currentTutor.tutor_id;
 
-    //  Approve the request
     const res = await fetch(`/api/requests/update-status/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -181,10 +180,10 @@ const handleAccept = async (id) => {
       return;
     }
 
-    //  Remove from pending requests
+  
     setRows((prev) => prev.filter((r) => r.request_id !== id));
 
-    // 🔹 Fetch updated appointments dynamically
+
     const apptRes = await fetch(`/api/requests/appointments/${tutorId}`);
     const appointments = await apptRes.json();
     setAppointments(appointments);
@@ -270,21 +269,23 @@ const handleDecline = (id) => {
         if (e.key === "Enter") handleSearch();
       }}
     />
-    <button
-      className="btn btn-success"
-      style={{
-        fontSize: "1.1rem",
-        padding: "12px 45px",
-        borderTopLeftRadius: 0,
-        borderBottomLeftRadius: 0,
-        borderTopRightRadius: 40,
-        borderBottomRightRadius: 40,
-        backgroundColor: "#4956AD",
-      }}
-      onClick={handleSearch}
-    >
-      Enter
-    </button>
+  <button
+  className="btn btn-success"
+  style={{
+    fontSize: "1.1rem",
+    padding: "12px 45px",
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    borderTopRightRadius: 40,
+    borderBottomRightRadius: 40,
+    backgroundColor: "#4956AD",
+    border: "none", // <-- remove border
+  }}
+  onClick={handleSearch}
+>
+  Enter
+</button>
+
   </div>
 </div>
 
@@ -459,7 +460,7 @@ const handleDecline = (id) => {
       }}
     >
       <div className="appointments-wrapper container my-5"
-      >
+        style={{ backgroundColor: "transparent" }}>
   {appointments.length === 0 ? (
     <p className="no-appointments">No appointments available.</p>
   ) : (
@@ -468,7 +469,11 @@ const handleDecline = (id) => {
         <div
           className="card appointment-card"
           key={app.request_id}
-          onClick={() => setSelectedApp(app)}
+         onClick={() => {
+  setSelectedApp(app);
+  setSelectedTuteeName(`${app.first_name} ${app.middle_name || ""} ${app.last_name}`.trim());
+}}
+
         >
           <img
             className="card-img-top"
@@ -552,11 +557,9 @@ const handleDecline = (id) => {
     <strong>Subject Code:</strong> {selectedApp?.course_code || "N/A"}
   </p>
   <p className="card-text">
-    <strong>Tutee:</strong>{" "}
-    {selectedApp?.first_name || ""}{" "}
-    {selectedApp?.middle_name || ""}{" "}
-    {selectedApp?.last_name || selectedApp?.name || ""}
-  </p>
+  <strong>Tutee:</strong> {selectedTuteeName || ""}
+</p>
+
   <p className="card-text">
     {selectedApp?.start_time || "N/A"} - {selectedApp?.end_time || "N/A"}
   </p>
@@ -567,6 +570,7 @@ const handleDecline = (id) => {
     <strong>Course:</strong> {selectedApp?.course_code || "N/A"}
   </p>
 </div>
+
 
           </div>
         </div>

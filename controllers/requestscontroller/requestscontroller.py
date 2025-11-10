@@ -13,10 +13,12 @@ def get_pending_requests(tutor_id):
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     query = """
-        SELECT 
+       SELECT 
             r.request_id,
             r.tutee_id,
-            r.first_name || ' ' || COALESCE(r.middle_name,'') || ' ' || r.last_name AS name,
+            COALESCE(t.first_name, 'Unknown') || ' ' || 
+            COALESCE(t.middle_name, '') || ' ' || 
+            COALESCE(t.last_name, '') AS name,
             r.course_code,
             r.appointment_date,
             r.program_code,
@@ -25,8 +27,9 @@ def get_pending_requests(tutor_id):
             r.end_time,
             r.status
         FROM request r
+        LEFT JOIN tutee t ON r.tutee_id = t.id_number
         WHERE r.tutor_id = %s AND r.status = 'PENDING'
-        ORDER BY r.appointment_date, r.start_time
+        ORDER BY r.appointment_date, r.start_time;
     """
 
     cur.execute(query, (tutor_id,))
@@ -42,6 +45,8 @@ def get_pending_requests(tutor_id):
             r["day_of_week"] = r["day_of_week"].strip()
 
     return jsonify(results)
+
+
 
 
 
@@ -171,7 +176,7 @@ def delete_request(request_id):
 @requests_bp.route("/search", methods=["GET"])
 def search_requests():
     query = request.args.get("q", "").strip()
-    tutor_id = request.args.get("tutor_id", "").strip()  
+    tutor_id = request.args.get("tutor_id", "").strip()
 
     if not tutor_id:
         return jsonify({"error": "Missing tutor_id"}), 400
@@ -180,61 +185,55 @@ def search_requests():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        if not query:
-        
-            sql = """
-                SELECT 
-                    r.request_id,
-                    r.tutee_id,
-                    r.first_name || ' ' || COALESCE(r.middle_name,'') || ' ' || r.last_name AS name,
-                    r.course_code,
-                    r.program_code,
-                    r.appointment_date,
-                    TO_CHAR(r.appointment_date, 'Day') AS day_of_week,
-                    r.start_time,
-                    r.end_time,
-                    r.status
-                FROM request r
-                WHERE r.tutor_id = %s
-                ORDER BY r.appointment_date, r.start_time
+        # Use COALESCE to handle possible NULL middle names and remove double spaces
+        name_concat = "TRIM(CONCAT(t.first_name, ' ', COALESCE(t.middle_name || ' ', ''), t.last_name))"
+
+        base_select = f"""
+            SELECT 
+                r.request_id,
+                r.tutee_id,
+                {name_concat} AS name,
+                r.course_code,
+                r.program_code,
+                r.appointment_date,
+                TO_CHAR(r.appointment_date, 'Day') AS day_of_week,
+                r.start_time,
+                r.end_time,
+                r.status
+            FROM request r
+            JOIN tutee t ON r.tutee_id = t.id_number
+            WHERE r.tutor_id = %s
+        """
+
+        if query:
+            # Search by tutee's name or other related fields
+            search_filter = f"""
+              AND (
+                  {name_concat} ILIKE %s OR
+                  r.tutee_id::TEXT ILIKE %s OR
+                  r.course_code ILIKE %s OR
+                  r.program_code ILIKE %s OR
+                  r.status ILIKE %s OR
+                  TO_CHAR(r.appointment_date, 'YYYY-MM-DD') ILIKE %s OR
+                  TO_CHAR(r.appointment_date, 'Day') ILIKE %s
+              )
             """
-            cur.execute(sql, (tutor_id,))
-        else:
-          
-            sql = """
-                SELECT 
-                    r.request_id,
-                    r.tutee_id,
-                    r.first_name || ' ' || COALESCE(r.middle_name,'') || ' ' || r.last_name AS name,
-                    r.course_code,
-                    r.program_code,
-                    r.appointment_date,
-                    TO_CHAR(r.appointment_date, 'Day') AS day_of_week,
-                    r.start_time,
-                    r.end_time,
-                    r.status
-                FROM request r
-                WHERE r.tutor_id = %s
-                  AND (
-                    r.first_name || ' ' || COALESCE(r.middle_name,'') || ' ' || r.last_name ILIKE %s OR
-                    r.tutee_id::TEXT ILIKE %s OR
-                    r.course_code ILIKE %s OR
-                    r.program_code ILIKE %s OR
-                    r.status ILIKE %s OR
-                    TO_CHAR(r.appointment_date, 'YYYY-MM-DD') ILIKE %s OR
-                    TO_CHAR(r.appointment_date, 'Day') ILIKE %s
-                  )
-                ORDER BY r.appointment_date, r.start_time
-            """
+            sql = base_select + search_filter + " ORDER BY r.appointment_date, r.start_time"
             like = f"%{query}%"
             cur.execute(sql, (tutor_id, like, like, like, like, like, like, like))
+        else:
+            sql = base_select + " ORDER BY r.appointment_date, r.start_time"
+            cur.execute(sql, (tutor_id,))
 
         results = cur.fetchall()
 
         for r in results:
-            r["appointment_date"] = r["appointment_date"].isoformat()
-            r["start_time"] = r["start_time"].strftime("%H:%M")
-            r["end_time"] = r["end_time"].strftime("%H:%M")
+            if r["appointment_date"]:
+                r["appointment_date"] = r["appointment_date"].isoformat()
+            if r["start_time"]:
+                r["start_time"] = r["start_time"].strftime("%H:%M")
+            if r["end_time"]:
+                r["end_time"] = r["end_time"].strftime("%H:%M")
             if r.get("day_of_week"):
                 r["day_of_week"] = r["day_of_week"].strip()
 
@@ -247,6 +246,7 @@ def search_requests():
     finally:
         cur.close()
         conn.close()
+
 
 
 
