@@ -6,7 +6,7 @@ from datetime import datetime
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
-# ✅ GET all pending requests for a tutor
+
 @requests_bp.route("/pending/<tutor_id>", methods=["GET"])
 def get_pending_requests(tutor_id):
     conn = get_connection()
@@ -44,7 +44,7 @@ def get_pending_requests(tutor_id):
     return jsonify(results)
 
 
-# ✅ UPDATE request status and create appointment if approved
+
 @requests_bp.route("/update-status/<int:request_id>", methods=["PUT"])
 def update_request_status(request_id):
     data = request.get_json(silent=True) or {}
@@ -155,7 +155,6 @@ def update_request_status(request_id):
         conn.close()
 
 
-# ✅ DELETE request
 @requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
 def delete_request(request_id):
     conn = get_connection()
@@ -169,12 +168,10 @@ def delete_request(request_id):
     return jsonify({"message": f"Request {request_id} deleted"}), 200
 
 
-# ✅ SEARCH requests
-# ✅ SEARCH requests (Filtered by Tutor)
 @requests_bp.route("/search", methods=["GET"])
 def search_requests():
     query = request.args.get("q", "").strip()
-    tutor_id = request.args.get("tutor_id", "").strip()  # 👈 Add tutor_id filter
+    tutor_id = request.args.get("tutor_id", "").strip()  
 
     if not tutor_id:
         return jsonify({"error": "Missing tutor_id"}), 400
@@ -184,7 +181,7 @@ def search_requests():
 
     try:
         if not query:
-            # If no search term, just return all pending requests for this tutor
+        
             sql = """
                 SELECT 
                     r.request_id,
@@ -203,7 +200,7 @@ def search_requests():
             """
             cur.execute(sql, (tutor_id,))
         else:
-            # Filter by tutor_id + match query
+          
             sql = """
                 SELECT 
                     r.request_id,
@@ -252,7 +249,7 @@ def search_requests():
         conn.close()
 
 
-# ✅ GET appointments for a tutor
+
 @requests_bp.route("/appointments/<tutor_id>", methods=["GET"])
 def get_appointments(tutor_id):
     conn = get_connection()
@@ -291,7 +288,7 @@ def get_appointments(tutor_id):
 
 
 
-# ✅ UPDATE request status and log history/notifications
+
 @requests_bp.route("/update-status-and-log/<int:request_id>", methods=["PUT"])
 def update_request_status_and_log(request_id):
     data = request.get_json(silent=True) or {}

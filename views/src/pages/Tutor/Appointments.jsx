@@ -14,56 +14,56 @@ useEffect(() => {
       console.log("🔹 Fetching logged-in user...");
       const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
       if (!resUser.ok) {
-        console.warn("❌ Not logged in, redirecting...");
+        console.warn(" Not logged in, redirecting...");
         window.location.href = "/api/auth/login";
         return;
       }
       const loggedInUser = await resUser.json();
-      console.log("✅ Logged in user:", loggedInUser);
+      console.log("Logged in user:", loggedInUser);
 
       const googleId = loggedInUser.sub;
 
       console.log("🔹 Fetching all tutees...");
       const resTutees = await fetch("/api/tutee/all");
       const tutees = await resTutees.json();
-      console.log("✅ Tutees:", tutees);
+      console.log(" Tutees:", tutees);
 
       const currentTutee = tutees.find(t => t.google_id === googleId);
       if (!currentTutee) {
-        console.error("❌ No tutee found for Google ID:", googleId);
+        console.error(" No tutee found for Google ID:", googleId);
         return;
       }
-      console.log("✅ Found tutee:", currentTutee);
+      console.log(" Found tutee:", currentTutee);
 
       const tuteeId = currentTutee.id_number;
 
       console.log("🔹 Fetching tutors...");
       const resTutors = await fetch("/api/tutor/all");
       const tutors = await resTutors.json();
-      console.log("✅ Tutors:", tutors);
+      console.log(" Tutors:", tutors);
 
       const currentTutor = tutors.find(t => t.tutor_id === tuteeId);
       if (!currentTutor) {
         console.error("❌ This user is not registered as a tutor.");
         return;
       }
-      console.log("✅ Found tutor:", currentTutor);
+      console.log(" Found tutor:", currentTutor);
 
       const tutorId = currentTutor.tutor_id;
 
       console.log("🔹 Fetching pending requests...");
       const resPending = await fetch(`/api/requests/pending/${tutorId}`);
       const pendingData = await resPending.json();
-      console.log("✅ Pending requests:", pendingData);
+      console.log(" Pending requests:", pendingData);
       setRows(pendingData);
 
       console.log("🔹 Fetching appointments...");
       const resAppointments = await fetch(`/api/requests/appointments/${tutorId}`);
       const appointmentsData = await resAppointments.json();
-      console.log("✅ Appointments:", appointmentsData);
+      console.log(" Appointments:", appointmentsData);
       setAppointments(appointmentsData);
     } catch (err) {
-      console.error("💥 Error in fetchData:", err);
+      console.error(" Error in fetchData:", err);
     }
   }
 
@@ -136,6 +136,37 @@ const handleSearch = async () => {
 
 const handleAccept = async (id) => {
   try {
+    // 🔹 Get logged-in user info
+    const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
+    if (!resUser.ok) throw new Error("User not authenticated");
+    const loggedInUser = await resUser.json();
+    const googleId = loggedInUser.sub;
+
+    // 🔹 Fetch all tutees
+    const resTutees = await fetch("/api/tutee/all");
+    const tutees = await resTutees.json();
+    const currentTutee = tutees.find((t) => t.google_id === googleId);
+
+    if (!currentTutee) {
+      console.error("❌ No tutee found for this user");
+      return;
+    }
+
+    const tuteeId = currentTutee.id_number;
+
+    //  Fetch tutors and find matching tutor_id
+    const resTutors = await fetch("/api/tutor/all");
+    const tutors = await resTutors.json();
+    const currentTutor = tutors.find((t) => t.tutor_id === tuteeId);
+
+    if (!currentTutor) {
+      console.error("=This user is not registered as a tutor.");
+      return;
+    }
+
+    const tutorId = currentTutor.tutor_id;
+
+    //  Approve the request
     const res = await fetch(`/api/requests/update-status/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -150,21 +181,21 @@ const handleAccept = async (id) => {
       return;
     }
 
-    // Remove request from pending requests
+    //  Remove from pending requests
     setRows((prev) => prev.filter((r) => r.request_id !== id));
 
-    // Fetch updated appointments
-    const tutorId = "2023-3984"; // replace with current tutor
+    // 🔹 Fetch updated appointments dynamically
     const apptRes = await fetch(`/api/requests/appointments/${tutorId}`);
     const appointments = await apptRes.json();
+    setAppointments(appointments);
 
-    // Update appointments state
-    setAppointments(appointments); // assuming you have useState for appointments
+    console.log(` Request ${id} accepted by tutor ${tutorId}`);
   } catch (err) {
     console.error("Network error updating status:", err);
     alert("Network error. Check console for details.");
   }
 };
+
 
 
 
@@ -427,57 +458,47 @@ const handleDecline = (id) => {
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
       }}
     >
-      <div className="container my-5">
-        {appointments.length === 0 ? (
-          <p style={{ color: "white", textAlign: "center" }}>
-            No appointments available.
-          </p>
-        ) : (
-          <div
-            className="d-flex flex-wrap justify-content-center"
-            style={{ gap: "3rem" }}
-          >
-            {appointments.map((app) => (
-              <div
-                className="card"
-                style={{ width: "23rem", minHeight: "400px", cursor: "pointer" }}
-                key={app.request_id}
-                onClick={() => setSelectedApp(app)}
-              >
-                <img
-                  className="card-img-top"
-                  src={placeholderImage}
-                  alt="Card image cap"
-                  style={{ objectFit: "cover", height: "250px" }}
-                />
-                <div className="card-body">
-                  <h5 className="card-title">Subject Code: {app.course_code}</h5>
-                  <p className="card-text">
-  Tutee: {app.first_name} {app.middle_name} {app.last_name}
-</p>
+      <div className="appointments-wrapper container my-5"
+      >
+  {appointments.length === 0 ? (
+    <p className="no-appointments">No appointments available.</p>
+  ) : (
+    <div className="appointments-scroll d-flex flex-wrap justify-content-center">
+      {appointments.map((app) => (
+        <div
+          className="card appointment-card"
+          key={app.request_id}
+          onClick={() => setSelectedApp(app)}
+        >
+          <img
+            className="card-img-top"
+            src={placeholderImage}
+            alt="Card image cap"
+          />
+          <div className="card-body">
+            <h5 className="card-title">Subject Code: {app.course_code}</h5>
+            <p className="card-text">
+              Tutee: {app.first_name} {app.middle_name} {app.last_name}
+            </p>
 
-
-                  <div
-                    className="card px-2 px-sm-3 px-md-1"
-                    style={{ border: "none", boxShadow: "none" }}
-                  >
-                    <div className="card-body text-end">
-                      <p className="card-text mb-1">{app.appointment_date}</p>
-                      <p className="card-text">
-                        {app.start_time} - {app.end_time}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer d-flex justify-content-between">
-                  <small className="text-muted">Session started</small>
-                  <div></div>
-                </div>
+            <div className="card px-2 px-sm-3 px-md-1 border-0 shadow-none">
+              <div className="card-body text-end">
+                <p className="card-text mb-1">{app.appointment_date}</p>
+                <p className="card-text">
+                  {app.start_time} - {app.end_time}
+                </p>
               </div>
-            ))}
+            </div>
           </div>
-        )}
-      </div>
+          <div className="card-footer d-flex justify-content-between">
+            <small className="text-muted">Session started</small>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
 
       {/* Modal overlay */}
       {selectedApp && (
@@ -526,17 +547,27 @@ const handleDecline = (id) => {
               alt="Card image cap"
               style={{ objectFit: "cover", height: "300px" }}
             />
-            <div className="card-body">
-              <h5 className="card-title">
-                Subject Code: {selectedApp.course_code}
-              </h5>
-              <p className="card-text">Tutee: {selectedApp.name}</p>
-              <p className="card-text">
-                {selectedApp.start_time} - {selectedApp.end_time}
-              </p>
-              <p className="card-text">Date: {selectedApp.appointment_date}</p>
-              <p className="card-text">Course: {selectedApp.course_code}</p>
-            </div>
+          <div className="card-body">
+  <p>
+    <strong>Subject Code:</strong> {selectedApp?.course_code || "N/A"}
+  </p>
+  <p className="card-text">
+    <strong>Tutee:</strong>{" "}
+    {selectedApp?.first_name || ""}{" "}
+    {selectedApp?.middle_name || ""}{" "}
+    {selectedApp?.last_name || selectedApp?.name || ""}
+  </p>
+  <p className="card-text">
+    {selectedApp?.start_time || "N/A"} - {selectedApp?.end_time || "N/A"}
+  </p>
+  <p className="card-text">
+    <strong>Date:</strong> {selectedApp?.appointment_date || "N/A"}
+  </p>
+  <p className="card-text">
+    <strong>Course:</strong> {selectedApp?.course_code || "N/A"}
+  </p>
+</div>
+
           </div>
         </div>
       )}

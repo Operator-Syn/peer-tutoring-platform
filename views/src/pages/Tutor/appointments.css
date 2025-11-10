@@ -1,4 +1,58 @@
-/* General containers */
+
+
+.appointments-wrapper {
+  position: relative;
+  max-height: 80vh; 
+  overflow-y: auto; 
+  background-color: #f8f9ff;
+ 
+
+  padding: 2rem;
+}
+
+
+.appointments-wrapper::-webkit-scrollbar {
+  width: 10px;
+}
+
+.appointments-wrapper::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 5px;
+}
+
+.appointments-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+
+.no-appointments {
+  color: white;
+  text-align: center;
+}
+
+
+.appointments-scroll {
+  gap: 3rem;
+}
+
+
+.appointment-card {
+  width: 23rem;
+  min-height: 400px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.appointment-card:hover {
+  transform: translateY(-5px);
+}
+
+.appointment-card .card-img-top {
+  object-fit: cover;
+  height: 250px;
+}
+
+
 .schedules {
   min-height: 100px; 
   background-color: #ffffff; 
@@ -24,19 +78,19 @@
   width: 100%;
   padding-bottom: 5vh;
   
-  padding-top: 9rem; /* adjust */
+  padding-top: 9rem; 
 
 
 }
 
-/* Each row card */
+
 .custom-alert {
   background-color: #F8F9FF;
   border: 2px solid #4956AD;
   border-radius: 12px;
   width: 100%;
   display: flex;
-  flex-direction: column; /* stack on mobile */
+  flex-direction: column; 
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -45,19 +99,18 @@
   transition: all 0.2s ease;
 }
 
-/* Avatar + info wrapper */
+
 .profile-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-right: 1rem; /* spacing from box name/message */
+  margin-right: 1rem; 
 }
 
-/* Profile avatar */
 
 
-/* Profile text under avatar */
+
 .profile-info {
   display: flex;
   flex-direction: column;
@@ -76,27 +129,27 @@
   font-weight: bold;
 }
 
-/* Box name next to avatar-wrapper */
+
 .box-name {
   font-weight: bold;
   font-size: 0.9rem;
 }
 
-/* Message area */
+
 .message-cell {
   flex-grow: 1;
   text-align: center;
   margin: 0.5rem 0;
 }
 
-/* Buttons container */
+
 .actions-cell {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-/* Buttons styling (optional) */
+
 .actions-cell .btn {
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
@@ -109,12 +162,11 @@
 .form-control:focus {
   box-shadow: none !important;
   outline: none !important;
-    border-color: #ced4da !important; /* keep the normal border color */
+    border-color: #ced4da !important; 
 }
 
 
-/* Responsive: stack items on small screens */
-/* Buttons under card break to full width on small screens */
+
 @media (max-width: 768px) {
   .action-buttons {
     position: static !important;
@@ -129,8 +181,6 @@
   }
 }
 
-/* Default (desktop/tablet): stacked layout stays unchanged */
-/* Info + Date/Time responsive alignment */
 .info-section,
 .datetime-section {
   display: flex;
@@ -140,7 +190,7 @@
   padding: 0.5rem 1rem;
 }
 
-/* Desktop layout: side by side */
+
 @media (min-width: 768px) {
   .alert.custom-alert {
     display: flex;
@@ -160,20 +210,20 @@
   }
 }
 
-/* Mobile layout: stack nicely */
+
 @media (max-width: 767px) {
   .alert.custom-alert {
     flex-direction: column;
-    align-items: center; /* center everything */
-    text-align: center;  /* prevent weird text wrapping */
-    padding: 1rem;       /* reduce inner spacing */
+    align-items: center; 
+    text-align: center;  
+    padding: 1rem;       
   }
 
   .info-section,
   .datetime-section {
     width: 100%;
     margin: 0.5rem 0;
-    text-align: center;  /* prevent text from hugging sides */
+    text-align: center; 
   }
 
   .datetime-section {
@@ -181,15 +231,15 @@
     padding-top: 1rem;
   }
 
-  /* Ensure avatar boxes scale properly */
+
   .custom-alert .text-center.me-52 {
     margin-right: 0 !important;
     margin-bottom: 1rem !important;
   }
 
-  /* Fix wide buttons overlapping */
+
   .action-buttons {
-    position: static !important; /* no absolute position on mobile */
+    position: static !important; 
     flex-direction: column;
     gap: 0.5rem;
     width: 100%;
@@ -197,11 +247,11 @@
   }
 
   .action-buttons .btn {
-    width: 90%; /* fit nicely in small screens */
+    width: 90%; 
     padding: 12px 0 !important;
   }
 }
-/* MOBILE FIX FOR SMALL SCREENS (≤ 480px) */
+
 @media (max-width: 480px) {
   .requests {
     width: 100%;
@@ -210,14 +260,14 @@
 
   .boxes-wrapper {
     padding-top: 6rem;
-    align-items: center; /* center all cards */
+    align-items: center;
   }
 
   .alert.custom-alert {
     flex-direction: column !important;
-    align-items: center !important; /* center all children horizontally */
+    align-items: center !important; 
     justify-content: center !important;
-    text-align: center !important;  /* center text content */
+    text-align: center !important; 
     width: 100%;
     padding: 1rem !important;
   }
@@ -246,7 +296,7 @@
 
   .action-buttons {
     flex-direction: column !important;
-    align-items: center !important; /* center buttons */
+    align-items: center !important; 
     justify-content: center !important;
     width: 100% !important;
     gap: 0.5rem;
@@ -254,7 +304,7 @@
   }
 
   .action-buttons .btn {
-    width: 80% !important; /* slightly smaller than full width for visual balance */
+    width: 80% !important; 
     font-size: 0.9rem !important;
     padding: 12px 0 !important;
   }
