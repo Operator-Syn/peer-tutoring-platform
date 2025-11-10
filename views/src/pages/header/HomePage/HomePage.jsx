@@ -17,6 +17,49 @@ export default function HomePage() {
     const navigate = useNavigate();
     const loginCheck = useLoginCheck({route: "/Appointments"});
 
+   const handleAppointmentsClick = async () => {
+  const isLoggedIn = await loginCheck();
+  if (!isLoggedIn) return;
+
+  try {
+    const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
+    if (resUser.status === 401) {
+      window.location.href = "/api/auth/login";
+      return;
+    }
+    const loggedInUser = await resUser.json();
+
+    // Fetch all tutees
+    const tutees = await fetch("/api/tutee/all").then(r => r.json());
+    const userData = tutees.find(u => u.google_id === loggedInUser.sub);
+
+    // Fetch all tutors
+    const tutors = await fetch("/api/tutor/all").then(r => r.json());
+    const tutorData = tutors.find(t => t.tutor_id === userData?.id_number);
+
+    // Build a JSON object that includes everything you need
+    const userJSON = {
+      id_number: userData?.id_number,
+      google_id: userData?.google_id,
+      name: userData?.name,
+      isTutor: !!tutorData,
+      tutor_id: tutorData?.tutor_id || null
+    };
+
+    console.log("User JSON:", userJSON);
+
+    // You can also store this in localStorage, context, or pass it to the next page
+    localStorage.setItem("userInfo", JSON.stringify(userJSON));
+
+    // Then navigate
+    navigate(userJSON.isTutor ? "/TutorAppointments" : "/Appointments");
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
     return (
         <>  
             <div className='home container-fluid column align-center height-100'>
@@ -39,9 +82,9 @@ export default function HomePage() {
                             <BasicButton onClick={() => {
                                 loginCheck();
                             }}>Start Learning</BasicButton>
-                            <BasicButton onClick={() => {
-                                loginCheck();
-                            }} light={true}>Appointments</BasicButton>
+                            <BasicButton onClick={handleAppointmentsClick} light={true}>
+                                Appointments
+                            </BasicButton>
                         </div>
                     </div>
 

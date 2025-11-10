@@ -9,7 +9,8 @@ from api.app_auth import auth_bp, oauth
 from datetime import timedelta
 from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
 from controllers.requestscontroller.requestscontroller import requests_bp  
-
+from api.getuser import tutee_bp
+from api.getuser import tutor_bp
 
 # Existing controllers
 
@@ -20,6 +21,8 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath
 CORS(app, supports_credentials=True)
 app.secret_key = Config.SECRET_KEY  # required for session management
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+
+
 
 oauth.init_app(app)
 oauth.register(
@@ -35,6 +38,8 @@ app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications
 app.register_blueprint(bp_appointments)
 app.register_blueprint(requests_bp) 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
+app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 # ---------- Protect all API routes ----------
 
 # @app.before_request

@@ -9,7 +9,7 @@ function Appointments() {
   const [searchTerm, setSearchTerm] = useState("");
 
 useEffect(() => {
-  const tutorId = "2023-0639"; // or dynamically set this
+  const tutorId = "2023-3984"; // or dynamically set this
   fetch(`/api/requests/pending/${tutorId}`)
     .then((res) => {
       if (!res.ok) throw new Error("Network response was not ok");
@@ -23,7 +23,7 @@ useEffect(() => {
  
 const fetchAppointments = async () => {
   try {
-    const tutorId = "2023-0639";
+    const tutorId = "2023-3984";
     const res = await fetch(`/api/requests/appointments/${tutorId}`);
     if (!res.ok) throw new Error("Failed to fetch appointments");
     const data = await res.json();
@@ -40,7 +40,7 @@ const handleSearch = async () => {
 
     // If empty, reload pending requests for the tutor
     if (!query) {
-      const tutorId = "2023-0639";
+      const tutorId = "2023-3984";
       const res = await fetch(`/api/requests/pending/${tutorId}`);
       const data = await res.json();
       setRows(data);
@@ -81,7 +81,7 @@ const handleAccept = async (id) => {
     setRows((prev) => prev.filter((r) => r.request_id !== id));
 
     // Fetch updated appointments
-    const tutorId = "2023-0639"; // replace with current tutor
+    const tutorId = "023-3984"; // replace with current tutor
     const apptRes = await fetch(`/api/requests/appointments/${tutorId}`);
     const appointments = await apptRes.json();
 
@@ -373,13 +373,16 @@ const handleDecline = (id) => {
               >
                 <img
                   className="card-img-top"
-                   src={placeholderImage}
+                  src="placeholderImage"
                   alt="Card image cap"
                   style={{ objectFit: "cover", height: "250px" }}
                 />
                 <div className="card-body">
                   <h5 className="card-title">Subject Code: {app.course_code}</h5>
-                  <p className="card-text">Tutee: {app.name}</p>
+                  <p className="card-text">
+  Tutee: {app.first_name} {app.middle_name} {app.last_name}
+</p>
+
 
                   <div
                     className="card px-2 px-sm-3 px-md-1"
@@ -446,7 +449,7 @@ const handleDecline = (id) => {
             </button>
             <img
               className="card-img-top"
-                src={placeholderImage}
+              src="placeholderImage"
               alt="Card image cap"
               style={{ objectFit: "cover", height: "300px" }}
             />
