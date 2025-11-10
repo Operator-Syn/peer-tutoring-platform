@@ -16,6 +16,7 @@ import { useLoginCheck } from '../../../hooks/useLoginCheck';
 export default function HomePage() {
     const navigate = useNavigate();
     const loginCheck = useLoginCheck({route: "/Appointments"});
+    const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({route: "/CreateAppointment"})
 
     return (
         <>  
@@ -37,7 +38,7 @@ export default function HomePage() {
 
                         <div className='row gap-3 align-items-center justify-content-center mt-4'>
                             <BasicButton onClick={() => {
-                                loginCheck();
+                                checkIfLoggedinBeforeCreatingAppointment();
                             }}>Start Learning</BasicButton>
                             <BasicButton onClick={() => {
                                 loginCheck();
