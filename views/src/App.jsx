@@ -10,6 +10,7 @@ import Messages from "./pages/header/Messages";
 import Report from "./pages/header/Report";
 import Apply from "./pages/profile/apply";
 import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppointmentsPage";
+import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
 
@@ -28,6 +29,8 @@ function App() {
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
+            <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
+            
           </Route>
         </Route>
       </Routes>
