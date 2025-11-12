@@ -7,46 +7,55 @@ admin_dashboard_bp = Blueprint("admin_dashboard", __name__)
 def get_all_tutor_applications():
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cur = conn.cursor()
 
-        cursor.execute("""
+        cur.execute("""
             SELECT 
                 ta.application_id,
                 ta.student_id,
-                CONCAT(t.first_name, ' ', t.last_name) AS student_name,
-                t.program_code AS college,
                 ta.status,
                 ta.date_submitted,
                 ta.cor_filename,
+                t.first_name,
+                t.middle_name,
+                t.last_name,
+                t.program_code AS program,
                 ARRAY_AGG(ac.course_code) FILTER (WHERE ac.course_code IS NOT NULL) AS courses
             FROM tutor_application ta
             JOIN tutee t ON ta.student_id = t.id_number
             LEFT JOIN application_courses ac ON ta.application_id = ac.application_id
-            GROUP BY ta.application_id, ta.student_id, t.first_name, t.last_name, 
-                     t.program_code, ta.status, ta.date_submitted, ta.cor_filename
+            GROUP BY ta.application_id, ta.student_id, ta.status, ta.date_submitted,
+                     ta.cor_filename, t.first_name, t.middle_name, t.last_name, t.program_code
             ORDER BY ta.date_submitted DESC
         """)
 
         applications = []
-        for row in cursor.fetchall():
+        for row in cur.fetchall():
             applications.append({
                 "application_id": row[0],
                 "student_id": row[1],
-                "student_name": row[2],
-                "college": row[3],
-                "status": row[4],
-                "date_submitted": row[5],
-                "cor_filename": row[6],
-                "courses": row[7] if row[7] else []
+                "status": row[2],
+                "date_submitted": row[3].isoformat(),
+                "cor_filename": row[4],
+                "student_name": f"{row[5]} {row[6] or ''} {row[7]}".strip(),
+                "program": row[8],
+                "courses": row[9] or []
             })
 
-        cursor.close()
+        cur.close()
         conn.close()
 
-        return jsonify({"applications": applications})
+        return jsonify({
+            "success": True,
+            "applications": applications
+        }), 200
+
     except Exception as e:
-        print("Error fetching tutor applications:", e)
-        return jsonify({"error": str(e)}), 500
+        print("Error loading tutor applications:", e)
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @admin_dashboard_bp.route("/api/tutor-applications/admin/statistics", methods=["GET"])
 def get_admin_statistics():

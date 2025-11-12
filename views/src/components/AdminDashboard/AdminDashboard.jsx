@@ -18,6 +18,9 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date_desc');
   const [processingId, setProcessingId] = useState(null);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
 
@@ -63,6 +66,54 @@ const AdminDashboard = () => {
       setStatistics(getMockStatistics());
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = (applicationId, newStatus) => {
+    const app = applications.find(a => a.application_id === applicationId);
+    if (!app) return;
+
+    setSelectedApplication(app);
+    setConfirmAction(newStatus);
+    setShowConfirm(true);
+  };
+
+  const confirmActionHandler = async (applicationId, action) => {
+    try {
+      setProcessingId(applicationId);
+
+      const endpoint =
+        action === 'APPROVED'
+          ? `${API_BASE_URL}/admin/applications/${applicationId}/approve`
+          : `${API_BASE_URL}/admin/applications/${applicationId}/reject`;
+
+      const response = await fetch(endpoint, { method: 'POST' });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to update status');
+      }
+
+      // update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.application_id === applicationId
+            ? { ...app, status: data.data.status }
+            : app
+        )
+      );
+
+      setShowConfirm(false);
+      setSelectedApplication(null);
+      setConfirmAction(null);
+      fetchData();
+
+      alert(`Application ${action === 'APPROVED' ? 'approved' : 'rejected'} successfully.`);
+    } catch (err) {
+      console.error('Error updating application:', err);
+      alert(err.message);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -296,6 +347,56 @@ const AdminDashboard = () => {
           ))}
         </div>
       </div>
+      {showConfirm && selectedApplication && (
+        <div className="modal fade show" style={{ display: 'block' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg" style={{ borderRadius: '12px' }}>
+              <div className="modal-header bg-primary text-white" style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
+                <h5 className="modal-title">
+                  {confirmAction === 'APPROVED' ? 'Approve Application' : 'Reject Application'}
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowConfirm(false)}></button>
+              </div>
+
+              <div className="modal-body text-center p-4">
+                <p className="fs-5 text-muted mb-4">
+                  Are you sure you want to 
+                  <strong> {confirmAction === 'APPROVED' ? 'approve' : 'reject'} </strong>
+                  this tutor application?
+                </p>
+
+                <div className="alert alert-light text-start border-0" style={{ background: '#f8f9fa' }}>
+                  <strong>{selectedApplication.student_name || selectedApplication.student_id}</strong><br />
+                  Program: {selectedApplication.program || 'N/A'}<br />
+                  Courses: {selectedApplication.courses?.join(', ') || 'None'}
+                </div>
+              </div>
+
+              <div className="modal-footer border-0 d-flex justify-content-center gap-3 pb-4">
+                <button
+                  className="btn btn-secondary px-4"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className={`btn px-4 ${confirmAction === 'APPROVED' ? 'btn-success' : 'btn-danger'}`}
+                  onClick={() => confirmActionHandler(selectedApplication.application_id, confirmAction)}
+                  disabled={processingId === selectedApplication.application_id}
+                >
+                  {processingId === selectedApplication.application_id ? (
+                    <span className="spinner-border spinner-border-sm"></span>
+                  ) : (
+                    confirmAction === 'APPROVED' ? 'Approve' : 'Reject'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </div>
+      )}
     </div>
   );
 };
