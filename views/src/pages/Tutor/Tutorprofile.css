@@ -122,13 +122,25 @@
 }
 
 /* Base layout for the two-column section */
+
 .responsive-tutor-layout {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2rem;
-  transition: all 0.3s ease;
-   
+  flex-wrap: nowrap; /* keep side by side on larger screens */
+  align-items: flex-center;
+  justify-content: space-between; /* default on large screens */
+  background-color: #dbdce4ff;
+  box-shadow: 0 8px 10px rgba(0, 0, 0, 0.25);
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px;
+}
+
+/* Center content on smaller screens */
+@media (max-width: 992px) {
+  .responsive-tutor-layout {
+    justify-content: center; /* center horizontally */
+    flex-wrap: wrap;         /* allow wrapping if needed */
+  }
 }
 
 /* Each column (left/right) */

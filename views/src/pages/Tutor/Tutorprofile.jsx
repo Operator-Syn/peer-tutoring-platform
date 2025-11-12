@@ -27,6 +27,15 @@ const [activeBadge, setActiveBadge] = useState(""); // to know which badge was c
 const [selectedBadges, setSelectedBadges] = useState([]);
 const [isShortInfoModalOpen, setIsShortInfoModalOpen] = useState(false);
 const [shortInfo, setShortInfo] = useState(tutor?.short_info || ""); // 
+const [badgeCounts, setBadgeCounts] = useState({
+
+
+  friendly: 0,
+  punctual: 0,
+  engaging: 0,
+  proficient: 0,
+});
+  const [isCoursesModalOpen, setIsCoursesModalOpen] = useState(false);
 
 const toggleBadge = (badgeName) => {
   setSelectedBadges((prev) =>
@@ -74,7 +83,41 @@ const fetchExistingBadges = async () => {
 };
 
 
-// Inside useEffect to fetch logged-in user
+//this gets the tutor's badge count
+useEffect(() => {
+  const fetchBadgeCounts = async () => {
+    if (!tutor?.tutor_id) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/tutor/badge_counts/${tutor.tutor_id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBadgeCounts({
+          friendly: data.friendly_count,
+          punctual: data.punctual_count,
+          engaging: data.engaging_count,
+          proficient: data.proficient_count
+        });
+      } else {
+        console.error("Failed to fetch badge counts:", data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  fetchBadgeCounts();
+}, [tutor]);
+
+
+
+
+
+
+useEffect(() => {
+  if (tutor) {
+    setShortInfo(tutor.about || ""); // or tutor.short_info depending on your API
+  }
+}, [tutor]);
+// Inside useEffect to fetch ylogged-in user
 useEffect(() => {
   const fetchUser = async () => {
     try {
@@ -143,11 +186,40 @@ const openBadgeModal = async () => {
       boxShadow: "none", 
     }}
   >
-   <div className="tutor-header text-center">
+
+
+
+
+ <div className="tutor-header text-center" style={{ position: "relative" }}>
   <img src={profile} alt="Tutor Profile" className="tutor-profile-img" />
   <p className="tutor-name">{tutor.first_name} {tutor.middle_name} {tutor.last_name}</p>
   <h1 className="tutor-title">Tutor</h1> 
-    <div
+
+  {/* Report Button */}
+{!isCurrentUserTutor && (
+  <button
+    onClick={() => alert("Report functionality coming soon!")}
+    style={{
+      position: "absolute",
+      top: "-1.5rem",    // slightly above the card
+      left: "-3rem",      // start of the card with some margin
+      padding: "0.5rem 1rem",
+      backgroundColor: "#ffffffff",
+      color: "#4F62DE",
+      border: "none",
+      borderRadius: "5px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      fontSize: "0.9rem",
+      textDecoration: "underline"
+    }}
+  >
+    Report
+  </button>
+)}
+
+
+  <div
     style={{
       display: "flex",
       justifyContent: "space-between",
@@ -156,34 +228,98 @@ const openBadgeModal = async () => {
     }}
   >
     <span></span> {/* empty left side if you want carousel to fill remaining space */}
-    <p style={{ cursor: "pointer", color: "#4F62DE", margin: 0,textDecoration: "underline" }}>See all</p>
+   <p
+  style={{ cursor: "pointer", color: "#4F62DE", margin: 0, textDecoration: "underline" }}
+  onClick={() => setIsCoursesModalOpen(true)}
+>
+  See all
+</p>
+
+{isCoursesModalOpen && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    }}
+    onClick={() => setIsCoursesModalOpen(false)} // close on background click
+  >
+    <div
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: "10px",
+        padding: "20px",
+        maxWidth: "600px",
+        width: "90%",
+        maxHeight: "80%",
+        overflowY: "auto",
+        
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+      }}
+      onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
+    >
+      <h3 style={{ textAlign: "center", marginBottom: "10px",color: "#4956AD", }}>All Courses</h3>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
+        {courses.length > 0 ? (
+          courses.map((course, index) => (
+            <div
+              key={index}
+              style={{
+                minWidth: "120px",
+                padding: "10px",
+                borderRadius: "8px",
+                border: "2px solid #4956AD",
+                backgroundColor: "#F8F9FF",
+                color: "#4956AD",
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              {course}
+            </div>
+          ))
+        ) : (
+          <p>No courses available.</p>
+        )}
+      </div>
+      <button
+        onClick={() => setIsCoursesModalOpen(false)}
+        style={{
+          marginTop: "15px",
+          padding: "8px 15px",
+          borderRadius: "5px",
+          border: "none",
+          backgroundColor: "#4F62DE",
+          color: "#fff",
+          cursor: "pointer",
+          alignSelf: "center",
+        }}
+      >
+        Close
+      </button>
+    </div>
   </div>
-   {/* Carousel */}
-{/* Carousel */}
-{/* Carousel */}
- <div style={{ display: "flex", overflowX: "auto", gap: "10px", padding: "10px" }}>
-      {courses.length > 0 ? (
-        courses.map((course, index) => (
-          <div
-            key={index}
-            style={{
-              flex: "0 0 auto",
-              width: "150px",
-              height: "55px",
-              backgroundColor: "#F8F9FF",
-              border: "3px solid #4956AD",
-              color: "#4956AD",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: "10px",
-            }}
-          >
-            {course}
-          </div>
-        ))
-      ) : (
+)}
+
+
+  </div>
+
+  {/* Carousel */}
+  <div style={{ display: "flex", overflowX: "auto", gap: "10px", padding: "10px" }}>
+    {courses.length > 0 ? (
+      courses.map((course, index) => (
         <div
+          key={index}
           style={{
             flex: "0 0 auto",
             width: "150px",
@@ -197,24 +333,37 @@ const openBadgeModal = async () => {
             borderRadius: "10px",
           }}
         >
-          No Courses
+          {course}
         </div>
-      )}
-    </div>
+      ))
+    ) : (
+      <div
+        style={{
+          flex: "0 0 auto",
+          width: "150px",
+          height: "55px",
+          backgroundColor: "#F8F9FF",
+          border: "3px solid #4956AD",
+          color: "#4956AD",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: "10px",
+        }}
+      >
+        No Courses
+      </div>
+    )}
+  </div>
 
-
-
-<h1 className="tutor-title mt-4">Subjects Offered</h1> 
-
-
-
+  <h1 className="tutor-title mt-4">Subjects Offered</h1>
 </div>
 
 
 
 
     {/* Small Boxes */}
-    <div className="d-flex flex-wrap gap-3 mb-4 justify-content-e"></div>
+    <div className="d-flex flex-wrap gap-5 mb-5 justify-content-e"></div>
   </div>
 </div>
 
@@ -230,6 +379,7 @@ const openBadgeModal = async () => {
       minHeight: "500px",
       width: "100%",         
       maxWidth: "900px",     
+      
       marginLeft: "10px",   
       boxSizing: "border-box",
        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.5)"
@@ -239,16 +389,18 @@ const openBadgeModal = async () => {
 <div
   className="responsive-tutor-layout"
   style={{
-   
     display: "flex",
-    flexWrap: "nowrap", // ✅ keeps them side by side
-    alignItems: "flex-center",
-    justifyContent: "space-between",
-     
+    flexWrap: "wrap", // allow wrapping on smaller screens
+    alignItems: "center", // vertically center children
+    justifyContent: "center", // horizontally center children
     gap: "20px",
-    overflowX: "auto", // ✅ prevents overflow cutoff if needed
+    borderRadius:"20px",
+    overflowX: "auto",
+    backgroundColor: "#dbdce4ff",
+    padding: "10px",
   }}
 >
+
   {/* Left Column */}
   <div className="responsive-column">
 
@@ -327,17 +479,58 @@ const openBadgeModal = async () => {
   </div>
 
 
-    <div
-      className="card p-4 rounded flex-grow-1"
-      style={{
-        backgroundColor: "#F8F9FF",
-         border: "3px solid #4956AD",
-        minWidth: "250px",
-        maxWidth: "450px",
-        minHeight: "255px",
-         boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)", 
-      }}
-    ><h4 className="displays">Badge Count</h4></div>
+<div
+  className="card p-4 rounded flex-grow-1"
+  style={{
+    backgroundColor: "#F8F9FF",
+    border: "3px solid #4956AD",
+    minWidth: "250px",
+    maxWidth: "450px",
+    minHeight: "255px",
+    boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)", 
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "15px",
+  }}
+>
+  <h4 className="displays">Recognition Count</h4>
+
+  <div 
+  style={{ 
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", // responsive
+    gap: "15px",
+    width: "100%",
+  }}
+>
+  {/* Badge cards */}
+  {[
+    { label: "Friendly", count: badgeCounts.friendly },
+    { label: "Punctual", count: badgeCounts.punctual },
+    { label: "Engaging", count: badgeCounts.engaging },
+    { label: "Proficient", count: badgeCounts.proficient },
+  ].map((badge, index) => (
+    <div key={index} style={{
+      backgroundColor: "#F8F9FF",
+      border: "3px solid #4956AD",
+      borderRadius: "8px",
+      padding: "10px",
+      textAlign: "center",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
+    }}>
+      <p style={{ margin: 0, fontWeight: "bold", color: "#333C7B" }}>{badge.label}</p>
+      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: "bold" }}>{badge.count}</p>
+    </div>
+  ))}
+</div>
+
+</div>
+
+
+
+
 
 
 
@@ -354,7 +547,7 @@ const openBadgeModal = async () => {
     border: "3px solid #4956AD",
     minWidth: "400px",
     maxWidth: "450px",
-    height: "510px", // fixed height
+    height: "545px", // fixed height
     cursor: "pointer",
     boxShadow: "0 8px 20px rgba(0, 0, 0, 0.25)", // stronger shadow
     display: "flex",
@@ -505,7 +698,7 @@ const openBadgeModal = async () => {
   >
     <div className="column justify-content-start">
       {/* Match left column width (col-md-4 like the profile card) */}
-      <div className="col-125 col-md-4 d-flex justify-start">
+      <div className="col-12 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
 

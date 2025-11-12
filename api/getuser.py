@@ -185,6 +185,9 @@ def give_badges():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
+
 @tutor_bp.route("/badges/<tutor_id>/<tutee_id>", methods=["GET"])
 def get_badge_status(tutor_id, tutee_id):
     try:
@@ -200,6 +203,29 @@ def get_badge_status(tutor_id, tutee_id):
                 if not badge:
                     return jsonify({"message": "No badges yet"}), 404
         return jsonify(badge), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+# === GET TOTAL BADGES PER TUTOR ===
+@tutor_bp.route("/badge_counts/<tutor_id>", methods=["GET"])
+def get_badge_counts(tutor_id):
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT
+                        COALESCE(SUM(CASE WHEN friendly THEN 1 ELSE 0 END), 0) AS friendly_count,
+                        COALESCE(SUM(CASE WHEN punctual THEN 1 ELSE 0 END), 0) AS punctual_count,
+                        COALESCE(SUM(CASE WHEN engaging THEN 1 ELSE 0 END), 0) AS engaging_count,
+                        COALESCE(SUM(CASE WHEN proficient THEN 1 ELSE 0 END), 0) AS proficient_count
+                    FROM tutor_badges
+                    WHERE tutor_id = %s
+                """, (tutor_id,))
+                counts = cursor.fetchone()
+        return jsonify(counts), 200
     except Exception as e:
         import traceback
         traceback.print_exc()
