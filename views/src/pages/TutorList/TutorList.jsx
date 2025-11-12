@@ -9,6 +9,11 @@ import { Form, Card, Button } from 'react-bootstrap';
 const availabilityOptions = [
 	{ value: 'monday', label: 'Monday' },
 	{ value: 'tuesday', label: 'Tuesday' },
+	{ value: 'wednesday', label: 'Wednesday' },
+	{ value: 'thursday', label: 'Thursday' },
+	{ value: 'friday', label: 'Friday' },
+	{ value: 'saturday', label: 'Saturday' },
+	{ value: 'sunday', label: 'Sunday' }
 	// ...
 ];
 
@@ -19,17 +24,17 @@ export default function TutorList() {
 	const [tutors, setTutors] = useState([]);
 	const [courseOptions, setCourseOptions] = useState([]);
 	const [courseSearch, setCourseSearch] = useState('');
+	const [availabilitySearch, setAvailabilitySearch] = useState('');
 
 	useEffect(() => {
-		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}`)
+		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}`)
 			.then(res => res.json())
 			.then(data => {
-				console.log("Fetched tutors data:", data); // Debugging line
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
 			})
 			.catch(error => console.error("Error fetching tutors:", error));
-	}, [page, courseSearch]);
+	}, [page, courseSearch, availabilitySearch]);
 
 	const fetchCourses = (search = '') => {
 		fetch(`/api/tutor-list/courses?search=${encodeURIComponent(search)}`)
@@ -49,10 +54,10 @@ export default function TutorList() {
 
 				<div className='d-flex gap-3 justify-content-center'>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
-						<Select options={courseOptions} isSearchable isClearable placeholder="Course" onInputChange={e => {fetchCourses(e);}} onChange={e => {setCourseSearch(e);setPage(1);console.log(e);}} />
+						<Select options={courseOptions} isSearchable isClearable placeholder="Course" onInputChange={e => {fetchCourses(e);}} onChange={e => {setCourseSearch(e);setPage(1);}} />
 					</div>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
-						<Select options={availabilityOptions} isClearable placeholder="Availability" />
+						<Select options={availabilityOptions} isClearable isSearchable={false} placeholder="Availability" onChange={e => {setAvailabilitySearch(e);setPage(1);}} />
 					</div>
 				</div>
 

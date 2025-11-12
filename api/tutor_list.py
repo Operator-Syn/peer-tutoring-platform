@@ -10,53 +10,60 @@ def get_tutor_list():
         page = int(request.args.get('page', 1))
         per_page = 9
         offset = (page - 1) * per_page
-        course = request.args.get('course', '').strip().upper()
+        course = request.args.get('course', '').strip()
+        availability = request.args.get('availability', '').strip().upper()  # Accepts e.g. 'MONDAY'
 
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Build base query and params
+                base_query = """
+                    SELECT t.* FROM tutor t
+                """
+                joins = []
+                wheres = ["t.status = 'ACTIVE'"]
+                params = []
 
-                if course:  # <-- Added: filter by course if provided
-                    cursor.execute(
-                        """
-                        SELECT t.* FROM tutor t
-                        JOIN teaches te ON t.tutor_id = te.tutor_id
-                        WHERE t.status = 'ACTIVE' AND te.course_code = %s
-                        LIMIT %s OFFSET %s
-                        """,
-                        (course, per_page, offset)
-                    )
-                    tutors = cursor.fetchall()
-                    print("DEBUG tutors with course filter:", tutors)  # Debugging line
-                    cursor.execute(
-                        """
-                        SELECT COUNT(DISTINCT t.tutor_id) FROM tutor t
-                        JOIN teaches te ON t.tutor_id = te.tutor_id
-                        WHERE t.status = 'ACTIVE' AND te.course_code = %s
-                        """,
-                        (course,)
-                    )
-                else:
+                if course:
+                    joins.append("JOIN teaches te ON t.tutor_id = te.tutor_id")
+                    wheres.append("te.course_code = %s")
+                    params.append(course)
+                if availability:
+                    joins.append("JOIN availability a ON t.tutor_id = a.tutor_id")
+                    wheres.append("a.day_of_week = %s")
+                    params.append(availability.upper())
 
-                    cursor.execute(
-                        "SELECT * FROM tutor WHERE status = 'ACTIVE' LIMIT %s OFFSET %s",
-                        (per_page, offset)
-                    )
-                    tutors = cursor.fetchall()
-                    cursor.execute("SELECT COUNT(*) FROM tutor WHERE status = 'ACTIVE'")
+                # Combine query
+                if joins:
+                    base_query += " " + " ".join(joins)
+                if wheres:
+                    base_query += " WHERE " + " AND ".join(wheres)
+                # Avoid duplicate tutors
+                base_query += " GROUP BY t.tutor_id"
+                base_query += " LIMIT %s OFFSET %s"
+                params.extend([per_page, offset])
+
+                cursor.execute(base_query, params)
+                tutors = cursor.fetchall()
+
+                # Count query for pagination
+                count_query = "SELECT COUNT(DISTINCT t.tutor_id) FROM tutor t"
+                if joins:
+                    count_query += " " + " ".join(joins)
+                if wheres:
+                    count_query += " WHERE " + " AND ".join(wheres)
+                cursor.execute(count_query, params[:-2])  # Exclude LIMIT/OFFSET
                 total_tutors = cursor.fetchone()['count']
 
                 tutor_details = []
                 for t in tutors:
-
                     cursor.execute("SELECT * FROM teaches WHERE tutor_id = %s", (t['tutor_id'],))
                     courses = [row['course_code'] for row in cursor.fetchall()]
-
                     cursor.execute("SELECT * FROM tutee WHERE id_number = %s", (t['tutor_id'],))
                     tutee_info = cursor.fetchone()
                     tutor_details.append({'tutorName': tutee_info['first_name'] + ' ' + tutee_info['last_name'], 'courses': courses})
 
-                max_pages = (total_tutors + per_page - 1) // per_page  # ceiling division
+                max_pages = (total_tutors + per_page - 1) // per_page
 
             return jsonify({
                 "tutors": tutor_details,
