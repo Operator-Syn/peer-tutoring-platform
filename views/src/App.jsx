@@ -35,7 +35,7 @@ function App() {
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
-<Route path="tutorprofile/:tutor_id" element={<TutorProfile />} />
+<Route path="tutor/:tutor_id" element={<TutorProfile />} />
               
             
           </Route>

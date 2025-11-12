@@ -236,7 +236,19 @@ const openBadgeModal = async () => {
     }}
   >
  
-<div className="responsive-tutor-layout">
+<div
+  className="responsive-tutor-layout"
+  style={{
+   
+    display: "flex",
+    flexWrap: "nowrap", // ✅ keeps them side by side
+    alignItems: "flex-center",
+    justifyContent: "space-between",
+     
+    gap: "20px",
+    overflowX: "auto", // ✅ prevents overflow cutoff if needed
+  }}
+>
   {/* Left Column */}
   <div className="responsive-column">
 
@@ -322,7 +334,7 @@ const openBadgeModal = async () => {
          border: "3px solid #4956AD",
         minWidth: "250px",
         maxWidth: "450px",
-        minHeight: "250px",
+        minHeight: "255px",
          boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)", 
       }}
     ><h4 className="displays">Badge Count</h4></div>
@@ -342,21 +354,41 @@ const openBadgeModal = async () => {
     border: "3px solid #4956AD",
     minWidth: "400px",
     maxWidth: "450px",
-    minHeight: "250px",
+    height: "510px", // fixed height
     cursor: "pointer",
-    boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)",
+    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.25)", // stronger shadow
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden", // prevents inner content from breaking out
   }}
   onClick={() => {
     if (isCurrentUserTutor) {
-      setIsShortInfoModalOpen(true); // open modal for tutor to edit
+      setIsShortInfoModalOpen(true);
     } else {
       console.log("Card clicked by visitor!");
-      // navigate("/tutor-details") or other action
     }
   }}
 >
   <h4 className="displays">About</h4>
+  <p
+    style={{
+      marginTop: "10px",
+      flexGrow: 1,
+      overflowY: "auto",      // scroll if content is too tall
+      paddingRight: "5px",    // prevents scrollbar overlap
+      lineHeight: "1.4em",
+      color: "#333",
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    }}
+  >
+    {tutor?.about
+      ? tutor.about.replace(/(.{40})/g, "$1\n") // line break every 40 chars
+      : "Click to add info about yourself..."}
+  </p>
 </div>
+
+
 
 {/* Modal for editing Short Info */}
 {isShortInfoModalOpen && (
@@ -386,12 +418,22 @@ const openBadgeModal = async () => {
       onClick={(e) => e.stopPropagation()}
     >
       <h4>Edit Short Info</h4>
-      <textarea
-        value={shortInfo}
-        onChange={(e) => setShortInfo(e.target.value)}
-        rows={5}
-        style={{ width: "100%", marginTop: "10px", padding: "10px", borderRadius: "5px" }}
-      />
+     <textarea
+  value={shortInfo}
+  onChange={(e) => setShortInfo(e.target.value)}
+  rows={5}
+  style={{
+    width: "100%",
+    marginTop: "10px",
+    padding: "10px",
+    borderRadius: "5px",
+    resize: "none",          // optional: prevent resizing
+    overflow: "auto",        // scroll if too tall
+    whiteSpace: "normal",    // normal wrapping behavior
+    wordWrap: "break-word",  // breaks very long words that exceed width
+  }}
+/>
+
       <div style={{ marginTop: "15px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
         <button
           onClick={() => setIsShortInfoModalOpen(false)}
@@ -400,10 +442,29 @@ const openBadgeModal = async () => {
           Cancel
         </button>
         <button
-          onClick={() => {
-            console.log("Updated Short Info:", shortInfo);
-            // TODO: send shortInfo to your backend API to save
-            setIsShortInfoModalOpen(false);
+          onClick={async () => {
+            try {
+              const res = await fetch("http://localhost:5000/api/tutor/update_about", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  tutor_id: tutor.tutor_id,
+                  about: shortInfo,
+                }),
+              });
+
+              const data = await res.json();
+              if (!res.ok) {
+                console.error("Failed to save About:", data.error);
+              } else {
+                console.log("About updated successfully");
+                setTutor((prev) => ({ ...prev, about: shortInfo }));
+              }
+            } catch (err) {
+              console.error("Error saving About:", err);
+            } finally {
+              setIsShortInfoModalOpen(false);
+            }
           }}
           style={{ padding: "8px 15px", borderRadius: "5px", cursor: "pointer", backgroundColor: "#4F62DE", color: "#fff", border: "none" }}
         >
@@ -413,6 +474,7 @@ const openBadgeModal = async () => {
     </div>
   </div>
 )}
+
 
 
 
@@ -446,6 +508,10 @@ const openBadgeModal = async () => {
       <div className="col-125 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
+
+
+
+
 
       {/* Dynamic Schedule Cards (from tutor.schedule) */}
       <div className="d-flex flex-wrap gap-4 mt-5"  style={{

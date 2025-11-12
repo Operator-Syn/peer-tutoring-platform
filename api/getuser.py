@@ -33,15 +33,14 @@ def get_all_tutors():
         return jsonify(tutors)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @tutor_bp.route("/<tutor_id>")
 def get_tutor(tutor_id):
     try:
+        import base64
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # --- 1️⃣ Fetch tutor info including google_id ---
+                # Fetch tutor info
                 cursor.execute("""
                     SELECT 
                         t.tutor_id,
@@ -52,6 +51,8 @@ def get_tutor(tutor_id):
                         tt.program_code,
                         p.program_name,
                         t.status,
+                        t.about,
+                        t.profile_img,
                         tt.google_id
                     FROM tutor t
                     JOIN tutee tt ON t.tutor_id = tt.id_number
@@ -63,7 +64,13 @@ def get_tutor(tutor_id):
                 if not tutor:
                     return jsonify({"error": "Tutor not found"}), 404
 
-                # --- 2️⃣ Fetch availability & appointments ---
+                # Convert BYTEA to base64
+                tutor["profile_img"] = (
+                    base64.b64encode(tutor["profile_img"]).decode("utf-8")
+                    if tutor["profile_img"] else None
+                )
+
+                # Availability + appointments
                 cursor.execute("""
                     SELECT 
                         a.vacant_id,
@@ -78,33 +85,32 @@ def get_tutor(tutor_id):
                     WHERE a.tutor_id = %s
                     ORDER BY a.day_of_week, a.start_time;
                 """, (tutor_id,))
-                
                 schedule = cursor.fetchall()
-                for slot in schedule:
-                    slot["start_time"] = slot["start_time"].strftime("%H:%M:%S") if slot["start_time"] else None
-                    slot["end_time"] = slot["end_time"].strftime("%H:%M:%S") if slot["end_time"] else None
-                    slot["appointment_date"] = slot["appointment_date"].strftime("%Y-%m-%d") if slot["appointment_date"] else None
 
-                # --- 3️⃣ Fetch teaches / courses ---
-                cursor.execute("""
-                    SELECT course_code 
-                    FROM teaches 
-                    WHERE tutor_id = %s
-                """, (tutor_id,))
-                
+                for slot in schedule:
+                    if slot["start_time"]:
+                        slot["start_time"] = slot["start_time"].strftime("%H:%M:%S")
+                    if slot["end_time"]:
+                        slot["end_time"] = slot["end_time"].strftime("%H:%M:%S")
+                    if slot["appointment_date"]:
+                        slot["appointment_date"] = slot["appointment_date"].strftime("%Y-%m-%d")
+
+                # Teaches courses
+                cursor.execute("SELECT course_code FROM teaches WHERE tutor_id = %s", (tutor_id,))
                 courses = [row["course_code"] for row in cursor.fetchall()]
 
-        # --- 4️⃣ Structure the response including google_id ---
         response = {
             "tutor_id": tutor["tutor_id"],
             "first_name": tutor["first_name"],
-            "middle_name": tutor["middle_name"] or "",
+            "middle_name": tutor["middle_name"],
             "last_name": tutor["last_name"],
             "year_level": tutor["year_level"],
             "program_code": tutor["program_code"],
             "program_name": tutor["program_name"],
             "status": tutor["status"],
-            "google_id": tutor["google_id"],   # ✅ added Google ID
+            "about": tutor["about"] or "",
+            "profile_img": tutor["profile_img"],
+            "google_id": tutor["google_id"],
             "schedule": schedule,
             "courses": courses
         }
@@ -112,6 +118,8 @@ def get_tutor(tutor_id):
         return jsonify(response), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -192,6 +200,44 @@ def get_badge_status(tutor_id, tutee_id):
                 if not badge:
                     return jsonify({"message": "No badges yet"}), 404
         return jsonify(badge), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+@tutor_bp.route("/update_about", methods=["POST"])
+def update_about():
+    data = request.json
+    tutor_id = data.get("tutor_id")
+    about = data.get("about")
+    profile_img_base64 = data.get("profile_img")  # optional
+
+    if not tutor_id:
+        return jsonify({"error": "Missing tutor_id"}), 400
+
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                if profile_img_base64:
+                    profile_img_bytes = base64.b64decode(profile_img_base64)
+                    cursor.execute("""
+                        UPDATE tutor
+                        SET about = %s,
+                            profile_img = %s
+                        WHERE tutor_id = %s
+                    """, (about, profile_img_bytes, tutor_id))
+                else:
+                    cursor.execute("""
+                        UPDATE tutor
+                        SET about = %s
+                        WHERE tutor_id = %s
+                    """, (about, tutor_id))
+
+        return jsonify({"message": "Tutor info updated successfully"}), 200
     except Exception as e:
         import traceback
         traceback.print_exc()
