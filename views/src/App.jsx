@@ -13,6 +13,7 @@ import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppoi
 import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
+import TutorList from "./pages/TutorList/TutorList";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
           <Route path="Events" element={<Events />} />
+          <Route path="TutorList" element={<TutorList />} />
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
             <Route path="Report" element={<Report />} />

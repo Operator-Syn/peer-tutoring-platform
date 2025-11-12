@@ -1,0 +1,42 @@
+
+.tutor-list {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 3rem;
+}
+
+.tutor-info-1 {
+
+}
+
+.tutor-info-2 {
+
+}
+
+.course-tag-list {
+  gap: 8px;
+  background-color: #D6DAF2;
+  width: fit-content;
+  padding: 0px 8px;
+  border-radius: 4px;
+}
+
+.tutor-card-grid {
+  width: fit-content !important;
+  margin-left: 0;  /* Remove negative margin from .row */
+  margin-right: 0;
+  border: 1px solid red;
+}
+
+@media (max-width: 840px) {
+  .tutor-list-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tutor-list-search-bar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
