@@ -33,6 +33,7 @@ export default function TutorList() {
 			.then(data => {
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
+				console.log(data);
 			})
 			.catch(error => console.error("Error fetching tutors:", error));
 	}, [page, courseSearch, availabilitySearch, nameSearch]);

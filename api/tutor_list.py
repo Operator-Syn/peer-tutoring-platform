@@ -20,6 +20,7 @@ def get_tutor_list():
                 # Build base query and params
                 base_query = """
                     SELECT t.* FROM tutor t
+                    JOIN tutee ON t.tutor_id = tutee.id_number
                 """
                 joins = []
                 wheres = ["t.status = 'ACTIVE'"]
@@ -34,7 +35,6 @@ def get_tutor_list():
                     wheres.append("a.day_of_week = %s")
                     params.append(availability.upper())
                 if name:
-                    joins.append("JOIN tutee ON t.tutor_id = tutee.id_number")
                     wheres.append("(tutee.first_name ILIKE %s OR tutee.last_name ILIKE %s)")
                     params.extend([f"%{name}%", f"%{name}%"])
 
@@ -44,7 +44,8 @@ def get_tutor_list():
                 if wheres:
                     base_query += " WHERE " + " AND ".join(wheres)
                 # Avoid duplicate tutors
-                base_query += " GROUP BY t.tutor_id"
+                base_query += " GROUP BY t.tutor_id, tutee.last_name, tutee.first_name"
+                base_query += " ORDER BY tutee.last_name ASC, tutee.first_name ASC"
                 base_query += " LIMIT %s OFFSET %s"
                 params.extend([per_page, offset])
 
@@ -52,7 +53,7 @@ def get_tutor_list():
                 tutors = cursor.fetchall()
 
                 # Count query for pagination
-                count_query = "SELECT COUNT(DISTINCT t.tutor_id) FROM tutor t"
+                count_query = "SELECT COUNT(DISTINCT t.tutor_id) FROM tutor t JOIN tutee ON t.tutor_id = tutee.id_number"
                 if joins:
                     count_query += " " + " ".join(joins)
                 if wheres:
