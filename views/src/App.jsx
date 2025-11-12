@@ -34,8 +34,8 @@ function App() {
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
-            <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
-<Route path="Tutorprofile/:tutor_id" element={<TutorProfile />} />
+            <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
+<Route path="tutorprofile/:tutor_id" element={<TutorProfile />} />
               
             
           </Route>

@@ -492,6 +492,7 @@ const handleDecline = (id) => {
               <div className="card-body text-end">
                 <p className="card-text mb-1">{app.appointment_date}</p>
                 <p className="card-text">
+                  
                   {app.start_time} - {app.end_time}
                 </p>
               </div>
@@ -563,6 +564,7 @@ const handleDecline = (id) => {
 </p>
 
   <p className="card-text">
+    <strong>Time: </strong>
     {selectedApp?.start_time || "N/A"} - {selectedApp?.end_time || "N/A"}
   </p>
   <p className="card-text">
