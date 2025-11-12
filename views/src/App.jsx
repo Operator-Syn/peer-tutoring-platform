@@ -23,7 +23,6 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
           <Route path="Events" element={<Events />} />
-          <Route path="TutorList" element={<TutorList />} />
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
             <Route path="Report" element={<Report />} />
@@ -32,7 +31,7 @@ function App() {
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
-            
+            <Route path="TutorList" element={<TutorList />} />
           </Route>
         </Route>
       </Routes>
