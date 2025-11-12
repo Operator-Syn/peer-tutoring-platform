@@ -49,21 +49,36 @@ const AdminDashboard = () => {
       const appsData = await appsResponse.json();
       const statsData = await statsResponse.json();
 
-      console.log('Applications:', appsData);
-      console.log('Statistics:', statsData);
-
       if (appsData.applications && Array.isArray(appsData.applications)) {
         setApplications(appsData.applications);
+      } else {
+        setApplications([]);
       }
 
       if (statsData.statistics) {
         setStatistics(statsData.statistics);
+      } else {
+        setStatistics({
+          total_applications: 0,
+          pending: 0,
+          total_tutors: 0,
+          total_tutees: 0,
+          total_courses: 0,
+          active_sessions: 0
+        });
       }
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load data. Using mock data for display.');
-      setApplications(getMockApplications());
-      setStatistics(getMockStatistics());
+      setError('Failed to load data from server.');
+      setApplications([]);
+      setStatistics({
+        total_applications: 0,
+        pending: 0,
+        total_tutors: 0,
+        total_tutees: 0,
+        total_courses: 0,
+        active_sessions: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -79,43 +94,51 @@ const AdminDashboard = () => {
   };
 
   const confirmActionHandler = async (applicationId, action) => {
-    try {
-      setProcessingId(applicationId);
+  try {
+    setProcessingId(applicationId);
 
-      const endpoint =
-        action === 'APPROVED'
-          ? `${API_BASE_URL}/admin/applications/${applicationId}/approve`
-          : `${API_BASE_URL}/admin/applications/${applicationId}/reject`;
+    const endpoint =
+      action === 'APPROVED'
+        ? `${API_BASE_URL}/admin/applications/${applicationId}/approve`
+        : `${API_BASE_URL}/admin/applications/${applicationId}/reject`;
 
-      const response = await fetch(endpoint, { method: 'POST' });
-      const data = await response.json();
+    console.log("Sending request to:", endpoint);
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update status');
-      }
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
 
-      // update local state
-      setApplications(prev =>
-        prev.map(app =>
-          app.application_id === applicationId
-            ? { ...app, status: data.data.status }
-            : app
-        )
-      );
+    const data = await response.json();
+    console.log("Response data:", data);
 
-      setShowConfirm(false);
-      setSelectedApplication(null);
-      setConfirmAction(null);
-      fetchData();
-
-      alert(`Application ${action === 'APPROVED' ? 'approved' : 'rejected'} successfully.`);
-    } catch (err) {
-      console.error('Error updating application:', err);
-      alert(err.message);
-    } finally {
-      setProcessingId(null);
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to update status');
     }
-  };
+
+    // Update local list
+    setApplications(prev =>
+      prev.map(app =>
+        app.application_id === applicationId
+          ? { ...app, status: data.data.status }
+          : app
+      )
+    );
+
+    setShowConfirm(false);
+    setSelectedApplication(null);
+    setConfirmAction(null);
+    fetchData();
+
+    alert(`Application ${action === 'APPROVED' ? 'approved' : 'rejected'} successfully.`);
+  } catch (err) {
+    console.error('Error updating application:', err);
+    alert(err.message);
+  } finally {
+    setProcessingId(null);
+  }
+};
 
   const applyFiltersAndSort = () => {
     let filtered = [...applications];
@@ -294,6 +317,7 @@ const AdminDashboard = () => {
                   <div className="actions-section">
                     <button
                       className="btn btn-accept"
+                      onClick={() => handleUpdateStatus(app.application_id, 'APPROVED')}
                       disabled={processingId === app.application_id || app.status === 'APPROVED'}
                     >
                       {processingId === app.application_id ? (
@@ -305,6 +329,7 @@ const AdminDashboard = () => {
                     <button
                       className="btn btn-decline"
                       disabled={processingId === app.application_id || app.status === 'REJECTED'}
+                      onClick={() => handleUpdateStatus(app.application_id, 'REJECTED')}
                     >
                       Decline
                     </button>
@@ -394,7 +419,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="modal-backdrop fade show"></div>
         </div>
       )}
     </div>
@@ -402,54 +426,5 @@ const AdminDashboard = () => {
 };
 
 // mock data for testing
-const getMockApplications = () => [
-  {
-    application_id: 1,
-    student_id: 'STU001',
-    student_name: 'Jazrel Xandrei Quinlob',
-    college: 'CCS',
-    gender: 'Male',
-    school_year: '3rd year',
-    date_submitted: '2025-01-15T10:30:00',
-    status: 'PENDING',
-    cor_filename: 'jazrel_cor.pdf',
-    cor_filepath: '/uploads/cor/STU001_jazrel_cor.pdf',
-    courses: ['CS101', 'CS102', 'MAT101']
-  },
-  {
-    application_id: 2,
-    student_id: 'STU002',
-    student_name: 'John-Ronan Biera',
-    college: 'CCS',
-    gender: 'Male',
-    school_year: '3rd year',
-    date_submitted: '2025-01-14T14:20:00',
-    status: 'PENDING',
-    cor_filename: 'jazrel_cor.pdf',
-    cor_filepath: '/uploads/cor/STU002_ronan_cor.pdf',
-    courses: ['CSC151', 'MAT51']
-  },
-  {
-    application_id: 3,
-    student_id: 'STU003',
-    student_name: 'Neil Anthony Balbutin',
-    college: 'CCS',
-    gender: 'Male',
-    school_year: '3rd year',
-    date_submitted: '2025-01-13T09:15:00',
-    status: 'APPROVED',
-    cor_filename: 'jarzel_cor.pdf',
-    cor_filepath: '/uploads/cor/STU003_neil_cor.pdf',
-    courses: ['MAT61', 'STT101']
-  }
-];
-
-const getMockStatistics = () => ({
-  total_applications: 67,
-  total_tutors: 10,
-  total_tutees: 69,
-  total_courses: 15,
-  active_sessions: 24
-});
 
 export default AdminDashboard;
