@@ -448,3 +448,21 @@
 .application-card:nth-child(3) { animation-delay: 0.15s; }
 .application-card:nth-child(4) { animation-delay: 0.2s; }
 .application-card:nth-child(5) { animation-delay: 0.25s; }
+
+.modal {
+  z-index: 2000 !important;
+}
+
+body.modal-open,
+.admin-container.modal-open {
+  overflow: hidden !important;
+}
+
+.modal-body {
+  overflow: hidden !important;
+}
+
+/* Optional: fade-in effect for modal background */
+.modal.fade.show {
+  transition: background-color 0.3s ease;
+}

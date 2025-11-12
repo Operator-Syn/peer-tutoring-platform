@@ -21,6 +21,8 @@ const AdminDashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [showCorModal, setShowCorModal] = useState(false);
+  const [selectedCorFile, setSelectedCorFile] = useState(null);
 
   const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
 
@@ -140,6 +142,11 @@ const AdminDashboard = () => {
   }
 };
 
+  const handleShowCor = (corFilename) => {
+    setSelectedCorFile(`http://127.0.0.1:5000/uploads/cor/${corFilename}`);
+    setShowCorModal(true);
+  };
+
   const applyFiltersAndSort = () => {
     let filtered = [...applications];
 
@@ -205,7 +212,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="admin-container">
+    <div className="admin-container ${showCorModal ? 'modal-open-custom' : ''}">
       <header className="admin-header">
         <div className="header-content">
           <div className="logo-section">
@@ -307,13 +314,22 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="documents-section">
-                    {app.cor_filename && (
-                      <div className="document-icon" title={app.cor_filename}>
-                        <i className="bi bi-file-earmark-text-fill"></i>
+                    {app.cor_filename ? (
+                      <button
+                        type="button"
+                        className="btn btn-link p-0 document-icon"
+                        onClick={() => handleShowCor(app.cor_filename)}
+                        title={app.cor_filename}
+                      >
+                        <i className="bi bi-file-earmark-text-fill fs-4"></i>
+                      </button>
+                    ) : (
+                      <div className="document-icon disabled" title="No COR uploaded">
+                        <i className="bi bi-file-earmark-x fs-4"></i>
                       </div>
                     )}
                   </div>
-
+                  
                   <div className="actions-section">
                     <button
                       className="btn btn-accept"
@@ -372,6 +388,7 @@ const AdminDashboard = () => {
           ))}
         </div>
       </div>
+      
       {showConfirm && selectedApplication && (
         <div className="modal fade show" style={{ display: 'block' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -421,10 +438,101 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {showCorModal && (
+        <>
+          <div
+            className="modal fade show"
+            style={{
+              display: 'block',
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            }}
+            tabIndex="-1"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="modal-dialog modal-dialog-centered"
+              role="document"
+              style={{
+                maxWidth: '800px',
+                width: '800px',
+                height: '600px',
+              }}
+            >
+              <div
+                className="modal-content border-0 shadow-lg"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '10px',
+                  backgroundColor: '#1a1a1a',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  className="modal-body d-flex align-items-center justify-content-center p-0"
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#000',
+                  }}
+                >
+                  {selectedCorFile ? (
+                    selectedCorFile.toLowerCase().endsWith('.pdf') ? (
+                      <iframe
+                        src={selectedCorFile}
+                        title="COR PDF"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          border: 'none',
+                          backgroundColor: '#1a1a1a',
+                        }}
+                      ></iframe>
+                    ) : (
+                      <img
+                        src={selectedCorFile}
+                        alt="COR Document"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain',
+                          display: 'block',
+                          margin: '0 auto',
+                        }}
+                      />
+                    )
+                  ) : (
+                    <div className="text-center text-light">No COR available</div>
+                  )}
+                </div>
+
+                <div
+                  className="py-3 text-center border-0"
+                  style={{
+                    background: '#1a1a1a',
+                  }}
+                >
+                  <button
+                    className="btn btn-light px-4"
+                    onClick={() => setShowCorModal(false)}
+                    style={{
+                      fontWeight: '500',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+  </div>
   );
 };
-
-// mock data for testing
 
 export default AdminDashboard;

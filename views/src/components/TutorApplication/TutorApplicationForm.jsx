@@ -10,14 +10,60 @@ const TutorApplicationForm = () => {
   const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingStudent, setLoadingStudent] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [studentNotFound, setStudentNotFound] = useState(false);
 
   const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tutor-applications`;
 
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  // fetch student info when student ID changes
+  useEffect(() => {
+    const fetchStudentInfo = async () => {
+      if (!studentId || studentId.trim().length === 0) {
+        setFirstName('');
+        setLastName('');
+        setStudentNotFound(false);
+        return;
+      }
+
+      setLoadingStudent(true);
+      setStudentNotFound(false);
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/student/${studentId.trim()}`);
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setFirstName(data.student.first_name || '');
+          setLastName(data.student.last_name || '');
+          setStudentNotFound(false);
+        } else {
+          setFirstName('');
+          setLastName('');
+          setStudentNotFound(true);
+        }
+      } catch (err) {
+        console.error('Error fetching student info:', err);
+        setFirstName('');
+        setLastName('');
+        setStudentNotFound(true);
+      } finally {
+        setLoadingStudent(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      fetchStudentInfo();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [studentId]);
 
   const fetchCourses = async () => {
     let data = null;
@@ -57,11 +103,16 @@ const TutorApplicationForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (studentNotFound) {
+      setError('Please enter a valid Student ID');
+      return;
+    }
+
     setError(null);
     setSuccess(null);
     setLoading(true);
     
-  const formData = new FormData();
+    const formData = new FormData();
     formData.append("student_id", studentId);
     selectedCourses.forEach(course => formData.append("courses", course));
     
@@ -80,8 +131,11 @@ const TutorApplicationForm = () => {
       if (response.ok) {
         setSuccess(data);
         setStudentId("");
+        setFirstName("");
+        setLastName("");
         setSelectedCourses([]);
         fileInput.value = "";
+        setStudentNotFound(false);
       } else {
         setError(data.error || "Failed to submit application");
       }
@@ -159,32 +213,6 @@ const TutorApplicationForm = () => {
               <div className="form-left">
 
                 <div className="form-group">
-                  <label className="form-label-custom">First Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Enter first name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label-custom">Last Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Enter last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
                   <label className="form-label-custom">Student ID</label>
                   <input
                     type="text"
@@ -194,6 +222,51 @@ const TutorApplicationForm = () => {
                     onChange={(e) => setStudentId(e.target.value)}
                     disabled={loading}
                     required
+                  />
+                  {loadingStudent && (
+                    <small className="text-muted">
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Fetching student information...
+                    </small>
+                  )}
+                  {studentNotFound && studentId && !loadingStudent && (
+                    <small className="text-danger">
+                      Student ID not found in the system
+                    </small>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label-custom">First Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Auto-filled from Student ID"
+                    value={firstName}
+                    readOnly
+                    disabled
+                    style={{ 
+                      backgroundColor: '#f8f9fa', 
+                      cursor: 'not-allowed',
+                      color: firstName ? '#495057' : '#6c757d'
+                    }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label-custom">Last Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Auto-filled from Student ID"
+                    value={lastName}
+                    readOnly
+                    disabled
+                    style={{ 
+                      backgroundColor: '#f8f9fa', 
+                      cursor: 'not-allowed',
+                      color: lastName ? '#495057' : '#6c757d'
+                    }}
                   />
                 </div>
 
@@ -281,7 +354,7 @@ const TutorApplicationForm = () => {
               <button 
                 type="submit" 
                 className="submit-button"
-                disabled={loading || loadingCourses || selectedCourses.length === 0}
+                disabled={loading || loadingCourses || loadingStudent || selectedCourses.length === 0 || studentNotFound || !firstName || !lastName}
               >
                 {loading ? (
                   <>

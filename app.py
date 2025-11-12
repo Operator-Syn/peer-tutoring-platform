@@ -42,6 +42,9 @@ app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 app.register_blueprint(admin_dashboard_bp)
+@app.route('/uploads/cor/<filename>')
+def serve_cor_file(filename):
+    return send_from_directory('uploads/cor', filename)
 # ---------- Protect all API routes ----------
 
 # @app.before_request
