@@ -11,6 +11,10 @@ from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardCo
 from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
 from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
 from controllers.createNewPendingAppointmentController.createNewPendingAppointmentController import bp_create_pending
+from controllers.requestscontroller.requestscontroller import requests_bp  
+from api.getuser import tutee_bp
+from api.getuser import tutor_bp
+
 # Existing controllers
 
 # Authentication controller
@@ -20,6 +24,8 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath
 CORS(app, supports_credentials=True)
 app.secret_key = Config.SECRET_KEY  # required for session management
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+
+
 
 oauth.init_app(app)
 oauth.register(
@@ -33,10 +39,13 @@ oauth.register(
 # ---------- Register API routes ----------
 app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
 app.register_blueprint(bp_appointments)
+app.register_blueprint(requests_bp) 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(bp_fillout)
 app.register_blueprint(bp_availability)
 app.register_blueprint(bp_create_pending)
+app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
+app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 # ---------- Protect all API routes ----------
 
 # @app.before_request
