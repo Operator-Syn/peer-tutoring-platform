@@ -22,12 +22,6 @@
   border-radius: 4px;
 }
 
-.tutor-card-grid {
-  width: fit-content !important;
-  margin-left: 0;  /* Remove negative margin from .row */
-  margin-right: 0;
-  border: 1px solid red;
-}
 
 @media (max-width: 840px) {
   .tutor-list-search {

@@ -1,15 +1,14 @@
 import './TutorList.css';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BasicButton from '../../components/BasicButton/BasicButton.jsx';
 import Select from 'react-select';
 import { Form, Card, Button } from 'react-bootstrap';
 
-const courseOptions = [
-	{ value: 'cs101', label: 'CS101' },
-	{ value: 'cs103', label: 'CS103' },
-	// ...
-];
+// const courseOptions = [
+// 	{ value: 'cs101', label: 'CS101' },
+// 	{ value: 'cs103', label: 'CS103' },
+// ];
 
 const availabilityOptions = [
 	{ value: 'monday', label: 'Monday' },
@@ -17,19 +16,43 @@ const availabilityOptions = [
 	// ...
 ];
 
-const tutors = [
-	{ tutorName: "Alice Johnson", courses: ["CS101", "MATH201"] },
-	{ tutorName: "Bob Smith", courses: ["ENG150", "HIST210"] },
-	{ tutorName: "Charlie Brown", courses: ["BIO110", "CHEM120"] },
-	{ tutorName: "Diana Prince", courses: ["PHYS130", "CS102"] },
-	{ tutorName: "Ethan Hunt", courses: ["MATH202", "STAT300"] },
-	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
-	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
-	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] }
-];
+// const tutors = [
+// 	{ tutorName: "Alice Johnson", courses: ["CS101", "MATH201"] },
+// 	{ tutorName: "Bob Smith", courses: ["ENG150", "HIST210"] },
+// 	{ tutorName: "Charlie Brown", courses: ["BIO110", "CHEM120"] },
+// 	{ tutorName: "Diana Prince", courses: ["PHYS130", "CS102"] },
+// 	{ tutorName: "Ethan Hunt", courses: ["MATH202", "STAT300"] },
+// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
+// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
+// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] }
+// ];
 
 export default function TutorList() {
 	const [page, setPage] = useState(1);
+	const [maxPages, setMaxPages] = useState(1);
+	const [tutors, setTutors] = useState([]);
+	const [courseOptions, setCourseOptions] = useState([]);
+	const [courseSearch, setCourseSearch] = useState('');
+
+	useEffect(() => {
+		fetch(`/api/tutor-list/all?page=${page ? page : 1}`)
+			.then(res => res.json())
+			.then(data => {
+				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
+				setMaxPages(data.max_pages);
+			})
+			.catch(error => console.error("Error fetching tutors:", error));
+	}, [page]);
+
+	const fetchCourses = (search = '') => {
+		fetch(`/api/tutor-list/courses?search=${encodeURIComponent(search)}`)
+		.then(res => res.json())
+		.then(data => {
+			setCourseOptions(
+			(data.courses || []).map(c => ({ value: c, label: c }))
+			);
+		});
+	};
 
 	return (
 		<div className="tutor-list align-items-center">
@@ -39,10 +62,10 @@ export default function TutorList() {
 
 				<div className='d-flex gap-3 justify-content-center'>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
-						<Select options={courseOptions} isSearchable placeholder="Course" />
+						<Select options={courseOptions} isSearchable isClearable placeholder="Course" onInputChange={e => {setCourseSearch(e); fetchCourses(e);}} />
 					</div>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
-						<Select options={availabilityOptions} isSearchable placeholder="Availability" />
+						<Select options={availabilityOptions} isClearable placeholder="Availability" />
 					</div>
 				</div>
 
@@ -63,20 +86,21 @@ export default function TutorList() {
 			</div>
 
 			<div className="d-flex align-items-center justify-content-center gap-2 mt-3">
-				<Button variant="outline-primary">
+				<Button variant="outline-primary" onClick={() => setPage(prev => Math.max(1, Number(prev) - 1))}>
 					&lt;
 				</Button>
 				<span>
-					<Form.Control
-					type="number"
-					min={1}
-					max={3}
-					value={page}
-					style={{ width: "60px", display: "inline-block", textAlign: "center" }}
-					/>{" "}
-					of {3}
+					<Form.Control value={page}   onChange={e => {
+							const val = e.target.value;
+							// Allow empty string for controlled input, or check if value is a positive integer
+							if (val === "" || (/^\d+$/.test(val) && Number(val) >= 1 && Number(val) <= maxPages)) {
+								setPage(val === "" ? "" : Number(val));
+							}
+						}} 
+						style={{ width: "60px", display: "inline-block", textAlign: "center" }} />
+					{" "} of {maxPages}
 				</span>
-				<Button variant="outline-primary">
+				<Button variant="outline-primary" onClick={() => setPage(prev => Math.min(maxPages, Number(prev) + 1))}>
 					&gt;
 				</Button>
 			</div>
@@ -98,9 +122,9 @@ function TutorCard({tutorName="Tutor Name", courses}) {
 				</div>
 			</Card.Body>
 			<Card.Body className="d-flex tutor-info-2" style={{padding: "0rem"}}>
-				<CourseTag courseCode="CS101" />
-				<CourseTag courseCode="CS101" />
-				<CourseTag courseCode="CS101" />
+				{courses.map((course, idx) => (
+					<CourseTag key={idx} courseCode={course} />
+				))}
 			</Card.Body>
 			<BasicButton style={{fontSize: "0.8rem", borderRadius: "4px", width: "fit-content", height: "auto", minWidth: 0, padding: "0.175rem 0.75rem", marginLeft: "auto"}}> View Profile </BasicButton>
 		</Card>

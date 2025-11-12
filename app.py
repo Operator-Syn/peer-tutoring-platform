@@ -11,6 +11,7 @@ from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardCo
 from controllers.requestscontroller.requestscontroller import requests_bp  
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
+from api.tutor_list import tutor_list
 
 # Existing controllers
 
@@ -40,6 +41,7 @@ app.register_blueprint(requests_bp)
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
+app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 # ---------- Protect all API routes ----------
 
 # @app.before_request
