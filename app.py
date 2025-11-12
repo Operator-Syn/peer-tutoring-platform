@@ -8,7 +8,9 @@ from authlib.integrations.flask_client import OAuth
 from api.app_auth import auth_bp, oauth
 from datetime import timedelta
 from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
-
+from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
+from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
+from controllers.createNewPendingAppointmentController.createNewPendingAppointmentController import bp_create_pending
 # Existing controllers
 
 # Authentication controller
@@ -32,6 +34,9 @@ oauth.register(
 app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
 app.register_blueprint(bp_appointments)
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(bp_fillout)
+app.register_blueprint(bp_availability)
+app.register_blueprint(bp_create_pending)
 # ---------- Protect all API routes ----------
 
 # @app.before_request
