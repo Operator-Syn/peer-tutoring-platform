@@ -70,9 +70,9 @@ export default function TutorList() {
 				
 			</div>
 
-			<div className='row justify-content-center flex-wrap gap-3'>
+			<div className='tutor-card-grid' style={{minHeight: "33.8rem"}}>
 				{tutors.map((tutor, idx) => (
-					<div className="col-lg-4 col-md-6 col-12 p-0 w-auto m-auto" key={idx}>
+					<div key={idx}>
 						<TutorCard {...tutor} />
 					</div>
 				))}
@@ -114,7 +114,7 @@ function TutorCard({tutorName="Tutor Name", courses}) {
 					<Card.Text className='text-center'>Tutor</Card.Text>
 				</div>
 			</Card.Body>
-			<Card.Body className="d-flex tutor-info-2" style={{padding: "0rem"}}>
+			<Card.Body className="row tutor-info-2 gap-2" style={{padding: "0rem", margin: "0", maxWidth: "254px", overflowX: "auto"}}>
 				{courses.map((course, idx) => (
 					<CourseTag key={idx} courseCode={course} />
 				))}
@@ -129,7 +129,7 @@ function TutorCard({tutorName="Tutor Name", courses}) {
 function CourseTag({ courseCode }) {
 
 	return (
-		<div className="course-tag-list me-2">
+		<div className="course-tag-list">
 			<p style={{margin: "0px", fontSize: "0.7rem"}}>{courseCode}</p>
 		</div>
 	);
