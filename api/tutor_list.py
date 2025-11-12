@@ -12,6 +12,7 @@ def get_tutor_list():
         offset = (page - 1) * per_page
         course = request.args.get('course', '').strip()
         availability = request.args.get('availability', '').strip().upper()  # Accepts e.g. 'MONDAY'
+        name = request.args.get('name', '').strip()
 
         conn = get_connection()
         with conn:
@@ -32,6 +33,10 @@ def get_tutor_list():
                     joins.append("JOIN availability a ON t.tutor_id = a.tutor_id")
                     wheres.append("a.day_of_week = %s")
                     params.append(availability.upper())
+                if name:
+                    joins.append("JOIN tutee ON t.tutor_id = tutee.id_number")
+                    wheres.append("(tutee.first_name ILIKE %s OR tutee.last_name ILIKE %s)")
+                    params.extend([f"%{name}%", f"%{name}%"])
 
                 # Combine query
                 if joins:

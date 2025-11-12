@@ -25,16 +25,17 @@ export default function TutorList() {
 	const [courseOptions, setCourseOptions] = useState([]);
 	const [courseSearch, setCourseSearch] = useState('');
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
+	const [nameSearch, setNameSearch] = useState('');
 
 	useEffect(() => {
-		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}`)
+		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}${nameSearch ? `&name=${encodeURIComponent(nameSearch)}` : ''}`)
 			.then(res => res.json())
 			.then(data => {
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
 			})
 			.catch(error => console.error("Error fetching tutors:", error));
-	}, [page, courseSearch, availabilitySearch]);
+	}, [page, courseSearch, availabilitySearch, nameSearch]);
 
 	const fetchCourses = (search = '') => {
 		fetch(`/api/tutor-list/courses?search=${encodeURIComponent(search)}`)
@@ -63,7 +64,7 @@ export default function TutorList() {
 
 				<div className='tutor-list-search-bar p-0' style={{width: "100%", minWidth: "17rem", maxWidth: "30rem", marginLeft: "auto"}}>
 					<Form>
-						<Form.Control type="search" placeholder="Search" className="me-2" aria-label="Search" />
+						<Form.Control type="search" placeholder="Search" className="me-2" aria-label="Search" onChange={e => {setNameSearch(e.target.value); setPage(1);}} />
 					</Form>
 				</div>
 				
