@@ -5,10 +5,6 @@ import BasicButton from '../../components/BasicButton/BasicButton.jsx';
 import Select from 'react-select';
 import { Form, Card, Button } from 'react-bootstrap';
 
-// const courseOptions = [
-// 	{ value: 'cs101', label: 'CS101' },
-// 	{ value: 'cs103', label: 'CS103' },
-// ];
 
 const availabilityOptions = [
 	{ value: 'monday', label: 'Monday' },
@@ -16,16 +12,6 @@ const availabilityOptions = [
 	// ...
 ];
 
-// const tutors = [
-// 	{ tutorName: "Alice Johnson", courses: ["CS101", "MATH201"] },
-// 	{ tutorName: "Bob Smith", courses: ["ENG150", "HIST210"] },
-// 	{ tutorName: "Charlie Brown", courses: ["BIO110", "CHEM120"] },
-// 	{ tutorName: "Diana Prince", courses: ["PHYS130", "CS102"] },
-// 	{ tutorName: "Ethan Hunt", courses: ["MATH202", "STAT300"] },
-// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
-// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] },
-// 	{ tutorName: "Fiona Gallagher", courses: ["PSY101", "SOC200"] }
-// ];
 
 export default function TutorList() {
 	const [page, setPage] = useState(1);
@@ -35,14 +21,15 @@ export default function TutorList() {
 	const [courseSearch, setCourseSearch] = useState('');
 
 	useEffect(() => {
-		fetch(`/api/tutor-list/all?page=${page ? page : 1}`)
+		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}`)
 			.then(res => res.json())
 			.then(data => {
+				console.log("Fetched tutors data:", data); // Debugging line
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
 			})
 			.catch(error => console.error("Error fetching tutors:", error));
-	}, [page]);
+	}, [page, courseSearch]);
 
 	const fetchCourses = (search = '') => {
 		fetch(`/api/tutor-list/courses?search=${encodeURIComponent(search)}`)
@@ -62,7 +49,7 @@ export default function TutorList() {
 
 				<div className='d-flex gap-3 justify-content-center'>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
-						<Select options={courseOptions} isSearchable isClearable placeholder="Course" onInputChange={e => {setCourseSearch(e); fetchCourses(e);}} />
+						<Select options={courseOptions} isSearchable isClearable placeholder="Course" onInputChange={e => {fetchCourses(e);}} onChange={e => {setCourseSearch(e);setPage(1);console.log(e);}} />
 					</div>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
 						<Select options={availabilityOptions} isClearable placeholder="Availability" />

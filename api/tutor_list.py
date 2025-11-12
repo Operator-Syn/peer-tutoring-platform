@@ -10,15 +10,41 @@ def get_tutor_list():
         page = int(request.args.get('page', 1))
         per_page = 9
         offset = (page - 1) * per_page
+        course = request.args.get('course', '').strip().upper()
 
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    "SELECT * FROM tutor WHERE status = 'ACTIVE' LIMIT %s OFFSET %s",
-                    (per_page, offset)
-                )
-                tutors = cursor.fetchall()
+
+                if course:  # <-- Added: filter by course if provided
+                    cursor.execute(
+                        """
+                        SELECT t.* FROM tutor t
+                        JOIN teaches te ON t.tutor_id = te.tutor_id
+                        WHERE t.status = 'ACTIVE' AND te.course_code = %s
+                        LIMIT %s OFFSET %s
+                        """,
+                        (course, per_page, offset)
+                    )
+                    tutors = cursor.fetchall()
+                    print("DEBUG tutors with course filter:", tutors)  # Debugging line
+                    cursor.execute(
+                        """
+                        SELECT COUNT(DISTINCT t.tutor_id) FROM tutor t
+                        JOIN teaches te ON t.tutor_id = te.tutor_id
+                        WHERE t.status = 'ACTIVE' AND te.course_code = %s
+                        """,
+                        (course,)
+                    )
+                else:
+
+                    cursor.execute(
+                        "SELECT * FROM tutor WHERE status = 'ACTIVE' LIMIT %s OFFSET %s",
+                        (per_page, offset)
+                    )
+                    tutors = cursor.fetchall()
+                    cursor.execute("SELECT COUNT(*) FROM tutor WHERE status = 'ACTIVE'")
+                total_tutors = cursor.fetchone()['count']
 
                 tutor_details = []
                 for t in tutors:
@@ -30,8 +56,6 @@ def get_tutor_list():
                     tutee_info = cursor.fetchone()
                     tutor_details.append({'tutorName': tutee_info['first_name'] + ' ' + tutee_info['last_name'], 'courses': courses})
 
-                cursor.execute("SELECT COUNT(*) FROM tutor WHERE status = 'ACTIVE'")
-                total_tutors = cursor.fetchone()['count']
                 max_pages = (total_tutors + per_page - 1) // per_page  # ceiling division
 
             return jsonify({
