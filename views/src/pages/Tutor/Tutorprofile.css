@@ -1,0 +1,400 @@
+/* TutorProfile.css */
+.fixed-carousel {
+  height: 120px; /* fixed height */
+  overflow: hidden; /* prevent expansion */
+}
+
+.fixed-carousel .carousel-item {
+  height: 100% !important; /* each item fills the carousel container */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tutor-profile-img {
+  width: 200px;       /* make it bigger */
+     /* maintain square ratio */
+  object-fit: cover;  /* crop if needed */
+  border-radius: 50%; /* make it circular */
+  margin-bottom: 0px; /* spacing below the image */
+
+}
+
+.tutor-header {
+  margin-top: 0%; /* Moves the entire header group down */
+  text-align: center;
+    
+}
+
+.tutor-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #333; /* Optional: dark text for readability */
+}
+
+.tutor-title {
+  margin-top: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4956AD;
+}
+
+.displays {
+  font-family: 'Inter', sans-serif;
+  color: #4956AD;             /* black text */
+  font-weight: 600;        /* bold but not too heavy */
+       /* center it */
+  margin-top: 15px;
+  font-size: 1.4rem;       /* slightly bigger */
+}
+
+.tutor-cards-wrapper {
+  margin-top: 10px;
+}
+
+/* The square card */
+.tutor-profile-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  padding: 2rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Title */
+.tutor-profile-title {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+/* Tutor info section */
+.tutor-profile-info p {
+  margin: 0.3rem 0;
+  font-size: 1rem;
+}
+
+/* Schedule section */
+.tutor-schedule {
+  margin-top: 1rem;
+  overflow-y: auto;
+}
+
+.tutor-schedule-title {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Table inside the square */
+.tutor-schedule-table-wrapper {
+  overflow-x: auto;
+}
+
+.tutor-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.tutor-schedule-table th,
+.tutor-schedule-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.tutor-schedule-table th {
+  background-color: #f7f7f7;
+}
+
+/* No schedule message */
+.tutor-no-schedule {
+  text-align: center;
+  margin-top: 1rem;
+  color: #888;
+}
+
+/* Base layout for the two-column section */
+.responsive-tutor-layout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  transition: all 0.3s ease;
+}
+
+/* Each column (left/right) */
+.responsive-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  justify-content: center;
+}
+
+/* Card general styling */
+.responsive-column .card {
+  border-radius: 1rem;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+/* ✅ Narrow phones (401px–430px) */
+@media (max-width: 430px) and (min-width: 401px) {
+  .responsive-tutor-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .responsive-column {
+    width: 100%;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .responsive-column .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 200px !important;
+    padding: 1.5rem !important;
+    margin: 0 auto;
+  }
+
+  .tutor-profile-card {
+    padding: 1.25rem;
+    aspect-ratio: auto;
+  }
+
+  .tutor-profile-title {
+    font-size: 1.45rem;
+  }
+
+  .tutor-profile-info p,
+  .tutor-schedule-table th,
+  .tutor-schedule-table td {
+    font-size: 0.95rem;
+    padding: 0.45rem;
+  }
+}
+
+/* ✅ Tablet & large phones (431px–768px) */
+@media (max-width: 768px) and (min-width: 431px) {
+  .responsive-tutor-layout {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0 2rem;
+  }
+
+  .responsive-column {
+    width: 90%;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .responsive-column .card {
+    width: 100% !important;
+    max-width: 700px !important;
+    min-width: 0 !important;
+    min-height: 150px !important;
+    padding: 1.75rem !important;
+    margin: 0 auto;
+  }
+
+  .tutor-profile-card {
+    padding: 1.5rem;
+    aspect-ratio: auto;
+  }
+
+  .tutor-profile-title {
+    font-size: 1.6rem;
+  }
+
+  .tutor-profile-info p,
+  .tutor-schedule-table th,
+  .tutor-schedule-table td {
+    font-size: 1rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .responsive-tutor-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .responsive-column {
+    width: 95%;
+    gap: 1.2rem;
+  }
+
+  .responsive-column .card {
+    width: 100% !important;
+    max-width: 95% !important;
+    min-width: 0 !important;
+    min-height: auto !important;
+    padding: 1rem !important;
+  }
+
+  .tutor-profile-card {
+    padding: 1.25rem;
+    aspect-ratio: auto;
+  }
+
+  .tutor-profile-title {
+    font-size: 1.4rem;
+  }
+
+  .tutor-profile-info p,
+  .tutor-schedule-table th,
+  .tutor-schedule-table td {
+    font-size: 0.9rem;
+    padding: 0.4rem;
+  }
+
+  .tutor-schedule-table {
+    font-size: 0.9rem;
+  }
+}
+
+/* ✅ Small phones (301px–400px) */
+@media (max-width: 400px) and (min-width: 301px) {
+  .responsive-tutor-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.3rem;
+    padding: 0 1rem;
+  }
+
+  .responsive-column {
+    width: 90%;
+    gap: 1.3rem;
+  }
+
+  .responsive-column .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 150px !important;
+    padding: 1.25rem !important;
+  }
+
+  .tutor-profile-card {
+    padding: 1.3rem;
+    aspect-ratio: auto;
+  }
+
+  .tutor-profile-title {
+    font-size: 1.5rem;
+  }
+
+  .tutor-profile-info p,
+  .tutor-schedule-table th,
+  .tutor-schedule-table td {
+    font-size: 1rem;
+    padding: 0.45rem;
+  }
+
+  .tutor-schedule-table {
+    font-size: 1rem;
+  }
+}
+
+/* ✅ Ultra-small phones (≤300px) */
+@media (max-width: 300px) {
+  .responsive-tutor-layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .responsive-column {
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .responsive-column .card {
+    width: 100% !important;
+    padding: 0.8rem !important;
+  }
+
+  .tutor-profile-title {
+    font-size: 1.2rem;
+  }
+
+  .tutor-profile-info p,
+  .tutor-schedule-table th,
+  .tutor-schedule-table td {
+    font-size: 0.85rem;
+  }
+}
+
+/* ✅ BUTTON GRID SECTION — fits all breakpoints */
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2x2 layout by default */
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+}
+
+.tutor-btn {
+  background-color: #4956AD;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  width: 100%;
+  height: 100%;
+  min-height: 75px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tutor-btn:hover {
+  background-color: #35428e;
+  color: white;
+}
+
+/* ✅ Tablet buttons (≤768px): tighter spacing */
+@media (max-width: 768px) {
+  .button-grid {
+    gap: 0.75rem;
+  }
+}
+
+/* ✅ Small phones (≤430px): stack vertically */
+@media (max-width: 430px) {
+  .button-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .tutor-btn {
+    font-size: 0.9rem;
+    min-height: 55px;
+  }
+}
+
+/* ✅ Tiny phones (≤300px): smaller buttons */
+@media (max-width: 300px) {
+  .tutor-btn {
+    font-size: 0.8rem;
+    min-height: 50px;
+  }
+}

@@ -14,6 +14,9 @@ import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
 
+import TutorProfile from "./pages/Tutor/Tutorprofile";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -22,6 +25,8 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
           <Route path="Events" element={<Events />} />
+          
+          
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
             <Route path="Report" element={<Report />} />
@@ -30,6 +35,8 @@ function App() {
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
+<Route path="Tutorprofile/:tutor_id" element={<TutorProfile />} />
+              
             
           </Route>
         </Route>

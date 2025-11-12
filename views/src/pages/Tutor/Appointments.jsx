@@ -340,6 +340,8 @@ const handleDecline = (id) => {
           marginLeft: "5rem",
           marginRight: "5rem",
           marginBottom: "5rem",
+          
+          border: "2px solid #4956AD",
         }}
       >
         {/* Avatar + College Code */}
