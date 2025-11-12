@@ -1,36 +1,48 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FillOut from "./Steps/FillOut/FillOut";
-import Schedule from "./Steps/Schedule/Scedule";
+import Schedule from "./Steps/Schedule/Schedule";
 import Overview from "./Steps/Overview/Overview";
 import Settled from "./Steps/Settled/Settled";
-import "./CreateAppointment.css"; // optional external styling
+import "./CreateAppointment.css";
 
 export default function CreateAppointment() {
     const [step, setStep] = useState(0);
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        program: "",
-        subjectCode: "",
-        date: "",
-    });
+    const [formData, setFormData] = useState({});
+    const navigate = useNavigate(); 
 
     function updateFormData(updates) {
-        setFormData(function (prev) {
-            return { ...prev, ...updates };
-        });
+        setFormData((prev) => ({ ...prev, ...updates }));
     }
 
     function next() {
-        setStep(function (s) {
-            return Math.min(s + 1, steps.length - 1);
-        });
+        // Validation for FillOut step (step 0)
+        if (step === 0) {
+            if (!formData.courseCode || !formData.preferredDate) {
+                alert("Please select a subject and a date before continuing.");
+                return;
+            }
+        }
+
+        // Step 1: require a tutor selection
+        if (step === 1) {
+            if (!formData.vacant_id) {
+                alert("Please select a tutor before continuing.");
+                return;
+            }
+        }
+
+        if (step === steps.length - 1) {
+            // Last step: redirect to home
+            navigate("/");
+            return;
+        }
+
+        setStep((s) => Math.min(s + 1, steps.length - 1));
     }
 
     function prev() {
-        setStep(function (s) {
-            return Math.max(s - 1, 0);
-        });
+        setStep((s) => Math.max(s - 1, 0));
     }
 
     const steps = [
@@ -42,19 +54,21 @@ export default function CreateAppointment() {
 
     return (
         <div className="create-appointment-container container">
-            <h2 className="create-appointment-title">Create Appointment</h2>
-
             <div className="create-appointment-step">{steps[step]}</div>
 
             <div className="create-appointment-nav">
-                {step > 0 && (
+                {step > 0 && step < steps.length - 1 && (
                     <button className="nav-button back-button" onClick={prev}>
                         Back
                     </button>
                 )}
-                {step < steps.length - 1 && (
+                {step < steps.length - 1 ? (
                     <button className="nav-button next-button" onClick={next}>
                         Next
+                    </button>
+                ) : (
+                    <button className="nav-button next-button" onClick={next}>
+                        Finish
                     </button>
                 )}
             </div>
