@@ -13,6 +13,7 @@ import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppoi
 import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
+import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
+            <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             
           </Route>
