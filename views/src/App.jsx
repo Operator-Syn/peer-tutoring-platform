@@ -13,6 +13,7 @@ import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppoi
 import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
+import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
 
 import TutorProfile from "./pages/Tutor/Tutorprofile";
 
@@ -35,8 +36,10 @@ function App() {
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
-<Route path="tutor/:tutor_id" element={<TutorProfile />} />
+            <Route path="tutor/:tutor_id" element={<TutorProfile />} />
               
+            <Route path="CreateAppointment" element={<CreateAppointment />} />
+            <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             
           </Route>
         </Route>

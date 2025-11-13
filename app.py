@@ -8,9 +8,13 @@ from authlib.integrations.flask_client import OAuth
 from api.app_auth import auth_bp, oauth
 from datetime import timedelta
 from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
+from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
+from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
+from controllers.createNewPendingAppointmentController.createNewPendingAppointmentController import bp_create_pending
 from controllers.requestscontroller.requestscontroller import requests_bp  
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
+from controllers.adminDashboardController import admin_dashboard_bp
 
 # Existing controllers
 
@@ -38,8 +42,15 @@ app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications
 app.register_blueprint(bp_appointments)
 app.register_blueprint(requests_bp) 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(bp_fillout)
+app.register_blueprint(bp_availability)
+app.register_blueprint(bp_create_pending)
 app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
+app.register_blueprint(admin_dashboard_bp)
+@app.route('/uploads/cor/<filename>')
+def serve_cor_file(filename):
+    return send_from_directory('uploads/cor', filename)
 # ---------- Protect all API routes ----------
 
 # @app.before_request

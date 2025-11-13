@@ -9,10 +9,43 @@ from utils.db import get_connection
 upload_folder = "uploads/cor"
 allowed_extensions = {'pdf', 'jpg', 'jpeg', 'png'}
 os.makedirs(upload_folder, exist_ok=True)
-tutor_application_bp = Blueprint("tutor_application", __name__)
+tutor_application_bp = Blueprint("tutor_applications", __name__)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+@tutor_application_bp.route('/student/<student_id>', methods=['GET'])
+def get_student_info(student_id):
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id_number AS student_id, first_name, last_name
+                    FROM tutee
+                    WHERE id_number = %s
+                """, (student_id,))
+                student = cursor.fetchone()
+
+        if student:
+            return jsonify({
+                'success': True,
+                'student': student
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Student not found'
+            }), 404
+        
+    except Exception as e:
+        if conn:
+            conn.close()
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch student information',
+            'details': str(e)
+        }), 500
 
 @tutor_application_bp.route('/tutor-applications', methods=['POST'])
 def submit_tutor_application():
@@ -99,5 +132,3 @@ def get_courses():
             'error': 'Failed to fetch courses',
             'details': str(e)
         }), 500
-    
-

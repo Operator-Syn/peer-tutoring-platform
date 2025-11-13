@@ -224,3 +224,5 @@ views/public/pfp/
 
 # OAuth2 credentials
 client_secret.json
+
+.flaskenv
