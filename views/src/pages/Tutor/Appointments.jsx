@@ -10,6 +10,7 @@ const [selectedTuteeName, setSelectedTuteeName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
 useEffect(() => {
+
   async function fetchData() {
     try {
       console.log("🔹 Fetching logged-in user...");
@@ -45,7 +46,7 @@ useEffect(() => {
 
       const currentTutor = tutors.find(t => t.tutor_id === tuteeId);
       if (!currentTutor) {
-        console.error("❌ This user is not registered as a tutor.");
+        console.error(" This user is not registered as a tutor.");
         return;
       }
       console.log(" Found tutor:", currentTutor);
@@ -235,7 +236,7 @@ const handleDecline = (id) => {
 
 
  
-{/* Search Input + Enter Button */}
+
 {/* Search Input + Enter Button */}
 <div 
   className="d-flex justify-content-center w-100 px-3 px-md-5"

@@ -117,7 +117,7 @@ const res = await fetch(
 
 
     const preselected = [];
-    if (badgeData.friendly) preselected.push("Handshake");
+    if (badgeData.friendly) preselected.push("Friendly");
     if (badgeData.punctual) preselected.push("Punctual");
     if (badgeData.engaging) preselected.push("Responsive");
     if (badgeData.proficient) preselected.push("Proficiency");
@@ -160,17 +160,17 @@ useEffect(() => {
 
 useEffect(() => {
   if (tutor) {
-    setShortInfo(tutor.about || ""); // or tutor.short_info depending on your API
+    setShortInfo(tutor.about || ""); 
   }
 }, [tutor]);
-// Inside useEffect to fetch ylogged-in user
+
 useEffect(() => {
   const fetchUser = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/get_user`);
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
-      setUserGoogleId(data.sub || data.google_id); // depending on what your API returns
+      setUserGoogleId(data.sub || data.google_id); 
     } catch (err) {
       console.error("Failed to fetch logged-in user:", err);
     }
@@ -181,6 +181,7 @@ useEffect(() => {
 const openBadgeModal = async () => {
   if (!tutor || !tutor.tutor_id) return;
   await fetchExistingBadges();
+   
   setIsModalOpen(true);
 };
 
@@ -193,7 +194,7 @@ useEffect(() => {
       if (!res.ok) {
         setError(data.error || "Failed to load tutor.");
       } else {
-        // Convert bytea image to base64 if present
+
         if (data.profile_img) {
           data.profile_img = `data:image/png;base64,${data.profile_img}`;
         }
@@ -210,6 +211,31 @@ useEffect(() => {
 
   fetchTutor();
 }, [tutor_id]);
+
+
+useEffect(() => {
+  const fetchBadgeCounts = async () => {
+    if (!tutor?.tutor_id) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBadgeCounts({
+          friendly: data.friendly_count,
+          punctual: data.punctual_count,
+          engaging: data.engaging_count,
+          proficient: data.proficient_count,
+        });
+      } else {
+        console.error("Failed to fetch badge counts:", data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchBadgeCounts();
+}, [tutor?.tutor_id, isModalOpen]); 
 
 
 
@@ -437,7 +463,7 @@ useEffect(() => {
     resize: "none",
     fontSize: "clamp(0.8rem, 2.2vw, 1rem)",  // responsive text
     lineHeight: "1.5",
-    minHeight: "120px", // ensures good height on small screens
+    minHeight: "120px", 
   }}
 />
 
@@ -1142,124 +1168,155 @@ useEffect(() => {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Scrollable Image Row */}
-      <div
+
+
+ <div
+  style={{
+    display: "flex",
+    gap: "20px",
+    overflowX: "auto",
+    paddingBottom: "10px",
+    width: "100%",
+  }}
+>
+  {["Responsive", "Friendly", "Punctual", "Proficiency"].map((badge) => (
+    <div
+      key={badge}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        flex: "0 0 auto",
+      }}
+    >
+      <button
         style={{
-          display: "flex",
-          gap: "20px",
-          overflowX: "auto",
-          paddingBottom: "10px",
-          width: "100%",
+          border: "none",
+          background: selectedBadges.includes(badge) ? "#4F62DE" : "transparent",
+          padding: 0,
+          cursor: "pointer",
+          outline: "none",
+          borderRadius: "10px",
+        }}
+        onClick={() => toggleBadge(badge)}
+      >
+        <img
+          src={
+            badge === "Responsive"
+              ? bigger_responsive
+              : badge === "Friendly"
+              ? bigger_handshake
+              : badge === "Punctual"
+              ? bigger_panctual
+              : bigger_proficiency
+          }
+          style={{
+            width: "150px",
+            height: "150px",
+            objectFit: "cover",
+            opacity: selectedBadges.includes(badge) ? 1 : 0.7,
+            transition: "all 0.2s",
+          }}
+        />
+      </button>
+      <p
+        style={{
+          marginTop: "10px", // space between image and label
+          fontWeight: "500",
+          color: "#4F62DE",
+          textAlign: "center",
         }}
       >
-        {["Responsive", "Handshake", "Punctual", "Proficiency"].map((badge) => (
-          <button
-            key={badge}
-            style={{
-              border: "none",
-              background: selectedBadges.includes(badge) ? "#4F62DE" : "transparent",
-              padding: 0,
-              flex: "0 0 auto",
-              cursor: "pointer",
-              outline: "none",
-              borderRadius: "10px",
-            }}
-            onClick={() => toggleBadge(badge)}
-          >
-            <img
-              src={
-                badge === "Responsive" ? bigger_responsive :
-                badge === "Handshake" ? bigger_handshake :
-                badge === "Punctual" ? bigger_panctual :
-                bigger_proficiency
-              }
-              style={{
-                width: "150px",
-                height: "150px",
-                objectFit: "cover",
-                opacity: selectedBadges.includes(badge) ? 1 : 0.7,
-                transition: "all 0.2s",
-              }}
-            />
-          </button>
-        ))}
-      </div>
-
-      {/* Modal Buttons */}
-      <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-        <button
-          style={{
-            padding: "10px 20px",
-            borderRadius: "5px",
-        
-            backgroundColor: "#ffffffff",
-            border:"3px solid #4F62DE",
-            color: "#4F62DE",
-            cursor: "pointer",
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          Cancel
-        </button>
-        <button
-          style={{
-            padding: "10px 20px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            
-             backgroundColor: "#4F62DE",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-          onClick={async () => {
-            console.log("Confirm clicked");
-            
-            if (!userGoogleId || !tutor?.tutor_id) {
-              console.error("Missing Google ID or tutor ID");
-              return;
-            }
-
-            try {
-            const tuteeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
-
-const tuteeData = await tuteeRes.json();
-
-if (!tuteeRes.ok || !tuteeData.id_number) {
-  console.error("Failed to fetch tutee id_number");
-  return;
-}
-
-const payload = {
-  tutee_id: tuteeData.id_number,
-  tutor_id: tutor.tutor_id,
-  friendly: selectedBadges.includes("Handshake"),
-  punctual: selectedBadges.includes("Punctual"),
-  engaging: selectedBadges.includes("Responsive"),
-  proficient: selectedBadges.includes("Proficiency"),
-};
-
-const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutor/badges`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
+        {badge}
+      </p>
+    </div>
+  ))}
+</div>
 
 
 
-const data = await res.json();
-if (!res.ok) console.error("Error giving badges:", data.error);
-else console.log("Badges saved:", data.badge);
 
 
-              setIsModalOpen(false);
-            } catch (err) {
-              console.error("Failed to submit badges:", err);
-            }
-          }}
-        >
-          Confirm
-        </button>
-      </div>
+
+
+
+{/* Modal Buttons */}
+<div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+  <button
+    style={{
+      padding: "10px 20px",
+      borderRadius: "5px",
+      backgroundColor: "#ffffffff",
+      border: "3px solid #4F62DE",
+      color: "#4F62DE",
+      cursor: "pointer",
+    }}
+    onClick={() => setIsModalOpen(false)}
+  >
+    Cancel
+  </button>
+  
+  <button
+    style={{
+      padding: "10px 20px",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      backgroundColor: "#4F62DE",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+    onClick={async () => {
+      console.log("Confirm clicked");
+
+      if (!userGoogleId || !tutor?.tutor_id) {
+        console.error("Missing Google ID or tutor ID");
+        return;
+      }
+
+      try {
+        const tuteeRes = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/tutee/by_google/${userGoogleId}`
+        );
+
+        const tuteeData = await tuteeRes.json();
+
+        if (!tuteeRes.ok || !tuteeData.id_number) {
+          console.error("Failed to fetch tutee id_number");
+          return;
+        }
+
+        const payload = {
+          tutee_id: tuteeData.id_number,
+          tutor_id: tutor.tutor_id,
+          friendly: selectedBadges.includes("Friendly"),
+          punctual: selectedBadges.includes("Punctual"),
+          engaging: selectedBadges.includes("Responsive"),
+          proficient: selectedBadges.includes("Proficiency"),
+        };
+
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/tutor/badges`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const data = await res.json();
+        if (!res.ok) console.error("Error giving badges:", data.error);
+        else console.log("Badges saved:", data.badge);
+
+        setIsModalOpen(false);
+      } catch (err) {
+        console.error("Failed to submit badges:", err);
+      }
+    }}
+  >
+    Confirm
+  </button>
+</div>
+
     </div>
   </div>
 )}
