@@ -334,7 +334,7 @@ const AdminDashboard = () => {
                     <button
                       className="btn btn-accept"
                       onClick={() => handleUpdateStatus(app.application_id, 'APPROVED')}
-                      disabled={processingId === app.application_id || app.status === 'APPROVED'}
+                      disabled={processingId === app.application_id || app.status === 'REJECTED' || app.status === 'APPROVED'}
                     >
                       {processingId === app.application_id ? (
                         <span className="spinner-border spinner-border-sm"></span>
@@ -344,7 +344,7 @@ const AdminDashboard = () => {
                     </button>
                     <button
                       className="btn btn-decline"
-                      disabled={processingId === app.application_id || app.status === 'REJECTED'}
+                      disabled={processingId === app.application_id || app.status === 'REJECTED' || app.status === 'APPROVED'}
                       onClick={() => handleUpdateStatus(app.application_id, 'REJECTED')}
                     >
                       Decline
