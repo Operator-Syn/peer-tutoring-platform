@@ -97,10 +97,10 @@ const fetchExistingBadges = async () => {
     const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
     const tuteeData = await tuteeRes.json();
 
-    if (!tuteeRes.ok || !tuteeData.id_number) {
+    /*if (!tuteeRes.ok || !tuteeData.id_number) {
       console.error("Failed to fetch tutee id_number");
       return;
-    }
+    }*/
 
     const tutee_id = tuteeData.id_number;
 
