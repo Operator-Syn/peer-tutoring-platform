@@ -1,12 +1,12 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
-import "./TutorProfile.css"; // import the CSS
+import "./Tutorprofile.css"; // import the CSS
 import profile from "../../assets/images/placeholders/Profile.png";
 import { Carousel } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import slide1 from "../../assets/images/placeholders/Profile.png";
 import slide2 from"../../assets/images/placeholders/Profile.png";
-import friendly from "../../assets/images/placeholders/Handshake.png"
+import friendly from "../../assets/images/placeholders/handshake.png"
 import proficient from "../../assets/images/placeholders/proficiency.png"
 import panctual from "../../assets/images/placeholders/panctual.png"
 import responsive from "../../assets/images/placeholders/response.png"
