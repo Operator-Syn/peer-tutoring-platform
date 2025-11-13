@@ -1,0 +1,45 @@
+.create-appointment-form-bg {
+    background-color: #F8F9FF;
+    border-radius: 20px;
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.h3-absolute {
+    /* Default: in flow, with padding to align with content */
+    padding-left: 1rem;
+}
+
+/* Custom border label group */
+.custom-border-label-group {
+    position: relative;
+}
+
+.custom-border-label-group .custom-border-label {
+    position: absolute;
+    top: -0.6em;
+    left: 0.75rem;
+    background-color: var(--bs-body-bg);
+    padding: 0 0.4em;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+}
+
+/* Shared padding for inputs and selects */
+.custom-border-label-group .custom-input,
+.custom-border-label-group .custom-select {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* Large screen adjustments */
+@media (min-width: 1800px) {
+    .h3-absolute {
+        position: absolute;
+        left: 0rem;
+        padding: 3rem 5rem 3rem 5rem;
+        background-color: #4956AD;
+        color: #FFFFFF;
+        font-weight: bold;
+        border-radius: 0px 10px 10px 0px;
+    }
+}

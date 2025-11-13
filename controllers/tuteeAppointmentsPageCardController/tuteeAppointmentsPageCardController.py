@@ -1,14 +1,12 @@
-# controllers/tuteeAppointmentsPageCardController.py
-from flask import Blueprint, jsonify
-from datetime import datetime
+from flask import Blueprint, jsonify, session
 from models.tuteeAppointmentsPageCardModel.tuteeAppointmentsPageCardModel import AppointmentCard, ModalContentItem
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 
-bp_appointments = Blueprint("appointmcd ents", __name__, url_prefix="/api")
+bp_appointments = Blueprint("appointments", __name__, url_prefix="/api")
 
 def fetch_appointment_cards(results):
-    """Helper to convert DB rows into AppointmentCard instances"""
+    """Convert DB rows into AppointmentCard instances"""
     cards = []
     for result in results:
         appointment_date_str = result['appointment_date'].strftime("%B %d, %Y")
@@ -31,18 +29,33 @@ def fetch_appointment_cards(results):
     return cards
 
 @bp_appointments.route("/appointments")
-def get_all_appointments():
+def get_user_appointments():
+    user = session.get("user")
+    if not user or not user.get("sub"):
+        return jsonify({"error": "User not authenticated"}), 401
+
+    google_id = user["sub"]
+
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    query = """
+
+    try:
+        # --- Fetch the current tutee ID ---
+        cur.execute("SELECT id_number FROM tutee WHERE google_id = %s LIMIT 1;", (google_id,))
+        tutee_result = cur.fetchone()
+        if not tutee_result:
+            return jsonify({"error": "No tutee found for this account"}), 404
+        tutee_id = tutee_result["id_number"]
+
+        query = """
         SELECT
             a.appointment_id,
             a.appointment_date,
             a.status,
             t.id_number AS tutor_id,
-            t.first_name || ' ' || t.middle_name || ' ' || t.last_name AS tutor_name,
+            t.first_name || ' ' || COALESCE(t.middle_name,'') || ' ' || t.last_name AS tutor_name,
             tu.id_number AS tutee_id,
-            tu.first_name || ' ' || tu.middle_name || ' ' || tu.last_name AS tutee_name,
+            tu.first_name || ' ' || COALESCE(tu.middle_name,'') || ' ' || tu.last_name AS tutee_name,
             av.start_time,
             av.end_time,
             c.course_code,
@@ -52,12 +65,14 @@ def get_all_appointments():
         JOIN tutor ttr ON av.tutor_id = ttr.tutor_id
         JOIN tutee t ON t.id_number = ttr.tutor_id
         JOIN tutee tu ON a.tutee_id = tu.id_number
-        JOIN teaches th ON ttr.tutor_id = th.tutor_id
-        JOIN course c ON th.course_code = c.course_code
-        ORDER BY a.appointment_date, av.start_time
-    """
-    cur.execute(query)
-    results = cur.fetchall()
-    cur.close()
-    conn.close()
-    return jsonify(fetch_appointment_cards(results))
+        JOIN course c ON a.course_code = c.course_code
+        WHERE a.tutee_id = %s
+        ORDER BY a.appointment_date, av.start_time;
+        """
+        cur.execute(query, (tutee_id,))
+        results = cur.fetchall()
+        return jsonify(fetch_appointment_cards(results))
+
+    finally:
+        cur.close()
+        conn.close()
