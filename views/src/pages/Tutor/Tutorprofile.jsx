@@ -28,14 +28,19 @@ const [selectedBadges, setSelectedBadges] = useState([]);
 const [isShortInfoModalOpen, setIsShortInfoModalOpen] = useState(false);
 const [shortInfo, setShortInfo] = useState(tutor?.short_info || ""); // 
 const [badgeCounts, setBadgeCounts] = useState({
-
-
+  
   friendly: 0,
   punctual: 0,
   engaging: 0,
   proficient: 0,
 });
+const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCoursesModalOpen, setIsCoursesModalOpen] = useState(false);
+const [selectedReasons, setSelectedReasons] = useState([]);
+const [reportDetails, setReportDetails] = useState("");
+const [reportFiles, setReportFiles] = useState([]); // store files
+const [tuteeId, setTuteeId] = useState(null);
+const [isSubmitting, setIsSubmitting] = useState(false);
 
 const toggleBadge = (badgeName) => {
   setSelectedBadges((prev) =>
@@ -139,6 +144,22 @@ const openBadgeModal = async () => {
 };
 
 
+useEffect(() => {
+  const fetchTuteeId = async () => {
+    if (!userGoogleId) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+      const data = await res.json();
+      if (res.ok && data.id_number) setTuteeId(data.id_number);
+      else console.error("Failed to fetch tutee ID:", data.error);
+    } catch (err) {
+      console.error("Error fetching tutee ID:", err);
+    }
+  };
+  fetchTuteeId();
+}, [userGoogleId]);
+
+
   useEffect(() => {
     const fetchTutor = async () => {
       try {
@@ -195,14 +216,14 @@ const openBadgeModal = async () => {
   <p className="tutor-name">{tutor.first_name} {tutor.middle_name} {tutor.last_name}</p>
   <h1 className="tutor-title">Tutor</h1> 
 
-  {/* Report Button */}
+
 {!isCurrentUserTutor && (
   <button
-    onClick={() => alert("Report functionality coming soon!")}
+    onClick={() => setIsReportModalOpen(true)}
     style={{
       position: "absolute",
-      top: "-1.5rem",    // slightly above the card
-      left: "-3rem",      // start of the card with some margin
+      top: "-1.25rem",
+      left: "-3rem",
       padding: "0.5rem 1rem",
       backgroundColor: "#ffffffff",
       color: "#4F62DE",
@@ -211,12 +232,236 @@ const openBadgeModal = async () => {
       cursor: "pointer",
       fontWeight: "bold",
       fontSize: "0.9rem",
-      textDecoration: "underline"
+      textDecoration: "underline",
     }}
   >
     Report
   </button>
 )}
+
+{isReportModalOpen && (
+  <div
+    style={{
+      position: "fixed",
+      top: 50,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    }}
+    onClick={() => setIsReportModalOpen(false)}
+  >
+    <div
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: "10px",
+        padding: "20px",
+        maxWidth: "500px",
+        width: "90%",
+        maxHeight: "80%",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: "15px",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h3>Reasons for Reporting</h3>
+      <p style={{ fontSize: "0.9rem", color: "#555" }}>
+        LAV has a zero-tolerance policy for bullying. Please describe the incident truthfully 
+        and with as much detail as possible. We will review the report and, if warranted, 
+        impose appropriate consequences.
+      </p>
+
+      {/* Multiple selectable reason buttons */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {[
+          "Harassment",
+          "Racist",
+          "Verbal Abuse",
+          "Cursing",
+          "Inappropriate Profile",
+          "Mocking",
+        ].map((reason) => (
+          <button
+            key={reason}
+            onClick={() => {
+              if (selectedReasons.includes(reason)) {
+                setSelectedReasons(selectedReasons.filter((r) => r !== reason));
+              } else {
+                setSelectedReasons([...selectedReasons, reason]);
+              }
+            }}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "5px",
+              border: selectedReasons.includes(reason)
+                ? "2px solid #4F62DE"
+                : "1px solid #ccc",
+              backgroundColor: selectedReasons.includes(reason)
+                ? "#4F62DE"
+                : "#f8f8f8",
+              color: selectedReasons.includes(reason) ? "#fff" : "#000",
+              cursor: "pointer",
+            }}
+          >
+            {reason}
+          </button>
+        ))}
+      </div>
+
+      {/* Details textarea */}
+ <textarea
+  placeholder="Describe the incident in detail..."
+  rows={5}
+  value={reportDetails}
+  onChange={(e) => setReportDetails(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "clamp(8px, 2vw, 12px)",  // scales padding with screen width
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    resize: "none",
+    fontSize: "clamp(0.8rem, 2.2vw, 1rem)",  // responsive text
+    lineHeight: "1.5",
+    minHeight: "120px", // ensures good height on small screens
+  }}
+/>
+
+
+      {/* File Upload */}
+      <div>
+        <label
+          htmlFor="reportFile"
+          style={{
+            display: "block",
+            marginBottom: "5px",
+            fontWeight: "500",
+          }}
+        >
+          Attach files (optional)
+        </label>
+        <input
+          type="file"
+          id="reportFile"
+          multiple
+          onChange={(e) => setReportFiles([...e.target.files])}
+          style={{
+            display: "block",
+            width: "100%",
+            border: "1px solid #ccc",
+            borderRadius: "5px",
+            padding: "5px",
+          }}
+        />
+        {reportFiles.length > 0 && (
+          <ul style={{ marginTop: "10px", paddingLeft: "20px" }}>
+            {reportFiles.map((file, i) => (
+              <li key={i}>{file.name}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Buttons */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+        <button
+          onClick={() => setIsReportModalOpen(false)}
+          style={{
+            padding: "8px 15px",
+            borderRadius: "5px",
+            border: "2px solid #4F62DE",
+            cursor: "pointer",
+            backgroundColor: "#fff",
+            color: "#4F62DE",
+            fontWeight: "600",
+          }}
+        >
+          Cancel
+        </button>
+
+        {/* ✅ Confirm Button */}{/* ✅ Confirm Button */}
+<button
+  onClick={async () => {
+    if (selectedReasons.length === 0 && reportDetails.trim() === "") {
+      alert("Please select at least one reason or add a description.");
+      return;
+    }
+
+    if (isSubmitting) return; // prevent multiple clicks
+    setIsSubmitting(true);
+
+    try {
+      // 1️⃣ Get tutee ID using Google ID
+      const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+      const tuteeData = await tuteeRes.json();
+
+      if (!tuteeRes.ok || !tuteeData.id_number) {
+        alert("Could not find your tutee ID. Please re-login.");
+        return;
+      }
+
+      // 2️⃣ Prepare FormData for the report
+      const formData = new FormData();
+      formData.append("reporter_id", tuteeData.id_number);
+      formData.append("reported_id", tutor.tutor_id);
+      formData.append("type", "TUTOR_REPORT");
+      formData.append("description", reportDetails);
+      formData.append("status", "PENDING");
+
+      // ✅ Append each reason individually (backend expects array via getlist)
+      selectedReasons.forEach((reason) => formData.append("reasons", reason));
+
+      // ✅ Attach each file
+      reportFiles.forEach((file) => formData.append("files", file));
+
+      // 3️⃣ Send request
+      const res = await fetch("http://localhost:5000/api/tutee/report", {
+        method: "POST",
+        body: formData, // no headers; browser sets multipart/form-data automatically
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to submit report");
+
+      // 4️⃣ Success feedback
+      alert("✅ Report submitted successfully!");
+      setIsReportModalOpen(false);
+      setSelectedReasons([]);
+      setReportDetails("");
+      setReportFiles([]);
+    } catch (err) {
+      console.error("Report submission error:", err);
+      alert("⚠️ Error submitting report. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }}
+  style={{
+    padding: "8px 15px",
+    borderRadius: "5px",
+    border: "none",
+    cursor: "pointer",
+    backgroundColor: "#4F62DE",
+    color: "#fff",
+    fontWeight: "600",
+  }}
+>
+  Confirm
+</button>
+
+
+
+      </div>
+    </div>
+  </div>
+)}
+
+
 
 
   <div
@@ -570,7 +815,7 @@ const openBadgeModal = async () => {
       overflowY: "auto",      // scroll if content is too tall
       paddingRight: "5px",    // prevents scrollbar overlap
       lineHeight: "1.4em",
-      color: "#333",
+      color: "#333C7B",
       whiteSpace: "pre-wrap",
       wordBreak: "break-word",
     }}
@@ -587,6 +832,7 @@ const openBadgeModal = async () => {
 {isShortInfoModalOpen && (
   <div
     style={{
+      
       position: "fixed",
       top: 0,
       left: 0,
@@ -610,12 +856,23 @@ const openBadgeModal = async () => {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <h4>Edit Short Info</h4>
+      <h4 style={{
+        backgroundColor: "#fff",
+        color:"#4956AD",
+        padding: "20px",
+        borderRadius: "10px",
+        maxWidth: "500px",
+        width: "90%",
+        
+      }}>Edit Short Info</h4>
      <textarea
+     
   value={shortInfo}
   onChange={(e) => setShortInfo(e.target.value)}
   rows={5}
   style={{
+    border: "2px solid #4956AD",
+    color:"#4956AD",
     width: "100%",
     marginTop: "10px",
     padding: "10px",
@@ -630,7 +887,8 @@ const openBadgeModal = async () => {
       <div style={{ marginTop: "15px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
         <button
           onClick={() => setIsShortInfoModalOpen(false)}
-          style={{ padding: "8px 15px", borderRadius: "5px", cursor: "pointer" }}
+          style={{ padding: "8px 15px", borderRadius: "5px", cursor: "pointer", backgroundColor: "#fff",
+        color:"#4956AD",border:"2px solid #4956AD" }}
         >
           Cancel
         </button>
@@ -722,14 +980,21 @@ const openBadgeModal = async () => {
                 minWidth: "250px",
                 maxWidth: "700px",
                 minHeight: "100px",
+                
                 boxShadow: "0 8px 10px rgba(0, 0, 0, 0.08)",
               }}
             >
-              <h5 className="displays mb-2">{slot.day_of_week}</h5>
-              <p className="mb-1">
+              <h5 className="displays mb-2"> {slot.day_of_week}</h5>
+              <p className="mb-1 " style={{
+              backgroundColor: "#F8F9FF",
+              color:"#333C7B"
+            }}>
                 <strong>Start Time:</strong> {slot.start_time}
               </p>
-              <p className="mb-1">
+              <p className="mb-1" style={{
+              backgroundColor: "#F8F9FF",
+              color:"#333C7B"
+            }}>
                 <strong>End Time:</strong> {slot.end_time}
               </p>
             </div>
@@ -839,9 +1104,10 @@ const openBadgeModal = async () => {
           style={{
             padding: "10px 20px",
             borderRadius: "5px",
-            border: "none",
-            backgroundColor: "#4F62DE",
-            color: "#fff",
+        
+            backgroundColor: "#ffffffff",
+            border:"3px solid #4F62DE",
+            color: "#4F62DE",
             cursor: "pointer",
           }}
           onClick={() => setIsModalOpen(false)}
@@ -853,8 +1119,9 @@ const openBadgeModal = async () => {
             padding: "10px 20px",
             borderRadius: "5px",
             border: "1px solid #ccc",
-            backgroundColor: "#fff",
-            color: "#000",
+            
+             backgroundColor: "#4F62DE",
+            color: "#fff",
             cursor: "pointer",
           }}
           onClick={async () => {

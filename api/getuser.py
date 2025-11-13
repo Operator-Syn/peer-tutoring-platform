@@ -1,7 +1,10 @@
-# api/tutee_api.py
-from flask import Blueprint, jsonify,request
+from flask import Blueprint, jsonify, request,send_from_directory
 from utils.db import get_connection
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor ,Json
+import traceback
+import os
+import base64
+from psycopg2 import sql
 
 tutee_bp = Blueprint('tutee', __name__)
 tutor_bp = Blueprint('tutor', __name__)
@@ -268,3 +271,68 @@ def update_about():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
+
+    
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads", "reports")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@tutee_bp.route("/report", methods=["POST"])
+def create_report():
+    try:
+        # --- Get form data ---
+        reporter_id = request.form.get("reporter_id")
+        reported_id = request.form.get("reported_id")
+        description = request.form.get("description", "")  # textarea input
+        report_type = request.form.get("type", "TUTOR_REPORT")
+        reasons = request.form.getlist("reasons")  # buttons input (array)
+
+        if not reporter_id or not reported_id:
+            return jsonify({"error": "Missing reporter_id or reported_id"}), 400
+
+        # --- Handle file uploads ---
+        file_list = []
+        files = request.files.getlist("files")
+        for file in files:
+            if file and file.filename:
+                unique_filename = f"{reporter_id}_{reported_id}_{file.filename}"
+                save_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+                file.save(save_path)
+                file_list.append(unique_filename)
+
+        # --- Insert into DB ---
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    INSERT INTO report (reporter_id, reported_id, description, type, reasons, files, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'PENDING')
+                    RETURNING report_id;
+                """, (
+                    reporter_id,
+                    reported_id,
+                    description,
+                    report_type,
+                    reasons or [],
+                    file_list or []
+                ))
+
+                report_id = cursor.fetchone()["report_id"]
+
+        return jsonify({
+            "message": "Report submitted successfully",
+            "report_id": report_id
+        }), 201
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@tutee_bp.route("/reports/files/<filename>", methods=["GET"])
+def get_report_file(filename):
+    try:
+        return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404

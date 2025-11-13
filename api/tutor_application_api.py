@@ -100,3 +100,4 @@ def get_courses():
             'details': str(e)
         }), 500
     
+
