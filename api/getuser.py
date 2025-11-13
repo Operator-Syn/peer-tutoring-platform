@@ -5,6 +5,7 @@ import traceback
 import os
 import base64
 from psycopg2 import sql
+from werkzeug.utils import secure_filename
 
 tutee_bp = Blueprint('tutee', __name__)
 tutor_bp = Blueprint('tutor', __name__)
@@ -33,9 +34,23 @@ def get_all_tutors():
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("SELECT * FROM tutor")  # fetch all tutors
                 tutors = cursor.fetchall()
-        return jsonify(tutors)
+
+        # Convert profile_img BYTEA to base64 for each tutor
+        for tutor in tutors:
+            if "profile_img" in tutor and tutor["profile_img"]:
+                tutor["profile_img"] = base64.b64encode(tutor["profile_img"]).decode("utf-8")
+            else:
+                tutor["profile_img"] = None
+
+        return jsonify(tutors), 200
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+    
+
+
 @tutor_bp.route("/<tutor_id>")
 def get_tutor(tutor_id):
     try:
@@ -336,3 +351,44 @@ def get_report_file(filename):
         return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
+    
+
+@tutor_bp.route("/update_profile_img", methods=["POST"])
+def update_profile_img():
+    try:
+        tutor_id = request.form.get("tutor_id")
+        if not tutor_id:
+            return jsonify({"error": "Missing tutor_id"}), 400
+
+        # Get uploaded file
+        file = request.files.get("profile_img")
+        if not file or file.filename == "":
+            return jsonify({"error": "No file uploaded"}), 400
+
+        # Read file as bytes
+        profile_img_bytes = file.read()
+
+        # Convert to base64 for immediate frontend use
+        profile_img_base64 = base64.b64encode(profile_img_bytes).decode("utf-8")
+
+        # Update DB
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE tutor
+                    SET profile_img = %s
+                    WHERE tutor_id = %s
+                """, (profile_img_bytes, tutor_id))
+
+        # Return base64 string so frontend can render immediately
+        return jsonify({
+            "message": "Profile image updated successfully",
+            "profile_img": profile_img_base64
+        }), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
