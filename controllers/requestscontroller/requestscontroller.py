@@ -185,7 +185,7 @@ def search_requests():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        # Use COALESCE to handle possible NULL middle names and remove double spaces
+        
         name_concat = "TRIM(CONCAT(t.first_name, ' ', COALESCE(t.middle_name || ' ', ''), t.last_name))"
 
         base_select = f"""
