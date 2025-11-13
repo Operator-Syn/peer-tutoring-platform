@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "77240721c7e13fb5ba16c6c7aac917a64bbdb66557fb518b8a4e9b0a68e77dfe"
+            "sha256": "2d682b3b816b9cefd1bad4f2f82e9429214dc8048b0366e640dac98402571b54"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.13"
+            "python_version": "3"
         },
         "sources": [
             {
@@ -421,6 +421,15 @@
             "index": "pypi",
             "markers": "python_version >= '3.9' and python_version < '4.0'",
             "version": "==6.0.1"
+        },
+        "git-filter-repo": {
+            "hashes": [
+                "sha256:2cd04929b9024e83e65db571cbe36aec65ead0cb5f9ec5abe42158654af5ad83",
+                "sha256:411b27e68a080c07a69c233cb526dbc2d848b09a72f10477f4444dd0822cf290"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.6'",
+            "version": "==2.47.0"
         },
         "idna": {
             "hashes": [
