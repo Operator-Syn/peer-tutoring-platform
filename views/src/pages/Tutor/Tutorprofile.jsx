@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
 import "./TutorProfile.css"; // import the CSS
 import profile from "../../assets/images/placeholders/Profile.png";
@@ -14,10 +14,12 @@ import bigger_responsive from "../../assets/images/placeholders/bigger_response.
 import bigger_handshake from "../../assets/images/placeholders/bigger_handshake.png"
 import bigger_panctual from "../../assets/images/placeholders/bigger_panctual.png"
 import bigger_proficiency from "../../assets/images/placeholders/bigger_proficiency.png"
+
+
 function TutorProfile() {
   const { tutor_id } = useParams(); //this will extract the tutor_id from ur URL, example /Tutorprofile/2023-3984
   const [date, setDate] = useState(new Date());
-  const [tutor, setTutor] = useState(null);//this will be a storage that will return by the API
+ const [tutor, setTutor] = useState({ profile_img: null }); // your tutor object
   const [loading, setLoading] = useState(true); //tracks if the API call is in progress or something
   const [error, setError] = useState("");//this stores error msg
   const [courses, setCourses] = useState([]);
@@ -27,6 +29,7 @@ const [activeBadge, setActiveBadge] = useState(""); // to know which badge was c
 const [selectedBadges, setSelectedBadges] = useState([]);
 const [isShortInfoModalOpen, setIsShortInfoModalOpen] = useState(false);
 const [shortInfo, setShortInfo] = useState(tutor?.short_info || ""); // 
+const [previewImg, setPreviewImg] = useState(null); // local preview
 const [badgeCounts, setBadgeCounts] = useState({
   
   friendly: 0,
@@ -34,6 +37,7 @@ const [badgeCounts, setBadgeCounts] = useState({
   engaging: 0,
   proficient: 0,
 });
+
 const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCoursesModalOpen, setIsCoursesModalOpen] = useState(false);
 const [selectedReasons, setSelectedReasons] = useState([]);
@@ -42,12 +46,49 @@ const [reportFiles, setReportFiles] = useState([]); // store files
 const [tuteeId, setTuteeId] = useState(null);
 const [isSubmitting, setIsSubmitting] = useState(false);
 
+const fileInputRef = useRef(null);
 const toggleBadge = (badgeName) => {
   setSelectedBadges((prev) =>
     prev.includes(badgeName)
       ? prev.filter((b) => b !== badgeName) // remove if already selected
       : [...prev, badgeName] // add if not selected
   );
+};
+
+ const handleImageClick = () => {
+    fileInputRef.current.click(); // Open file picker
+  };
+
+const handleFileChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Preview locally
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setPreviewImg(reader.result); // only update preview
+  };
+  reader.readAsDataURL(file);
+
+  // Upload binary to server
+  const formData = new FormData();
+  formData.append("tutor_id", tutor.tutor_id);
+  formData.append("profile_img", file);
+
+  try {
+    const res = await fetch("/api/tutor/update_profile_img", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    // Update tutor state only after successful upload
+setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profile_img }));
+
+  } catch (err) {
+    console.error(err.message);
+  }
 };
 
 
@@ -126,7 +167,7 @@ useEffect(() => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:5173/api/auth/get_user", { credentials: "include" });
+      const res = await fetch("http://localhost:5173/api/auth/get_user");
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUserGoogleId(data.sub || data.google_id); // depending on what your API returns
@@ -142,6 +183,34 @@ const openBadgeModal = async () => {
   await fetchExistingBadges();
   setIsModalOpen(true);
 };
+
+useEffect(() => {
+  const fetchTutor = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/tutor/${tutor_id}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to load tutor.");
+      } else {
+        // Convert bytea image to base64 if present
+        if (data.profile_img) {
+          data.profile_img = `data:image/png;base64,${data.profile_img}`;
+        }
+        setTutor(data);
+        setCourses(data.courses || []);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Failed to load tutor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTutor();
+}, [tutor_id]);
+
 
 
 useEffect(() => {
@@ -212,7 +281,47 @@ useEffect(() => {
 
 
  <div className="tutor-header text-center" style={{ position: "relative" }}>
-  <img src={profile} alt="Tutor Profile" className="tutor-profile-img" />
+
+<img
+  src={previewImg || (tutor.profile_img ? `data:image/png;base64,${tutor.profile_img}` : profile)}
+  alt="Tutor Profile"
+  onClick={() => {
+    if (isCurrentUserTutor) {
+      fileInputRef.current?.click();
+    }
+  }}
+  style={{
+    width: "150px",
+    height: "150px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    cursor: isCurrentUserTutor ? "pointer" : "default", // show pointer only if editable
+    border: "3px solid #4956AD",
+  }}
+/>
+
+{isCurrentUserTutor && (
+  <input
+    type="file"
+    accept="image/*"
+    ref={fileInputRef}
+    style={{ display: "none" }}
+    onChange={handleFileChange}
+  />
+)}
+
+
+
+<input
+  type="file"
+  accept="image/*"
+  ref={fileInputRef}
+  style={{ display: "none" }}
+  onChange={handleFileChange}
+/>
+
+
+
   <p className="tutor-name">{tutor.first_name} {tutor.middle_name} {tutor.last_name}</p>
   <h1 className="tutor-title">Tutor</h1> 
 
