@@ -14,6 +14,7 @@ from controllers.createNewPendingAppointmentController.createNewPendingAppointme
 from controllers.requestscontroller.requestscontroller import requests_bp  
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
+from controllers.adminDashboardController import admin_dashboard_bp
 
 # Existing controllers
 
@@ -46,6 +47,10 @@ app.register_blueprint(bp_availability)
 app.register_blueprint(bp_create_pending)
 app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
+app.register_blueprint(admin_dashboard_bp)
+@app.route('/uploads/cor/<filename>')
+def serve_cor_file(filename):
+    return send_from_directory('uploads/cor', filename)
 # ---------- Protect all API routes ----------
 
 # @app.before_request

@@ -448,3 +448,82 @@
 .application-card:nth-child(3) { animation-delay: 0.15s; }
 .application-card:nth-child(4) { animation-delay: 0.2s; }
 .application-card:nth-child(5) { animation-delay: 0.25s; }
+
+.modal {
+  z-index: 2000 !important;
+}
+
+body.modal-open,
+.admin-container.modal-open {
+  overflow: hidden !important;
+}
+
+.modal-body {
+  overflow: hidden !important;
+}
+
+.modal.fade.show {
+  transition: background-color 0.3s ease;
+}
+
+/* Status Filter Tabs */
+.status-filter-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+  border-color: #5865f2;
+  background: #f7f8fc;
+}
+
+.filter-tab.active {
+  background: #5865f2;
+  border-color: #5865f2;
+  color: white;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+@media (max-width: 768px) {
+  .status-filter-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .filter-tab {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 140px;
+    justify-content: center;
+  }
+}
