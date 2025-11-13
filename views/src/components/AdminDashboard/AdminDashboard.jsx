@@ -15,6 +15,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null);
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date_desc');
   const [processingId, setProcessingId] = useState(null);
@@ -32,7 +33,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
     applyFiltersAndSort();
-  }, [applications, searchQuery, sortBy]);
+  }, [applications, searchQuery, sortBy, statusFilter]);
 
   const fetchData = async () => {
     try {
@@ -150,6 +151,10 @@ const AdminDashboard = () => {
   const applyFiltersAndSort = () => {
     let filtered = [...applications];
 
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(app => app.status === statusFilter);
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(app =>
@@ -173,6 +178,27 @@ const AdminDashboard = () => {
       case 'name_desc':
         filtered.sort((a, b) => (b.student_name || b.student_id).localeCompare(a.student_name || a.student_id));
         break;
+      case 'status_pending':
+        filtered.sort((a, b) => {
+          if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+          if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
+          return new Date(b.date_submitted) - new Date(a.date_submitted);
+        });
+        break;
+      case 'status_approved':
+        filtered.sort((a, b) => {
+          if (a.status === 'APPROVED' && b.status !== 'APPROVED') return -1;
+          if (a.status !== 'APPROVED' && b.status === 'APPROVED') return 1;
+          return new Date(b.date_submitted) - new Date(a.date_submitted);
+        });
+        break;
+      case 'status_rejected':
+        filtered.sort((a, b) => {
+          if (a.status === 'REJECTED' && b.status !== 'REJECTED') return -1;
+          if (a.status !== 'REJECTED' && b.status === 'REJECTED') return 1;
+          return new Date(b.date_submitted) - new Date(a.date_submitted);
+        });
+        break;
       default:
         break;
     }
@@ -188,6 +214,13 @@ const AdminDashboard = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const statusCounts = {
+    all: applications.length,
+    PENDING: applications.filter(app => app.status === 'PENDING').length,
+    APPROVED: applications.filter(app => app.status === 'APPROVED').length,
+    REJECTED: applications.filter(app => app.status === 'REJECTED').length
   };
 
   const statsCards = [
@@ -212,7 +245,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="admin-container ${showCorModal ? 'modal-open-custom' : ''}">
+    <div className={`admin-container ${showCorModal ? 'modal-open-custom' : ''}`}>
       <header className="admin-header">
         <div className="header-content">
           <div className="logo-section">
@@ -248,7 +281,35 @@ const AdminDashboard = () => {
           </div>
         )}
 
-          <div className="controls-section">
+        {/* Status Filter Tabs */}
+        <div className="status-filter-tabs mb-3">
+          <button
+            className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('all')}
+          >
+            All <span className="count-badge">{statusCounts.all}</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'PENDING' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('PENDING')}
+          >
+            Pending <span className="count-badge badge-warning">{statusCounts.PENDING}</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'APPROVED' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('APPROVED')}
+          >
+            Approved <span className="count-badge badge-success">{statusCounts.APPROVED}</span>
+          </button>
+          <button
+            className={`filter-tab ${statusFilter === 'REJECTED' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('REJECTED')}
+          >
+            Rejected <span className="count-badge badge-danger">{statusCounts.REJECTED}</span>
+          </button>
+        </div>
+
+        <div className="controls-section">
           <div className="sort-dropdown">
             <select
               className="form-select"
@@ -259,6 +320,9 @@ const AdminDashboard = () => {
               <option value="date_asc">Sort by: Oldest First</option>
               <option value="name_asc">Sort by: Name (A-Z)</option>
               <option value="name_desc">Sort by: Name (Z-A)</option>
+              <option value="status_pending">Sort by: Pending First</option>
+              <option value="status_approved">Sort by: Approved First</option>
+              <option value="status_rejected">Sort by: Rejected First</option>
             </select>
           </div>
 
@@ -280,7 +344,11 @@ const AdminDashboard = () => {
           {filteredApplications.length === 0 ? (
             <div className="empty-state">
               <i className="bi bi-inbox fs-1 text-muted"></i>
-              <p className="text-muted mt-3">No applications found</p>
+              <p className="text-muted mt-3">
+                {statusFilter !== 'all' 
+                  ? `No ${statusFilter.toLowerCase()} applications found`
+                  : 'No applications found'}
+              </p>
             </div>
           ) : (
             filteredApplications.map((app) => (
@@ -531,7 +599,7 @@ const AdminDashboard = () => {
           </div>
         </>
       )}
-  </div>
+    </div>
   );
 };
 
