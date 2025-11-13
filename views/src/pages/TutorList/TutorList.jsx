@@ -26,7 +26,6 @@ export default function TutorList() {
 	const [courseSearch, setCourseSearch] = useState('');
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
 	const [nameSearch, setNameSearch] = useState('');
-	const navigate = useNavigate();
 
 	useEffect(() => {
 		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}${nameSearch ? `&name=${encodeURIComponent(nameSearch)}` : ''}`)
@@ -106,6 +105,7 @@ export default function TutorList() {
 
 
 function TutorCard({tutorName="Tutor Name", courses, tutorId}) {
+	const navigate = useNavigate();
 
 	return (
 		<Card className="column" style={{ width: '18rem', padding: "1rem", gap: "1rem" }}>
