@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BasicButton from '../../components/BasicButton/BasicButton.jsx';
 import Select from 'react-select';
 import { Form, Card, Button } from 'react-bootstrap';
+import { useNavigate } from "react-router-dom";
 
 
 const availabilityOptions = [
@@ -14,7 +15,6 @@ const availabilityOptions = [
 	{ value: 'friday', label: 'Friday' },
 	{ value: 'saturday', label: 'Saturday' },
 	{ value: 'sunday', label: 'Sunday' }
-	// ...
 ];
 
 
@@ -26,6 +26,7 @@ export default function TutorList() {
 	const [courseSearch, setCourseSearch] = useState('');
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
 	const [nameSearch, setNameSearch] = useState('');
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}${nameSearch ? `&name=${encodeURIComponent(nameSearch)}` : ''}`)
@@ -104,7 +105,7 @@ export default function TutorList() {
 }
 
 
-function TutorCard({tutorName="Tutor Name", courses}) {
+function TutorCard({tutorName="Tutor Name", courses, tutorId}) {
 
 	return (
 		<Card className="column" style={{ width: '18rem', padding: "1rem", gap: "1rem" }}>
@@ -120,7 +121,9 @@ function TutorCard({tutorName="Tutor Name", courses}) {
 					<CourseTag key={idx} courseCode={course} />
 				))}
 			</Card.Body>
-			<BasicButton style={{fontSize: "0.8rem", borderRadius: "4px", width: "fit-content", height: "auto", minWidth: 0, padding: "0.175rem 0.75rem", marginLeft: "auto"}}> View Profile </BasicButton>
+			<BasicButton style={{fontSize: "0.8rem", borderRadius: "4px", width: "fit-content", height: "auto", minWidth: 0, padding: "0.175rem 0.75rem", marginLeft: "auto"}} onClick={() => { navigate(`/tutor/${tutorId}`) }}> 
+				View Profile 
+			</BasicButton>
 		</Card>
 
 

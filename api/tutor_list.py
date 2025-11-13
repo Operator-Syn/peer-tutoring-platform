@@ -67,7 +67,7 @@ def get_tutor_list():
                     courses = [row['course_code'] for row in cursor.fetchall()]
                     cursor.execute("SELECT * FROM tutee WHERE id_number = %s", (t['tutor_id'],))
                     tutee_info = cursor.fetchone()
-                    tutor_details.append({'tutorName': tutee_info['first_name'] + ' ' + tutee_info['last_name'], 'courses': courses})
+                    tutor_details.append({'tutorName': tutee_info['first_name'] + ' ' + tutee_info['last_name'], 'courses': courses, 'tutorId': t['tutor_id']})
 
                 max_pages = (total_tutors + per_page - 1) // per_page
 
