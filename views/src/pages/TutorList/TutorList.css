@@ -1,0 +1,72 @@
+
+.tutor-list {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 3rem;
+}
+
+.tutor-info-1 {
+
+}
+
+.tutor-info-2 {
+
+}
+
+.course-tag-list {
+  gap: 8px;
+  background-color: #D6DAF2;
+  width: fit-content;
+  padding: 0px 8px;
+  border-radius: 4px;
+}
+
+.tutor-card-grid {
+  column-count: 3;
+  column-gap: 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 990px) {
+  .tutor-card-grid {
+    column-count: 2;
+  }
+  .tutor-card-grid > div {
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+  }
+}
+
+@media (max-width: 703px) {
+  .tutor-card-grid {
+    column-count: 1;
+  }
+
+  .tutor-card-grid > div {
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+  }
+}
+
+.tutor-card-grid > div {
+  display: block;
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
+}
+
+@media (max-width: 840px) {
+  .tutor-list-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tutor-list-search-bar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}

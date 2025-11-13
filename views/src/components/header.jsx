@@ -201,7 +201,11 @@ function Header() {
                 <p>
                   <img src={webIcon} alt="Website" /> Myiit
                 </p>
-                <p>
+                <p onClick={() => {
+                  setPopup(false);
+                  handleNavClick();
+                  navigate('/tutorlist');
+                }}>
                   <img src={tutorsIcon} alt="Tutors" /> Tutors
                 </p>
                 <p>

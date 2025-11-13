@@ -7,6 +7,7 @@ export default function BasicButton({
   light = false,
   variant,    // optional override
   size = undefined,
+  style,
   ...props
 }) {
 
@@ -18,6 +19,7 @@ export default function BasicButton({
         variant={mappedVariant}
         size={size}
         className={'basic-button'}
+        style={style}
         {...props}
     >
       {children}

@@ -13,6 +13,7 @@ import TuteeAppointmentsPage from "./components/TuteeAppointmentsPage/TuteeAppoi
 import TutorAppointmentsPage from "./pages/Tutor/Appointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
+import TutorList from "./pages/TutorList/TutorList";
 import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
 
 import TutorProfile from "./pages/Tutor/Tutorprofile";
@@ -40,7 +41,7 @@ function App() {
               
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
-            
+            <Route path="TutorList" element={<TutorList />} />
           </Route>
         </Route>
       </Routes>

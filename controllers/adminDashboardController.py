@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from utils.db import get_connection
+from psycopg2.extras import RealDictCursor
 
 admin_dashboard_bp = Blueprint("admin_dashboard", __name__)
 
@@ -107,21 +108,44 @@ def get_admin_statistics():
 def approve_tutor_application(application_id):
     try:
         conn = get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-        cursor.execute("SELECT student_id FROM tutor_application WHERE application_id = %s", (application_id,))
+        cursor.execute(
+            "SELECT student_id FROM tutor_application WHERE application_id = %s",
+            (application_id,)
+        )
         row = cursor.fetchone()
         if not row:
             return jsonify({"success": False, "message": "Application not found"}), 404
 
-        student_id = row[0]
+        student_id = row['student_id']
 
-        cursor.execute("UPDATE tutor_application SET status = 'APPROVED' WHERE application_id = %s", (application_id,))
+        cursor.execute(
+            "UPDATE tutor_application SET status = 'APPROVED' WHERE application_id = %s",
+            (application_id,)
+        )
         cursor.execute("""
             INSERT INTO tutor (tutor_id, status)
             VALUES (%s, 'ACTIVE')
             ON CONFLICT (tutor_id) DO UPDATE SET status = 'ACTIVE'
         """, (student_id,))
+
+        cursor.execute(
+            "SELECT course_code FROM application_courses WHERE application_id = %s",
+            (application_id,)
+        )
+        courses = cursor.fetchall()
+
+        for course in courses:
+            course_code = course['course_code']
+            cursor.execute(
+                """
+                INSERT INTO teaches (tutor_id, course_code)
+                VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+                """,
+                (student_id, course_code)
+            )
 
         conn.commit()
         cursor.close()
@@ -131,7 +155,8 @@ def approve_tutor_application(application_id):
             "success": True,
             "message": "Tutor application approved successfully",
             "data": {"application_id": application_id, "status": "APPROVED"}
-        })
+        }), 200
+
     except Exception as e:
         print("Error approving tutor:", e)
         return jsonify({"success": False, "message": str(e)}), 500

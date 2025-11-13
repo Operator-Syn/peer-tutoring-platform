@@ -1,12 +1,12 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
-import "./TutorProfile.css"; // import the CSS
+import "./Tutorprofile.css"; // import the CSS
 import profile from "../../assets/images/placeholders/Profile.png";
 import { Carousel } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import slide1 from "../../assets/images/placeholders/Profile.png";
 import slide2 from"../../assets/images/placeholders/Profile.png";
-import friendly from "../../assets/images/placeholders/Handshake.png"
+import friendly from "../../assets/images/placeholders/handshake.png"
 import proficient from "../../assets/images/placeholders/proficiency.png"
 import panctual from "../../assets/images/placeholders/panctual.png"
 import responsive from "../../assets/images/placeholders/response.png"
@@ -97,10 +97,10 @@ const fetchExistingBadges = async () => {
     const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
     const tuteeData = await tuteeRes.json();
 
-    if (!tuteeRes.ok || !tuteeData.id_number) {
+    /*if (!tuteeRes.ok || !tuteeData.id_number) {
       console.error("Failed to fetch tutee id_number");
       return;
-    }
+    }*/
 
     const tutee_id = tuteeData.id_number;
 
