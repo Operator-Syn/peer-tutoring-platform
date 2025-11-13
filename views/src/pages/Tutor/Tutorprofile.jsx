@@ -1,12 +1,12 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
-import "./Tutorprofile.css"; // import the CSS
+import "./TutorProfile.css"; // import the CSS
 import profile from "../../assets/images/placeholders/Profile.png";
 import { Carousel } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import slide1 from "../../assets/images/placeholders/Profile.png";
 import slide2 from"../../assets/images/placeholders/Profile.png";
-import friendly from "../../assets/images/placeholders/handshake.png"
+import friendly from "../../assets/images/placeholders/Handshake.png"
 import proficient from "../../assets/images/placeholders/proficiency.png"
 import panctual from "../../assets/images/placeholders/panctual.png"
 import responsive from "../../assets/images/placeholders/response.png"
@@ -94,19 +94,19 @@ setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profil
 
 const fetchExistingBadges = async () => {
   try {
-    const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+    const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
     const tuteeData = await tuteeRes.json();
 
-    /*if (!tuteeRes.ok || !tuteeData.id_number) {
+    if (!tuteeRes.ok || !tuteeData.id_number) {
       console.error("Failed to fetch tutee id_number");
       return;
-    }*/
+    }
 
     const tutee_id = tuteeData.id_number;
 
-    const res = await fetch(
-      `http://localhost:5000/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
-    );
+const res = await fetch(
+  `${API_BASE_URL}/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
+);
 
     if (!res.ok) {
       console.error("No existing badge record found");
@@ -134,7 +134,7 @@ useEffect(() => {
   const fetchBadgeCounts = async () => {
     if (!tutor?.tutor_id) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/tutor/badge_counts/${tutor.tutor_id}`);
+      const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
       const data = await res.json();
       if (res.ok) {
         setBadgeCounts({
@@ -167,7 +167,7 @@ useEffect(() => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/get_user");
+      const res = await fetch(`${API_BASE_URL}/api/auth/get_user`);
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUserGoogleId(data.sub || data.google_id); // depending on what your API returns
@@ -187,7 +187,7 @@ const openBadgeModal = async () => {
 useEffect(() => {
   const fetchTutor = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tutor/${tutor_id}`);
+      const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -217,7 +217,7 @@ useEffect(() => {
   const fetchTuteeId = async () => {
     if (!userGoogleId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+      const res = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
       const data = await res.json();
       if (res.ok && data.id_number) setTuteeId(data.id_number);
       else console.error("Failed to fetch tutee ID:", data.error);
@@ -232,7 +232,7 @@ useEffect(() => {
   useEffect(() => {
     const fetchTutor = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/tutor/${tutor_id}`);
+       const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -506,7 +506,7 @@ useEffect(() => {
 
     try {
     
-      const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+     const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
       const tuteeData = await tuteeRes.json();
 
       /*if (!tuteeRes.ok || !tuteeData.id_number) {
@@ -529,14 +529,10 @@ useEffect(() => {
       reportFiles.forEach((file) => formData.append("files", file));
 
       
-     const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
+   const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(reportData),
+  body: formData,
 });
-
-
-
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
@@ -1008,14 +1004,14 @@ useEffect(() => {
         <button
           onClick={async () => {
             try {
-              const res = await fetch("http://localhost:5000/api/tutor/update_about", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  tutor_id: tutor.tutor_id,
-                  about: shortInfo,
-                }),
-              });
+               const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutor/update_about`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tutor_id: tutor.tutor_id,
+      about: shortInfo,
+    }),
+  });
 
               const data = await res.json();
               if (!res.ok) {
@@ -1246,7 +1242,8 @@ useEffect(() => {
             }
 
             try {
-             const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+            const tuteeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
+
 const tuteeData = await tuteeRes.json();
 
 if (!tuteeRes.ok || !tuteeData.id_number) {
@@ -1263,11 +1260,12 @@ const payload = {
   proficient: selectedBadges.includes("Proficiency"),
 };
 
-const res = await fetch("http://localhost:5000/api/tutor/badges", {
+const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutor/badges`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(payload),
 });
+
 
 
 const data = await res.json();

@@ -22,9 +22,7 @@ import TutorProfile from "./pages/Tutor/Tutorprofile";
 function App() {
   return (
     <BrowserRouter>
-     <Frontpage_route/>
       <Routes>
-<<<<<<< Updated upstream
         <Route path="/*" element={<MasterLayout />}>
           <Route index element={<HomePage />} />
           <Route path="About" element={<About />} />
@@ -45,12 +43,6 @@ function App() {
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
           </Route>
-=======
-        <Route path="/" element={<MasterLayout />}>
-        
-          <Route index element={<Frontpage_route />} />
-          <Route path="/profile/apply" element={<Apply />} />
->>>>>>> Stashed changes
         </Route>
       </Routes>
     </BrowserRouter>
