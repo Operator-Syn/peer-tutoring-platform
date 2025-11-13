@@ -11,7 +11,6 @@ tutee_bp = Blueprint('tutee', __name__)
 tutor_bp = Blueprint('tutor', __name__)
 tutor_badges_bp = Blueprint('tutor_badges', __name__) 
 
-# === GET ALL TUTEES ===
 @tutee_bp.route("/all")
 def get_all_tutees():
     try:
@@ -25,7 +24,7 @@ def get_all_tutees():
         return jsonify({"error": str(e)}), 500
 
 
-# === GET ALL TUTORS ===
+
 @tutor_bp.route("/all")
 def get_all_tutors():
     try:
@@ -49,7 +48,6 @@ def get_all_tutors():
         return jsonify({"error": str(e)}), 500
 
     
-
 
 @tutor_bp.route("/<tutor_id>")
 def get_tutor(tutor_id):
@@ -88,30 +86,23 @@ def get_tutor(tutor_id):
                     if tutor["profile_img"] else None
                 )
 
-                # Availability + appointments
+                # Fetch availability only
                 cursor.execute("""
                     SELECT 
-                        a.vacant_id,
-                        a.day_of_week,
-                        a.start_time,
-                        a.end_time,
-                        ap.appointment_id,
-                        ap.appointment_date,
-                        ap.status AS appointment_status
-                    FROM availability a
-                    LEFT JOIN appointment ap ON a.vacant_id = ap.vacant_id
-                    WHERE a.tutor_id = %s
-                    ORDER BY a.day_of_week, a.start_time;
+                        vacant_id,
+                        day_of_week,
+                        start_time,
+                        end_time
+                    FROM availability
+                    WHERE tutor_id = %s
+                    ORDER BY day_of_week, start_time;
                 """, (tutor_id,))
-                schedule = cursor.fetchall()
+                availability = cursor.fetchall()
 
-                for slot in schedule:
-                    if slot["start_time"]:
-                        slot["start_time"] = slot["start_time"].strftime("%H:%M:%S")
-                    if slot["end_time"]:
-                        slot["end_time"] = slot["end_time"].strftime("%H:%M:%S")
-                    if slot["appointment_date"]:
-                        slot["appointment_date"] = slot["appointment_date"].strftime("%Y-%m-%d")
+                # Format times as strings
+                for slot in availability:
+                    slot["start_time"] = slot["start_time"].strftime("%H:%M:%S")
+                    slot["end_time"] = slot["end_time"].strftime("%H:%M:%S")
 
                 # Teaches courses
                 cursor.execute("SELECT course_code FROM teaches WHERE tutor_id = %s", (tutor_id,))
@@ -129,7 +120,7 @@ def get_tutor(tutor_id):
             "about": tutor["about"] or "",
             "profile_img": tutor["profile_img"],
             "google_id": tutor["google_id"],
-            "schedule": schedule,
+            "availability": availability,
             "courses": courses
         }
 
@@ -139,6 +130,7 @@ def get_tutor(tutor_id):
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 
 

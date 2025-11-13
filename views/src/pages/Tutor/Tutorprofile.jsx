@@ -1,12 +1,12 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
-import "./TutorProfile.css"; // import the CSS
+import "./Tutorprofile.css"; 
 import profile from "../../assets/images/placeholders/Profile.png";
 import { Carousel } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import slide1 from "../../assets/images/placeholders/Profile.png";
 import slide2 from"../../assets/images/placeholders/Profile.png";
-import friendly from "../../assets/images/placeholders/Handshake.png"
+import friendly from "../../assets/images/placeholders/handshake.png"
 import proficient from "../../assets/images/placeholders/proficiency.png"
 import panctual from "../../assets/images/placeholders/panctual.png"
 import responsive from "../../assets/images/placeholders/response.png"
@@ -115,7 +115,7 @@ const res = await fetch(
 
     const badgeData = await res.json();
 
-    // Map true fields to badge names
+
     const preselected = [];
     if (badgeData.friendly) preselected.push("Handshake");
     if (badgeData.punctual) preselected.push("Punctual");
@@ -129,7 +129,7 @@ const res = await fetch(
 };
 
 
-//this gets the tutor's badge count
+
 useEffect(() => {
   const fetchBadgeCounts = async () => {
     if (!tutor?.tutor_id) return;
@@ -1035,14 +1035,6 @@ useEffect(() => {
   </div>
 )}
 
-
-
-
-  
-
-
-
-    
   </div>
 </div>
 
@@ -1054,33 +1046,26 @@ useEffect(() => {
 </div>
 
       </div>
-
-        {/* Schedules */}
-       <div className="container py-5"> 
-
+<div className="container py-5"> 
   {/* Schedules / Badge count aligned under profile */}
-  <div
-    className="container py-5"
-   
-  >
+  <div className="container py-5">
     <div className="column justify-content-start">
       {/* Match left column width (col-md-4 like the profile card) */}
       <div className="col-12 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
 
-
-
-
-
-      {/* Dynamic Schedule Cards (from tutor.schedule) */}
-      <div className="d-flex flex-wrap gap-4 mt-5"  style={{
-      maxHeight: "400px",  // fixed height for vertical scroll
-      overflowY: "auto",   // vertical scrollbar
-      paddingBottom: "10px",
-    }}>
-        {tutor.schedule && tutor.schedule.length > 0 ? (
-          tutor.schedule.map((slot, index) => (
+      {/* Dynamic Schedule Cards (from tutor.availability) */}
+      <div
+        className="d-flex flex-wrap gap-4 mt-5"
+        style={{
+          maxHeight: "400px",  // fixed height for vertical scroll
+          overflowY: "auto",   // vertical scrollbar
+          paddingBottom: "10px",
+        }}
+      >
+        {tutor.availability && tutor.availability.length > 0 ? (
+          tutor.availability.map((slot, index) => (
             <div
               key={index}
               className="card p-4 rounded flex-grow-1"
@@ -1089,21 +1074,14 @@ useEffect(() => {
                 minWidth: "250px",
                 maxWidth: "700px",
                 minHeight: "100px",
-                
                 boxShadow: "0 8px 10px rgba(0, 0, 0, 0.08)",
               }}
             >
-              <h5 className="displays mb-2"> {slot.day_of_week}</h5>
-              <p className="mb-1 " style={{
-              backgroundColor: "#F8F9FF",
-              color:"#333C7B"
-            }}>
+              <h5 className="displays mb-2">{slot.day_of_week}</h5>
+              <p className="mb-1" style={{ color: "#333C7B" }}>
                 <strong>Start Time:</strong> {slot.start_time}
               </p>
-              <p className="mb-1" style={{
-              backgroundColor: "#F8F9FF",
-              color:"#333C7B"
-            }}>
+              <p className="mb-1" style={{ color: "#333C7B" }}>
                 <strong>End Time:</strong> {slot.end_time}
               </p>
             </div>
