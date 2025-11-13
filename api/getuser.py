@@ -293,20 +293,22 @@ def update_about():
 UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads", "reports")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
+
+
 @tutee_bp.route("/report", methods=["POST"])
 def create_report():
     try:
-        # --- Get form data ---
+  
         reporter_id = request.form.get("reporter_id")
         reported_id = request.form.get("reported_id")
-        description = request.form.get("description", "")  # textarea input
+        description = request.form.get("description", "")  
         report_type = request.form.get("type", "TUTOR_REPORT")
-        reasons = request.form.getlist("reasons")  # buttons input (array)
+        reasons = request.form.getlist("reasons")  
 
         if not reporter_id or not reported_id:
             return jsonify({"error": "Missing reporter_id or reported_id"}), 400
 
-        # --- Handle file uploads ---
         file_list = []
         files = request.files.getlist("files")
         for file in files:
@@ -316,7 +318,7 @@ def create_report():
                 file.save(save_path)
                 file_list.append(unique_filename)
 
-        # --- Insert into DB ---
+       
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -381,7 +383,7 @@ def update_profile_img():
                     WHERE tutor_id = %s
                 """, (profile_img_bytes, tutor_id))
 
-        # Return base64 string so frontend can render immediately
+        
         return jsonify({
             "message": "Profile image updated successfully",
             "profile_img": profile_img_base64

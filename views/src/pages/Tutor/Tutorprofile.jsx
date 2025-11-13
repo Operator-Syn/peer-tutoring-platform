@@ -15,6 +15,8 @@ import bigger_handshake from "../../assets/images/placeholders/bigger_handshake.
 import bigger_panctual from "../../assets/images/placeholders/bigger_panctual.png"
 import bigger_proficiency from "../../assets/images/placeholders/bigger_proficiency.png"
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 function TutorProfile() {
   const { tutor_id } = useParams(); //this will extract the tutor_id from ur URL, example /Tutorprofile/2023-3984
@@ -55,9 +57,7 @@ const toggleBadge = (badgeName) => {
   );
 };
 
- const handleImageClick = () => {
-    fileInputRef.current.click(); // Open file picker
-  };
+
 
 const handleFileChange = async (event) => {
   const file = event.target.files[0];
@@ -167,7 +167,7 @@ useEffect(() => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:5173/api/auth/get_user");
+      const res = await fetch("http://localhost:5000/api/auth/get_user");
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUserGoogleId(data.sub || data.google_id); // depending on what your API returns
@@ -493,7 +493,7 @@ useEffect(() => {
           Cancel
         </button>
 
-        {/* ✅ Confirm Button */}{/* ✅ Confirm Button */}
+ 
 <button
   onClick={async () => {
     if (selectedReasons.length === 0 && reportDetails.trim() === "") {
@@ -505,16 +505,16 @@ useEffect(() => {
     setIsSubmitting(true);
 
     try {
-      // 1️⃣ Get tutee ID using Google ID
+    
       const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
       const tuteeData = await tuteeRes.json();
 
-      if (!tuteeRes.ok || !tuteeData.id_number) {
+      /*if (!tuteeRes.ok || !tuteeData.id_number) {
         alert("Could not find your tutee ID. Please re-login.");
         return;
-      }
+      }*/
 
-      // 2️⃣ Prepare FormData for the report
+      
       const formData = new FormData();
       formData.append("reporter_id", tuteeData.id_number);
       formData.append("reported_id", tutor.tutor_id);
@@ -522,17 +522,21 @@ useEffect(() => {
       formData.append("description", reportDetails);
       formData.append("status", "PENDING");
 
-      // ✅ Append each reason individually (backend expects array via getlist)
+     
       selectedReasons.forEach((reason) => formData.append("reasons", reason));
 
-      // ✅ Attach each file
+  
       reportFiles.forEach((file) => formData.append("files", file));
 
-      // 3️⃣ Send request
-      const res = await fetch("http://localhost:5000/api/tutee/report", {
-        method: "POST",
-        body: formData, // no headers; browser sets multipart/form-data automatically
-      });
+      
+     const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(reportData),
+});
+
+
+
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
