@@ -86,7 +86,7 @@ useEffect(() => {
 
       const tuteeId = currentTutee.id_number;
 
-      console.log("🔹 Fetching tutors...");
+      console.log("Fetching tutors...");
       const resTutors = await fetch("/api/tutor/all");
       const tutors = await resTutors.json();
       console.log(" Tutors:", tutors);
@@ -100,13 +100,13 @@ useEffect(() => {
 
       const tutorId = currentTutor.tutor_id;
 
-      console.log("🔹 Fetching pending requests...");
+      console.log(" Fetching pending requests...");
       const resPending = await fetch(`/api/requests/pending/${tutorId}`);
       const pendingData = await resPending.json();
       console.log(" Pending requests:", pendingData);
       setRows(pendingData);
 
-      console.log("🔹 Fetching appointments...");
+      console.log("Fetching appointments...");
       const resAppointments = await fetch(`/api/requests/appointments/${tutorId}`);
       const appointmentsData = await resAppointments.json();
       console.log(" Appointments:", appointmentsData);
@@ -156,11 +156,11 @@ const handleAction = async (appointment_id, action) => {
       return;
     }
 
-    // Remove from pending rows AND backup
+    
     setRows(prev => prev.filter(r => r.appointment_id !== appointment_id));
     setAllRows(prev => prev.filter(r => r.appointment_id !== appointment_id));
 
-    // Refresh booked appointments
+
     const resAppointments = await fetch(`/api/requests/appointments/${tutorId}`);
     const appointmentsData = await resAppointments.json();
     setAppointments(appointmentsData);
@@ -206,7 +206,7 @@ const handleAction = async (appointment_id, action) => {
     className="d-flex w-100" 
     style={{ 
       maxWidth: "700px", 
-      marginLeft: "auto", // pushes slightly to the right
+      marginLeft: "auto", 
     }}
   >
     <input
@@ -240,7 +240,7 @@ const handleAction = async (appointment_id, action) => {
     borderTopRightRadius: 40,
     borderBottomRightRadius: 40,
     backgroundColor: "#4956AD",
-    border: "none", // <-- remove border
+    border: "none", 
   }}
   onClick={handleSearch}
 >
@@ -321,7 +321,7 @@ rows.map((row) => (
         >
         {row?.name
   ?.split(" ")
-  .filter(n => n)                // remove empty parts
+  .filter(n => n)                
   .map(n => n?.[0]?.toUpperCase() || "")
   .join("")}
 
@@ -449,8 +449,8 @@ rows.map((row) => (
   {appointments.map((app) => (
     <div
       className="card appointment-card"
-      key={app.request_id} // use request_id from backend
-      onClick={() => setSelectedApp(app)} // still opens modal if needed
+      key={app.request_id} 
+      onClick={() => setSelectedApp(app)} 
     >
       <img
         className="card-img-top"
@@ -507,7 +507,7 @@ rows.map((row) => (
         padding: "1rem",
         position: "relative",
       }}
-      onClick={(e) => e.stopPropagation()} // prevent modal close on inner click
+      onClick={(e) => e.stopPropagation()} 
     >
       <button
         onClick={() => setSelectedApp(null)}
