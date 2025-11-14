@@ -20,6 +20,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function TutorProfile() {
   const { tutor_id } = useParams(); //this will extract the tutor_id from ur URL, example /Tutorprofile/2023-3984
+
   const [date, setDate] = useState(new Date());
  const [tutor, setTutor] = useState({ profile_img: null }); // your tutor object
   const [loading, setLoading] = useState(true); //tracks if the API call is in progress or something
@@ -83,7 +84,7 @@ const handleFileChange = async (event) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    // Update tutor state only after successful upload
+
 setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profile_img }));
 
   } catch (err) {
@@ -130,28 +131,28 @@ const res = await fetch(
 
 
 
-useEffect(() => {
-  const fetchBadgeCounts = async () => {
-    if (!tutor?.tutor_id) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
-      const data = await res.json();
-      if (res.ok) {
-        setBadgeCounts({
-          friendly: data.friendly_count,
-          punctual: data.punctual_count,
-          engaging: data.engaging_count,
-          proficient: data.proficient_count
-        });
-      } else {
-        console.error("Failed to fetch badge counts:", data.error);
+  useEffect(() => {
+    const fetchBadgeCounts = async () => {
+      if (!tutor?.tutor_id) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setBadgeCounts({ //this puts the badge to the setbadgecounts state 
+            friendly: data.friendly_count,
+            punctual: data.punctual_count,
+            engaging: data.engaging_count,
+            proficient: data.proficient_count
+          });
+        } else {
+          console.error("Failed to fetch badge counts:", data.error);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  fetchBadgeCounts();
-}, [tutor]);
+    };
+    fetchBadgeCounts();
+  }, [tutor]);
 
 
 
@@ -184,6 +185,7 @@ const openBadgeModal = async () => {
    
   setIsModalOpen(true);
 };
+
 
 useEffect(() => {
   const fetchTutor = async () => {
@@ -255,7 +257,7 @@ useEffect(() => {
 }, [userGoogleId]);
 
 
-  useEffect(() => {
+useEffect(() => {
     const fetchTutor = async () => {
       try {
        const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
@@ -285,13 +287,18 @@ useEffect(() => {
 
 
   return (
+
+
     <div className="row justify-content-en g-0">
  <div className="container py-5"> 
 
       <div className="row justify-content-center g-4 mt-5" > 
         
            {/* first Card */}
+
+
 <div className="col-12 col-md-4 mt-5 d-flex justify-content-center ">
+
   <div
     className="card  p-5 rounded my-card-bg mt-5"
     style={{
@@ -373,6 +380,9 @@ useEffect(() => {
     Report
   </button>
 )}
+
+
+
 
 {isReportModalOpen && (
   <div
@@ -457,7 +467,7 @@ useEffect(() => {
   onChange={(e) => setReportDetails(e.target.value)}
   style={{
     width: "100%",
-    padding: "clamp(8px, 2vw, 12px)",  // scales padding with screen width
+    padding: "clamp(8px, 2vw, 12px)",  
     borderRadius: "6px",
     border: "1px solid #ccc",
     resize: "none",
@@ -1179,6 +1189,7 @@ useEffect(() => {
     width: "100%",
   }}
 >
+
   {["Responsive", "Friendly", "Punctual", "Proficiency"].map((badge) => (
     <div
       key={badge}
