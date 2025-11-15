@@ -1,6 +1,6 @@
 import React, { useEffect, useState,useRef  } from "react";
 import { useParams } from "react-router-dom";
-import "./Tutorprofile.css"; // import the CSS
+import "./Tutorprofile.css"; 
 import profile from "../../assets/images/placeholders/Profile.png";
 import { Carousel } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,9 +15,12 @@ import bigger_handshake from "../../assets/images/placeholders/bigger_handshake.
 import bigger_panctual from "../../assets/images/placeholders/bigger_panctual.png"
 import bigger_proficiency from "../../assets/images/placeholders/bigger_proficiency.png"
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 function TutorProfile() {
   const { tutor_id } = useParams(); //this will extract the tutor_id from ur URL, example /Tutorprofile/2023-3984
+
   const [date, setDate] = useState(new Date());
  const [tutor, setTutor] = useState({ profile_img: null }); // your tutor object
   const [loading, setLoading] = useState(true); //tracks if the API call is in progress or something
@@ -55,9 +58,7 @@ const toggleBadge = (badgeName) => {
   );
 };
 
- const handleImageClick = () => {
-    fileInputRef.current.click(); // Open file picker
-  };
+
 
 const handleFileChange = async (event) => {
   const file = event.target.files[0];
@@ -83,7 +84,7 @@ const handleFileChange = async (event) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    // Update tutor state only after successful upload
+
 setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profile_img }));
 
   } catch (err) {
@@ -94,19 +95,19 @@ setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profil
 
 const fetchExistingBadges = async () => {
   try {
-    const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+    const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
     const tuteeData = await tuteeRes.json();
 
-    /*if (!tuteeRes.ok || !tuteeData.id_number) {
+    if (!tuteeRes.ok || !tuteeData.id_number) {
       console.error("Failed to fetch tutee id_number");
       return;
-    }*/
+    }
 
     const tutee_id = tuteeData.id_number;
 
-    const res = await fetch(
-      `http://localhost:5000/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
-    );
+const res = await fetch(
+  `${API_BASE_URL}/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
+);
 
     if (!res.ok) {
       console.error("No existing badge record found");
@@ -115,9 +116,9 @@ const fetchExistingBadges = async () => {
 
     const badgeData = await res.json();
 
-    // Map true fields to badge names
+
     const preselected = [];
-    if (badgeData.friendly) preselected.push("Handshake");
+    if (badgeData.friendly) preselected.push("Friendly");
     if (badgeData.punctual) preselected.push("Punctual");
     if (badgeData.engaging) preselected.push("Responsive");
     if (badgeData.proficient) preselected.push("Proficiency");
@@ -129,29 +130,29 @@ const fetchExistingBadges = async () => {
 };
 
 
-//this gets the tutor's badge count
-useEffect(() => {
-  const fetchBadgeCounts = async () => {
-    if (!tutor?.tutor_id) return;
-    try {
-      const res = await fetch(`http://localhost:5000/api/tutor/badge_counts/${tutor.tutor_id}`);
-      const data = await res.json();
-      if (res.ok) {
-        setBadgeCounts({
-          friendly: data.friendly_count,
-          punctual: data.punctual_count,
-          engaging: data.engaging_count,
-          proficient: data.proficient_count
-        });
-      } else {
-        console.error("Failed to fetch badge counts:", data.error);
+
+  useEffect(() => {
+    const fetchBadgeCounts = async () => {
+      if (!tutor?.tutor_id) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setBadgeCounts({ //this puts the badge to the setbadgecounts state 
+            friendly: data.friendly_count,
+            punctual: data.punctual_count,
+            engaging: data.engaging_count,
+            proficient: data.proficient_count
+          });
+        } else {
+          console.error("Failed to fetch badge counts:", data.error);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  fetchBadgeCounts();
-}, [tutor]);
+    };
+    fetchBadgeCounts();
+  }, [tutor]);
 
 
 
@@ -160,17 +161,17 @@ useEffect(() => {
 
 useEffect(() => {
   if (tutor) {
-    setShortInfo(tutor.about || ""); // or tutor.short_info depending on your API
+    setShortInfo(tutor.about || ""); 
   }
 }, [tutor]);
-// Inside useEffect to fetch ylogged-in user
+
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:5173/api/auth/get_user");
+      const res = await fetch(`${API_BASE_URL}/api/auth/get_user`);
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
-      setUserGoogleId(data.sub || data.google_id); // depending on what your API returns
+      setUserGoogleId(data.sub || data.google_id); 
     } catch (err) {
       console.error("Failed to fetch logged-in user:", err);
     }
@@ -181,19 +182,21 @@ useEffect(() => {
 const openBadgeModal = async () => {
   if (!tutor || !tutor.tutor_id) return;
   await fetchExistingBadges();
+   
   setIsModalOpen(true);
 };
+
 
 useEffect(() => {
   const fetchTutor = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tutor/${tutor_id}`);
+      const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Failed to load tutor.");
       } else {
-        // Convert bytea image to base64 if present
+
         if (data.profile_img) {
           data.profile_img = `data:image/png;base64,${data.profile_img}`;
         }
@@ -212,12 +215,37 @@ useEffect(() => {
 }, [tutor_id]);
 
 
+useEffect(() => {
+  const fetchBadgeCounts = async () => {
+    if (!tutor?.tutor_id) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBadgeCounts({
+          friendly: data.friendly_count,
+          punctual: data.punctual_count,
+          engaging: data.engaging_count,
+          proficient: data.proficient_count,
+        });
+      } else {
+        console.error("Failed to fetch badge counts:", data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchBadgeCounts();
+}, [tutor?.tutor_id, isModalOpen]); 
+
+
 
 useEffect(() => {
   const fetchTuteeId = async () => {
     if (!userGoogleId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+      const res = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
       const data = await res.json();
       if (res.ok && data.id_number) setTuteeId(data.id_number);
       else console.error("Failed to fetch tutee ID:", data.error);
@@ -229,10 +257,10 @@ useEffect(() => {
 }, [userGoogleId]);
 
 
-  useEffect(() => {
+useEffect(() => {
     const fetchTutor = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/tutor/${tutor_id}`);
+       const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -259,13 +287,18 @@ useEffect(() => {
 
 
   return (
+
+
     <div className="row justify-content-en g-0">
  <div className="container py-5"> 
 
       <div className="row justify-content-center g-4 mt-5" > 
         
            {/* first Card */}
+
+
 <div className="col-12 col-md-4 mt-5 d-flex justify-content-center ">
+
   <div
     className="card  p-5 rounded my-card-bg mt-5"
     style={{
@@ -347,6 +380,9 @@ useEffect(() => {
     Report
   </button>
 )}
+
+
+
 
 {isReportModalOpen && (
   <div
@@ -431,13 +467,13 @@ useEffect(() => {
   onChange={(e) => setReportDetails(e.target.value)}
   style={{
     width: "100%",
-    padding: "clamp(8px, 2vw, 12px)",  // scales padding with screen width
+    padding: "clamp(8px, 2vw, 12px)",  
     borderRadius: "6px",
     border: "1px solid #ccc",
     resize: "none",
     fontSize: "clamp(0.8rem, 2.2vw, 1rem)",  // responsive text
     lineHeight: "1.5",
-    minHeight: "120px", // ensures good height on small screens
+    minHeight: "120px", 
   }}
 />
 
@@ -493,7 +529,7 @@ useEffect(() => {
           Cancel
         </button>
 
-        {/* ✅ Confirm Button */}{/* ✅ Confirm Button */}
+ 
 <button
   onClick={async () => {
     if (selectedReasons.length === 0 && reportDetails.trim() === "") {
@@ -505,16 +541,16 @@ useEffect(() => {
     setIsSubmitting(true);
 
     try {
-      // 1️⃣ Get tutee ID using Google ID
-      const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
+    
+     const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
       const tuteeData = await tuteeRes.json();
 
-      if (!tuteeRes.ok || !tuteeData.id_number) {
+      /*if (!tuteeRes.ok || !tuteeData.id_number) {
         alert("Could not find your tutee ID. Please re-login.");
         return;
-      }
+      }*/
 
-      // 2️⃣ Prepare FormData for the report
+      
       const formData = new FormData();
       formData.append("reporter_id", tuteeData.id_number);
       formData.append("reported_id", tutor.tutor_id);
@@ -522,17 +558,17 @@ useEffect(() => {
       formData.append("description", reportDetails);
       formData.append("status", "PENDING");
 
-      // ✅ Append each reason individually (backend expects array via getlist)
+     
       selectedReasons.forEach((reason) => formData.append("reasons", reason));
 
-      // ✅ Attach each file
+  
       reportFiles.forEach((file) => formData.append("files", file));
 
-      // 3️⃣ Send request
-      const res = await fetch("http://localhost:5000/api/tutee/report", {
-        method: "POST",
-        body: formData, // no headers; browser sets multipart/form-data automatically
-      });
+      
+   const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
+  method: "POST",
+  body: formData,
+});
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
@@ -1004,14 +1040,14 @@ useEffect(() => {
         <button
           onClick={async () => {
             try {
-              const res = await fetch("http://localhost:5000/api/tutor/update_about", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  tutor_id: tutor.tutor_id,
-                  about: shortInfo,
-                }),
-              });
+               const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutor/update_about`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tutor_id: tutor.tutor_id,
+      about: shortInfo,
+    }),
+  });
 
               const data = await res.json();
               if (!res.ok) {
@@ -1035,14 +1071,6 @@ useEffect(() => {
   </div>
 )}
 
-
-
-
-  
-
-
-
-    
   </div>
 </div>
 
@@ -1054,33 +1082,26 @@ useEffect(() => {
 </div>
 
       </div>
-
-        {/* Schedules */}
-       <div className="container py-5"> 
-
+<div className="container py-5"> 
   {/* Schedules / Badge count aligned under profile */}
-  <div
-    className="container py-5"
-   
-  >
+  <div className="container py-5">
     <div className="column justify-content-start">
       {/* Match left column width (col-md-4 like the profile card) */}
       <div className="col-12 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
 
-
-
-
-
-      {/* Dynamic Schedule Cards (from tutor.schedule) */}
-      <div className="d-flex flex-wrap gap-4 mt-5"  style={{
-      maxHeight: "400px",  // fixed height for vertical scroll
-      overflowY: "auto",   // vertical scrollbar
-      paddingBottom: "10px",
-    }}>
-        {tutor.schedule && tutor.schedule.length > 0 ? (
-          tutor.schedule.map((slot, index) => (
+      {/* Dynamic Schedule Cards (from tutor.availability) */}
+      <div
+        className="d-flex flex-wrap gap-4 mt-5"
+        style={{
+          maxHeight: "400px",  // fixed height for vertical scroll
+          overflowY: "auto",   // vertical scrollbar
+          paddingBottom: "10px",
+        }}
+      >
+        {tutor.availability && tutor.availability.length > 0 ? (
+          tutor.availability.map((slot, index) => (
             <div
               key={index}
               className="card p-4 rounded flex-grow-1"
@@ -1089,21 +1110,14 @@ useEffect(() => {
                 minWidth: "250px",
                 maxWidth: "700px",
                 minHeight: "100px",
-                
                 boxShadow: "0 8px 10px rgba(0, 0, 0, 0.08)",
               }}
             >
-              <h5 className="displays mb-2"> {slot.day_of_week}</h5>
-              <p className="mb-1 " style={{
-              backgroundColor: "#F8F9FF",
-              color:"#333C7B"
-            }}>
+              <h5 className="displays mb-2">{slot.day_of_week}</h5>
+              <p className="mb-1" style={{ color: "#333C7B" }}>
                 <strong>Start Time:</strong> {slot.start_time}
               </p>
-              <p className="mb-1" style={{
-              backgroundColor: "#F8F9FF",
-              color:"#333C7B"
-            }}>
+              <p className="mb-1" style={{ color: "#333C7B" }}>
                 <strong>End Time:</strong> {slot.end_time}
               </p>
             </div>
@@ -1164,122 +1178,156 @@ useEffect(() => {
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Scrollable Image Row */}
-      <div
+
+
+ <div
+  style={{
+    display: "flex",
+    gap: "20px",
+    overflowX: "auto",
+    paddingBottom: "10px",
+    width: "100%",
+  }}
+>
+
+  {["Responsive", "Friendly", "Punctual", "Proficiency"].map((badge) => (
+    <div
+      key={badge}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        flex: "0 0 auto",
+      }}
+    >
+      <button
         style={{
-          display: "flex",
-          gap: "20px",
-          overflowX: "auto",
-          paddingBottom: "10px",
-          width: "100%",
+          border: "none",
+          background: selectedBadges.includes(badge) ? "#4F62DE" : "transparent",
+          padding: 0,
+          cursor: "pointer",
+          outline: "none",
+          borderRadius: "10px",
+        }}
+        onClick={() => toggleBadge(badge)}
+      >
+        <img
+          src={
+            badge === "Responsive"
+              ? bigger_responsive
+              : badge === "Friendly"
+              ? bigger_handshake
+              : badge === "Punctual"
+              ? bigger_panctual
+              : bigger_proficiency
+          }
+          style={{
+            width: "150px",
+            height: "150px",
+            objectFit: "cover",
+            opacity: selectedBadges.includes(badge) ? 1 : 0.7,
+            transition: "all 0.2s",
+          }}
+        />
+      </button>
+      <p
+        style={{
+          marginTop: "10px", // space between image and label
+          fontWeight: "500",
+          color: "#4F62DE",
+          textAlign: "center",
         }}
       >
-        {["Responsive", "Handshake", "Punctual", "Proficiency"].map((badge) => (
-          <button
-            key={badge}
-            style={{
-              border: "none",
-              background: selectedBadges.includes(badge) ? "#4F62DE" : "transparent",
-              padding: 0,
-              flex: "0 0 auto",
-              cursor: "pointer",
-              outline: "none",
-              borderRadius: "10px",
-            }}
-            onClick={() => toggleBadge(badge)}
-          >
-            <img
-              src={
-                badge === "Responsive" ? bigger_responsive :
-                badge === "Handshake" ? bigger_handshake :
-                badge === "Punctual" ? bigger_panctual :
-                bigger_proficiency
-              }
-              style={{
-                width: "150px",
-                height: "150px",
-                objectFit: "cover",
-                opacity: selectedBadges.includes(badge) ? 1 : 0.7,
-                transition: "all 0.2s",
-              }}
-            />
-          </button>
-        ))}
-      </div>
-
-      {/* Modal Buttons */}
-      <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-        <button
-          style={{
-            padding: "10px 20px",
-            borderRadius: "5px",
-        
-            backgroundColor: "#ffffffff",
-            border:"3px solid #4F62DE",
-            color: "#4F62DE",
-            cursor: "pointer",
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          Cancel
-        </button>
-        <button
-          style={{
-            padding: "10px 20px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            
-             backgroundColor: "#4F62DE",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-          onClick={async () => {
-            console.log("Confirm clicked");
-            
-            if (!userGoogleId || !tutor?.tutor_id) {
-              console.error("Missing Google ID or tutor ID");
-              return;
-            }
-
-            try {
-             const tuteeRes = await fetch(`http://localhost:5000/api/tutee/by_google/${userGoogleId}`);
-const tuteeData = await tuteeRes.json();
-
-if (!tuteeRes.ok || !tuteeData.id_number) {
-  console.error("Failed to fetch tutee id_number");
-  return;
-}
-
-const payload = {
-  tutee_id: tuteeData.id_number,
-  tutor_id: tutor.tutor_id,
-  friendly: selectedBadges.includes("Handshake"),
-  punctual: selectedBadges.includes("Punctual"),
-  engaging: selectedBadges.includes("Responsive"),
-  proficient: selectedBadges.includes("Proficiency"),
-};
-
-const res = await fetch("http://localhost:5000/api/tutor/badges", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
+        {badge}
+      </p>
+    </div>
+  ))}
+</div>
 
 
-const data = await res.json();
-if (!res.ok) console.error("Error giving badges:", data.error);
-else console.log("Badges saved:", data.badge);
 
 
-              setIsModalOpen(false);
-            } catch (err) {
-              console.error("Failed to submit badges:", err);
-            }
-          }}
-        >
-          Confirm
-        </button>
-      </div>
+
+
+
+
+{/* Modal Buttons */}
+<div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+  <button
+    style={{
+      padding: "10px 20px",
+      borderRadius: "5px",
+      backgroundColor: "#ffffffff",
+      border: "3px solid #4F62DE",
+      color: "#4F62DE",
+      cursor: "pointer",
+    }}
+    onClick={() => setIsModalOpen(false)}
+  >
+    Cancel
+  </button>
+  
+  <button
+    style={{
+      padding: "10px 20px",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      backgroundColor: "#4F62DE",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+    onClick={async () => {
+      console.log("Confirm clicked");
+
+      if (!userGoogleId || !tutor?.tutor_id) {
+        console.error("Missing Google ID or tutor ID");
+        return;
+      }
+
+      try {
+        const tuteeRes = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/tutee/by_google/${userGoogleId}`
+        );
+
+        const tuteeData = await tuteeRes.json();
+
+        if (!tuteeRes.ok || !tuteeData.id_number) {
+          console.error("Failed to fetch tutee id_number");
+          return;
+        }
+
+        const payload = {
+          tutee_id: tuteeData.id_number,
+          tutor_id: tutor.tutor_id,
+          friendly: selectedBadges.includes("Friendly"),
+          punctual: selectedBadges.includes("Punctual"),
+          engaging: selectedBadges.includes("Responsive"),
+          proficient: selectedBadges.includes("Proficiency"),
+        };
+
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/tutor/badges`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        const data = await res.json();
+        if (!res.ok) console.error("Error giving badges:", data.error);
+        else console.log("Badges saved:", data.badge);
+
+        setIsModalOpen(false);
+      } catch (err) {
+        console.error("Failed to submit badges:", err);
+      }
+    }}
+  >
+    Confirm
+  </button>
+</div>
+
     </div>
   </div>
 )}

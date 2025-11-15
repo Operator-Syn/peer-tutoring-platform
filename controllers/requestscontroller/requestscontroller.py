@@ -6,30 +6,32 @@ from datetime import datetime
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
-
 @requests_bp.route("/pending/<tutor_id>", methods=["GET"])
 def get_pending_requests(tutor_id):
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     query = """
-       SELECT 
-            r.request_id,
-            r.tutee_id,
+        SELECT 
+            a.appointment_id,
+            a.tutee_id,
             COALESCE(t.first_name, 'Unknown') || ' ' || 
             COALESCE(t.middle_name, '') || ' ' || 
             COALESCE(t.last_name, '') AS name,
-            r.course_code,
-            r.appointment_date,
-            r.program_code,
-            TO_CHAR(r.appointment_date, 'Day') AS day_of_week,
-            r.start_time,
-            r.end_time,
-            r.status
-        FROM request r
-        LEFT JOIN tutee t ON r.tutee_id = t.id_number
-        WHERE r.tutor_id = %s AND r.status = 'PENDING'
-        ORDER BY r.appointment_date, r.start_time;
+            a.course_code,
+            a.appointment_date,
+            v.vacant_id,
+            v.tutor_id,
+            v.day_of_week,
+            v.start_time,
+            v.end_time,
+            a.status
+        FROM appointment a
+        JOIN availability v ON a.vacant_id = v.vacant_id
+        LEFT JOIN tutee t ON a.tutee_id = t.id_number
+        WHERE v.tutor_id = %s
+          AND a.status = 'PENDING'
+        ORDER BY a.appointment_date, v.start_time;
     """
 
     cur.execute(query, (tutor_id,))
@@ -50,114 +52,64 @@ def get_pending_requests(tutor_id):
 
 
 
-@requests_bp.route("/update-status/<int:request_id>", methods=["PUT"])
-def update_request_status(request_id):
+
+@requests_bp.route("/update-status/<int:appointment_id>", methods=["PUT"])
+def update_appointment_status(appointment_id):
     data = request.get_json(silent=True) or {}
     new_status = data.get("status")
 
-    if new_status != "APPROVED":
-        return jsonify({"error": "Only approval triggers appointment creation"}), 400
+    if new_status not in ("BOOKED", "CANCELLED", "COMPLETED"):
+        return jsonify({"error": "Invalid status"}), 400
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
+        # Fetch appointment info
         cur.execute("""
-            SELECT request_id, tutor_id, tutee_id, program_code, year_level,
-                   TO_CHAR(appointment_date, 'Day') AS day_of_week,
-                   course_code, appointment_date, start_time, end_time
-            FROM request
-            WHERE request_id = %s
-        """, (request_id,))
-        req = cur.fetchone()
+            SELECT a.vacant_id, a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            FROM appointment a
+            JOIN availability av ON a.vacant_id = av.vacant_id
+            WHERE a.appointment_id = %s
+        """, (appointment_id,))
+        appt = cur.fetchone()
 
-        if not req:
-            return jsonify({"error": "Request not found"}), 404
+        if not appt:
+            return jsonify({"error": "Appointment not found"}), 404
 
-        (_, tutor_id, tutee_id, program_code, year_level,
-         day_of_week, course_code, appointment_date,
-         start_time, end_time) = req
+        vacant_id, tutee_id, course_code, tutor_id, start_time, end_time = appt
 
-        day_of_week = day_of_week.strip().upper()
-
-        # Ensure tutor exists
+        # Update the appointment status
         cur.execute("""
-            INSERT INTO tutor (tutor_id, status)
-            VALUES (%s, 'ACTIVE')
-            ON CONFLICT (tutor_id) DO NOTHING
-        """, (tutor_id,))
+            UPDATE appointment
+            SET status = %s
+            WHERE appointment_id = %s
+        """, (new_status, appointment_id))
 
-        # Ensure tutor teaches the course
-        cur.execute("""
-            INSERT INTO teaches (tutor_id, course_code)
-            VALUES (%s, %s)
-            ON CONFLICT DO NOTHING
-        """, (tutor_id, course_code))
-
-        # Check or create availability
-        cur.execute("""
-            SELECT vacant_id
-            FROM availability
-            WHERE tutor_id = %s AND day_of_week = %s AND start_time = %s AND end_time = %s
-        """, (tutor_id, day_of_week, start_time, end_time))
-        existing_avail = cur.fetchone()
-
-        if existing_avail:
-            vacant_id = existing_avail[0]
-        else:
+        # If the status is BOOKED, log in history and send notification
+        if new_status == "BOOKED":
             cur.execute("""
-                INSERT INTO availability (tutor_id, day_of_week, start_time, end_time)
-                VALUES (%s, %s, %s, %s)
-                RETURNING vacant_id
-            """, (tutor_id, day_of_week, start_time, end_time))
-            vacant_id = cur.fetchone()[0]
+                INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
-        # Create appointment if not exists
-        cur.execute("""
-            SELECT appointment_id FROM appointment
-            WHERE vacant_id = %s AND appointment_date = %s
-        """, (vacant_id, appointment_date))
-        existing = cur.fetchone()
-
-        if existing:
-            appointment_id = existing[0]
-        else:
             cur.execute("""
-                INSERT INTO appointment (vacant_id, tutee_id, appointment_date, status, course_code)
-                VALUES (%s, %s, %s, 'BOOKED', %s)
-                RETURNING appointment_id
-            """, (vacant_id, tutee_id, appointment_date, course_code))
-            appointment_id = cur.fetchone()[0]
-
-        # Update request status
-        cur.execute("""
-            UPDATE request
-            SET status = 'APPROVED'
-            WHERE request_id = %s
-        """, (request_id,))
-
-        # Insert into history & notifications
-        cur.execute("""
-            INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (tutor_id, tutee_id, start_time, end_time, course_code))
-
-        cur.execute("""
-            INSERT INTO notifications (tutor_id, tutee_id)
-            VALUES (%s, %s)
-        """, (tutor_id, tutee_id))
+                INSERT INTO notifications (tutor_id, tutee_id)
+                VALUES (%s, %s)
+            """, (tutor_id, tutee_id))
 
         conn.commit()
-        return jsonify({"message": f"Appointment {appointment_id} created successfully!"}), 200
+        return jsonify({"message": f"Appointment {appointment_id} updated to {new_status}!"}), 200
 
     except Exception as e:
         conn.rollback()
-        print("❌ Error in update_request_status:", e)
+        print("❌ Error in update_appointment_status:", e)
         return jsonify({"error": "Internal server error"}), 500
 
     finally:
         cur.close()
         conn.close()
+
 
 
 @requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
@@ -185,44 +137,46 @@ def search_requests():
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        
         name_concat = "TRIM(CONCAT(t.first_name, ' ', COALESCE(t.middle_name || ' ', ''), t.last_name))"
 
         base_select = f"""
             SELECT 
-                r.request_id,
-                r.tutee_id,
+                a.appointment_id,
+                a.tutee_id,
                 {name_concat} AS name,
-                r.course_code,
-                r.program_code,
-                r.appointment_date,
-                TO_CHAR(r.appointment_date, 'Day') AS day_of_week,
-                r.start_time,
-                r.end_time,
-                r.status
-            FROM request r
-            JOIN tutee t ON r.tutee_id = t.id_number
-            WHERE r.tutor_id = %s
+                a.course_code,
+                tu.program_code,
+                a.appointment_date,
+                av.day_of_week,
+                av.start_time,
+                av.end_time,
+                a.status
+            FROM appointment a
+            JOIN tutee t ON a.tutee_id = t.id_number
+            JOIN tutee tu ON a.tutee_id = tu.id_number
+            JOIN availability av ON a.vacant_id = av.vacant_id
+            WHERE av.tutor_id = %s
+            AND a.status = 'PENDING'
         """
 
         if query:
-            # Search by tutee's name or other related fields
             search_filter = f"""
-              AND (
-                  {name_concat} ILIKE %s OR
-                  r.tutee_id::TEXT ILIKE %s OR
-                  r.course_code ILIKE %s OR
-                  r.program_code ILIKE %s OR
-                  r.status ILIKE %s OR
-                  TO_CHAR(r.appointment_date, 'YYYY-MM-DD') ILIKE %s OR
-                  TO_CHAR(r.appointment_date, 'Day') ILIKE %s
-              )
+                AND (
+                    {name_concat} ILIKE %s OR
+                    a.tutee_id::TEXT ILIKE %s OR
+                    a.course_code ILIKE %s OR
+                    tu.program_code ILIKE %s OR
+                    a.status ILIKE %s OR
+                    TO_CHAR(a.appointment_date, 'YYYY-MM-DD') ILIKE %s
+                )
             """
-            sql = base_select + search_filter + " ORDER BY r.appointment_date, r.start_time"
+
+            sql = base_select + search_filter + " ORDER BY a.appointment_date, av.start_time"
             like = f"%{query}%"
-            cur.execute(sql, (tutor_id, like, like, like, like, like, like, like))
+            cur.execute(sql, (tutor_id, like, like, like, like, like, like))
+
         else:
-            sql = base_select + " ORDER BY r.appointment_date, r.start_time"
+            sql = base_select + " ORDER BY a.appointment_date, av.start_time"
             cur.execute(sql, (tutor_id,))
 
         results = cur.fetchall()
@@ -234,8 +188,6 @@ def search_requests():
                 r["start_time"] = r["start_time"].strftime("%H:%M")
             if r["end_time"]:
                 r["end_time"] = r["end_time"].strftime("%H:%M")
-            if r.get("day_of_week"):
-                r["day_of_week"] = r["day_of_week"].strip()
 
         return jsonify(results)
 
@@ -285,52 +237,65 @@ def get_appointments(tutor_id):
     return jsonify(results)
 
 
-
-
-
-
-@requests_bp.route("/update-status-and-log/<int:request_id>", methods=["PUT"])
-def update_request_status_and_log(request_id):
+@requests_bp.route("/update-status-and-log/<int:appointment_id>", methods=["PUT"])
+def update_appointment_status_and_log(appointment_id):
+    """
+    Update the appointment status and log it to history table.
+    Accept = BOOKED
+    Decline = CANCELLED
+    """
     data = request.get_json(silent=True) or {}
-    new_status = data.get("status")
+    action = data.get("action")  # "accept" or "decline"
 
-    if not new_status:
-        return jsonify({"error": "Missing status"}), 400
+    if action not in ["accept", "decline"]:
+        return jsonify({"error": "Invalid action"}), 400
+
+    new_status = "BOOKED" if action == "accept" else "CANCELLED"
 
     conn = get_connection()
     cur = conn.cursor()
 
     try:
+        # Fetch appointment info first (including tutor_id from availability)
         cur.execute("""
-            UPDATE request
+            SELECT a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            FROM appointment a
+            JOIN availability av ON a.vacant_id = av.vacant_id
+            WHERE a.appointment_id = %s
+        """, (appointment_id,))
+
+        appt = cur.fetchone()
+        if not appt:
+            return jsonify({"error": "Appointment not found"}), 404
+
+        tutee_id, course_code, tutor_id, start_time, end_time = appt
+
+        # Update appointment status
+        cur.execute("""
+            UPDATE appointment
             SET status = %s
-            WHERE request_id = %s
-            RETURNING tutor_id, tutee_id, start_time, end_time, course_code;
-        """, (new_status, request_id))
+            WHERE appointment_id = %s
+        """, (new_status, appointment_id))
 
-        result = cur.fetchone()
-        if not result:
-            return jsonify({"error": "Request not found"}), 404
-
-        tutor_id, tutee_id, start_time, end_time, course_code = result
-
-        if new_status == "APPROVED":
+        # Log to history table if accepted
+        if new_status == "BOOKED":
             cur.execute("""
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
             """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
-            cur.execute("""
-                INSERT INTO notifications (tutor_id, tutee_id)
-                VALUES (%s, %s)
-            """, (tutor_id, tutee_id))
+        # Insert notification with action column
+        cur.execute("""
+            INSERT INTO notifications (tutor_id, tutee_id, action)
+            VALUES (%s, %s, %s)
+        """, (tutor_id, tutee_id, new_status))
 
         conn.commit()
-        return jsonify({"message": f"Request {new_status} successfully!"}), 200
+        return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
 
     except Exception as e:
         conn.rollback()
-        print("❌ Error in update_request_status_and_log:", e)
+        print("❌ Error in update_appointment_status_and_log:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
