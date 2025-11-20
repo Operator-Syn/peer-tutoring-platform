@@ -25,7 +25,7 @@ function App() {
       <Routes>
         <Route path="/*" element={<MasterLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="About" element={<About />} />
+          <Route path="About/:tutorId" element={<About />} />
           <Route path="Events" element={<Events />} />
           
           
