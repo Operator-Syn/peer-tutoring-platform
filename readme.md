@@ -10,7 +10,7 @@ These are **template configuration files** meant to help you set up your environ
 | Template File          | Target File  | Purpose                                                           |
 | ---------------------- | ------------ | ----------------------------------------------------------------- |
 | `config.py.configure`  | `config.py`  | Defines Flask and PostgreSQL settings used by the backend.        |
-| `views/.env.configure` | `views/.env` | Provides environment variables used by the frontend (Vite/React). |
+| `.env.configure` | `.env` | Provides environment variables used by the frontend (Vite/React). |
 
 ---
 
@@ -20,25 +20,33 @@ These are **template configuration files** meant to help you set up your environ
 
    ```bash
    cp config.py.configure config.py
-   cp views/.env.configure views/.env
+   cp .env.configure .env
    ```
 
 2 **Open the new files** and replace placeholder values with those matching your local system.
 
-Example: views/.env
+Example: .env
 ```
+# ===== Backend =====
+DB_NAME=your-DB_NAME
+DB_USER=your-DB_NAME
+DB_PASSWORD=your-DB_PASSWORD
+DB_HOST=your-DB_HOST
+DB_PORT=your-DB_PORT
+
+FRONTEND_URL=http://localhost:5000
+
+CORS_ALLOWED_ORIGINS=http://localhost:5000
+
+# ===== Frontend DEV (Vite) =====
 VITE_API_BASE_URL=http://localhost:5000
 ALLOWED_HOSTS=localhost
-```
 
-Example: config.py
-
-```
-DB_NAME = "your_database_name"
-DB_USER = "your_username"
-DB_PASSWORD = "your_password"
-DB_HOST = "localhost"
-DB_PORT = 5432
+# ===== FLASK CONFIG =====
+FLASK_APP=run.py
+FLASK_RUN_HOST=localhost
+FLASK_RUN_PORT=5000
+FLASK_DEBUG=1
 ```
 
 ## ❓ How to get started?
