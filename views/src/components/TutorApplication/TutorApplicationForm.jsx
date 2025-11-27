@@ -15,7 +15,6 @@ const TutorApplicationForm = () => {
   const [success, setSuccess] = useState(null);
   const [studentNotFound, setStudentNotFound] = useState(false);
 
-  const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tutor-applications`;
 
   useEffect(() => {
     fetchCourses();
@@ -36,7 +35,7 @@ const TutorApplicationForm = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/student/${studentId.trim()}`);
+        const response = await fetch(`/student/${studentId.trim()}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -70,7 +69,7 @@ const TutorApplicationForm = () => {
     try {
       setLoadingCourses(true);
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/courses`);
+      const response = await fetch(`/courses`);
       const data = await response.json();
 
       if (response.ok) {
@@ -122,7 +121,7 @@ const TutorApplicationForm = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/tutor-applications`, {
+      const response = await fetch(`/tutor-applications`, {
         method: "POST",
         body: formData,
       });

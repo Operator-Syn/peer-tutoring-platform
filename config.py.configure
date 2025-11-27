@@ -1,36 +1,36 @@
+from dotenv import load_dotenv
 import os
 import secrets
 import json
 
 class Config:
-    # Base directory of the repository (config.py location)
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    # Flask settings
     REACT_DIST = os.path.join(BASE_DIR, "views", "dist")
-    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)  # 32-byte random key if not set
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-    # PostgreSQL settings
-    DB_NAME = os.environ.get("DB_NAME", "")
-    DB_USER = os.environ.get("DB_USER", "")
-    DB_PASSWORD = os.environ.get("DB_PASSWORD", "")
-    DB_HOST = os.environ.get("DB_HOST", "")
-    DB_PORT = int(os.environ.get("DB_PORT", 5432))
+    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 
-    # OAuth2 settings for Google
-    FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASSWORD = os.environ.get("DB_PASSWORD")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = int(os.environ.get("DB_PORT"))
+
+    FRONTEND_URL = os.environ.get("FRONTEND_URL")
 
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+    # Optional: still allow JSON fallback
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         try:
             with open("client_secret.json", "r", encoding="utf-8") as f:
-                _g = json.load(f)
-            _creds = _g.get("web")
-            if _creds.get("client_id"):
-                GOOGLE_CLIENT_ID = _creds.get("client_id")
-            if _creds.get("client_secret"):
-                GOOGLE_CLIENT_SECRET = _creds.get("client_secret")
+                data = json.load(f).get("web", {})
+            GOOGLE_CLIENT_ID = data.get("client_id")
+            GOOGLE_CLIENT_SECRET = data.get("client_secret")
         except Exception as e:
             print(f"Error loading OAuth2 credentials: {e}")
-            pass
+
+    # CORS from env
+    _raw = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _raw.split(",") if o.strip()]

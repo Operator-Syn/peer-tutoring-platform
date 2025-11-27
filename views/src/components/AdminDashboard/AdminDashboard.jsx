@@ -25,7 +25,7 @@ const AdminDashboard = () => {
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
 
-  const API_BASE_URL = 'http://127.0.0.1:5000/api/tutor-applications';
+
 
   useEffect(() => {
     fetchData();
@@ -41,8 +41,8 @@ const AdminDashboard = () => {
       setError(null);
 
       const [appsResponse, statsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/applications`),
-        fetch(`${API_BASE_URL}/admin/statistics`)
+        fetch(`/admin/applications`),
+        fetch(`/admin/statistics`)
       ]);
 
       if (!appsResponse.ok || !statsResponse.ok) {
@@ -102,8 +102,8 @@ const AdminDashboard = () => {
 
     const endpoint =
       action === 'APPROVED'
-        ? `${API_BASE_URL}/admin/applications/${applicationId}/approve`
-        : `${API_BASE_URL}/admin/applications/${applicationId}/reject`;
+        ? `/admin/applications/${applicationId}/approve`
+        : `/admin/applications/${applicationId}/reject`;
 
     console.log("Sending request to:", endpoint);
 
@@ -144,7 +144,7 @@ const AdminDashboard = () => {
 };
 
   const handleShowCor = (corFilename) => {
-    setSelectedCorFile(`http://127.0.0.1:5000/uploads/cor/${corFilename}`);
+    setSelectedCorFile(`/uploads/cor/${corFilename}`);
     setShowCorModal(true);
   };
 

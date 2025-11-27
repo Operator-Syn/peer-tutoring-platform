@@ -15,7 +15,7 @@ import bigger_handshake from "../../assets/images/placeholders/bigger_handshake.
 import bigger_panctual from "../../assets/images/placeholders/bigger_panctual.png"
 import bigger_proficiency from "../../assets/images/placeholders/bigger_proficiency.png"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
 
 function TutorProfile() {
@@ -95,7 +95,7 @@ setTutor((prev) => ({ ...prev, profile_img: previewImg ? undefined : prev.profil
 
 const fetchExistingBadges = async () => {
   try {
-    const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
+    const tuteeRes = await fetch(`/api/tutee/by_google/${userGoogleId}`);
     const tuteeData = await tuteeRes.json();
 
     if (!tuteeRes.ok || !tuteeData.id_number) {
@@ -106,7 +106,7 @@ const fetchExistingBadges = async () => {
     const tutee_id = tuteeData.id_number;
 
 const res = await fetch(
-  `${API_BASE_URL}/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
+  `/api/tutor/badges/${tutor.tutor_id}/${tutee_id}`
 );
 
     if (!res.ok) {
@@ -135,7 +135,7 @@ const res = await fetch(
     const fetchBadgeCounts = async () => {
       if (!tutor?.tutor_id) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+        const res = await fetch(`/api/tutor/badge_counts/${tutor.tutor_id}`);
         const data = await res.json();
         if (res.ok) {
           setBadgeCounts({ //this puts the badge to the setbadgecounts state 
@@ -168,7 +168,7 @@ useEffect(() => {
 useEffect(() => {
   const fetchUser = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/get_user`);
+      const res = await fetch(`/api/auth/get_user`);
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
       setUserGoogleId(data.sub || data.google_id); 
@@ -190,7 +190,7 @@ const openBadgeModal = async () => {
 useEffect(() => {
   const fetchTutor = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
+      const res = await fetch(`/api/tutor/${tutor_id}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -219,7 +219,7 @@ useEffect(() => {
   const fetchBadgeCounts = async () => {
     if (!tutor?.tutor_id) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tutor/badge_counts/${tutor.tutor_id}`);
+      const res = await fetch(`/api/tutor/badge_counts/${tutor.tutor_id}`);
       const data = await res.json();
       if (res.ok) {
         setBadgeCounts({
@@ -245,7 +245,7 @@ useEffect(() => {
   const fetchTuteeId = async () => {
     if (!userGoogleId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
+      const res = await fetch(`/api/tutee/by_google/${userGoogleId}`);
       const data = await res.json();
       if (res.ok && data.id_number) setTuteeId(data.id_number);
       else console.error("Failed to fetch tutee ID:", data.error);
@@ -260,7 +260,7 @@ useEffect(() => {
 useEffect(() => {
     const fetchTutor = async () => {
       try {
-       const res = await fetch(`${API_BASE_URL}/api/tutor/${tutor_id}`);
+       const res = await fetch(`/api/tutor/${tutor_id}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -542,7 +542,7 @@ useEffect(() => {
 
     try {
     
-     const tuteeRes = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`);
+     const tuteeRes = await fetch(`/api/tutee/by_google/${userGoogleId}`);
       const tuteeData = await tuteeRes.json();
 
       /*if (!tuteeRes.ok || !tuteeData.id_number) {
@@ -565,7 +565,7 @@ useEffect(() => {
       reportFiles.forEach((file) => formData.append("files", file));
 
       
-   const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
+   const res = await fetch(`/api/tutee/report`, {
   method: "POST",
   body: formData,
 });
