@@ -586,10 +586,10 @@ rows.map((row) => (
           : "Are you sure you want to decline this request?"}
       </p>
       <div className="d-flex justify-content-end gap-2 mt-3">
-        <button className="btn btn-secondary" onClick={() => setShowConfirm(false)}>
+        <button className="btn my-no-btn" onClick={() => setShowConfirm(false)}>
           No
         </button>
-        <button className="btn btn-primary" onClick={handleConfirmYes}>
+        <button className="btn my-yes-btn" onClick={handleConfirmYes}>
           Yes
         </button>
       </div>

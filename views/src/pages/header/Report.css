@@ -1,0 +1,13 @@
+.spacing{
+    padding-top: 100px;
+}
+.report-container{
+    min-height: 700px;
+    width: 100%;
+}
+.report-title {
+  color: #4956AD;   /* dark bluish-purple, change to any color you like */
+}
+.spacing-report{
+   padding-top: 20px;  /* dark bluish-purple, change to any color you like */
+}
