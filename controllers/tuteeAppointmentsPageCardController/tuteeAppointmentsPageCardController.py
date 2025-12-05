@@ -62,8 +62,8 @@ def get_user_appointments():
             c.course_name
         FROM appointment a
         JOIN availability av ON a.vacant_id = av.vacant_id
-        JOIN tutor ttr ON av.tutor_id = ttr.tutor_id
-        JOIN tutee t ON t.id_number = ttr.tutor_id
+        JOIN tutor tr ON av.tutor_id = tr.tutor_id
+        JOIN tutee t ON tr.tutor_id = t.id_number
         JOIN tutee tu ON a.tutee_id = tu.id_number
         JOIN course c ON a.course_code = c.course_code
         WHERE a.tutee_id = %s
