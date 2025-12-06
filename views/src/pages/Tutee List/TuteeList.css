@@ -1,0 +1,81 @@
+/* div {
+    border: 2px solid #ff0000;
+} */
+
+.tutee-list {
+    /* position: relative; */
+    min-height: 728.93px;
+    min-width: 800px;
+    width: 70%;
+    max-width: 53rem;
+    
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 100px;
+    margin-bottom: 50px;
+
+}
+
+.search-component {
+    height: 80px;
+    width: 100%;
+    border: 1px solid #ccc;
+    /* border-radius: 8px; */
+}
+
+/* .tutees-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+} */
+
+.tutee-list th, .tutee-list td {
+    /* border: 1px solid #ccc; */
+    padding: 8px;
+    text-align: center;
+}
+
+.tutee-list th {
+    font-weight: normal;
+    color: #a4b5c9;
+}
+
+.tutees-table {
+    border-collapse: separate; /* Allows spacing between rows */
+    border-spacing: 0 10px; /* Adds space between rows */
+    width: 100%;
+    table-layout: fixed;
+    /* border: 1px solid #efeeee; */
+    border-radius: 8px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    padding: 0px 10px;
+}
+
+.tutee-card {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tutee-card td {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+/* .tl-pagination {
+    position: absolute;
+    margin-bottom: 15px;
+    bottom: 0px;
+    left: 0;
+    right: 0;
+} */
+
+.tutee-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+    transition: box-shadow 0.3s ease;
+}
