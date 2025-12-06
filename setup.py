@@ -26,7 +26,8 @@ def run_frontend():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        executable="/bin/bash"
     )
     stream_output(proc, "FRONTEND")
 
@@ -37,7 +38,8 @@ def run_backend_install():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        executable="/bin/bash"
     )
     stream_output(proc, "BACKEND")
 
@@ -48,7 +50,8 @@ def run_flask():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        bufsize=1
+        bufsize=1,
+        executable="/bin/bash"
     )
     stream_output(proc, "FLASK")
 

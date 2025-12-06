@@ -17,18 +17,35 @@ class AppointmentCard:
     start_time: str             # formatted for display
     end_time: str               # formatted for display
     modal_content: List[ModalContentItem]
+    status: str
+
     footer: Optional[str] = field(init=False)
 
     def __post_init__(self):
-        """Compute footer dynamically from current time to appointment start"""
+        # Handle non-BOOKED statuses directly
+        if self.status in ("PENDING", "CANCELLED", "COMPLETED"):
+            self.footer = f"APPOINTMENT {self.status}"
+            return
+
+
+        # BOOKED → compute remaining time
         appointment_dt = datetime.strptime(
-            f"{self.appointment_date} {self.start_time}", "%B %d, %Y %I:%M %p"
+            f"{self.appointment_date} {self.start_time}",
+            "%B %d, %Y %I:%M %p"
         )
         delta = appointment_dt - datetime.now()
+        total_seconds = delta.total_seconds()
 
-        if delta.total_seconds() <= 0:
+        if total_seconds <= 0:
             self.footer = "Appointment started"
+            return
+
+        # Compute days / hours / minutes
+        days = int(total_seconds // 86400)
+        hours = int((total_seconds % 86400) // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+
+        if days > 0:
+            self.footer = f"{days}d {hours}h {minutes}m left before the appointment"
         else:
-            hours, remainder = divmod(delta.total_seconds(), 3600)
-            minutes = remainder // 60
-            self.footer = f"{int(hours)}h {int(minutes)}m left before the appointment"
+            self.footer = f"{hours}h {minutes}m left before the appointment"

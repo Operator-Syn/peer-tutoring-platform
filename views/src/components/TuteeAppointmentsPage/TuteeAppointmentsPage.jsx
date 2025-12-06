@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
+import placeholderImage from "../../assets/cropped-waiting.png";
 import CardComponent from "../CardComponent/CardComponent";
 import { ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons";
 import "./TuteeAppointmentsPage.css";
+import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 
 export default function TuteeAppointmentsPage() {
+    useRoleRedirect('TUTEE');
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 992);
-
-    useEffect(() => {
-        const handleResize = () => setIsSmallScreen(window.innerWidth < 992);
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
 
     useEffect(() => {
         fetch("/api/appointments")
@@ -32,15 +27,8 @@ export default function TuteeAppointmentsPage() {
     if (loading) return <div className="container">Loading appointments...</div>;
     if (appointments.length === 0) return <div className="container">No appointments found.</div>;
 
-    const cardsPerRow = 3;
-    const remainder = appointments.length % cardsPerRow;
-    const placeholders = remainder > 0 ? Array(cardsPerRow - remainder).fill(null) : [];
-
     return (
-        <div
-            className={`container d-flex flex-wrap gap-3 align-items-center large-padding ${isSmallScreen ? "flex-column" : "flex-row justify-content-between"
-                }`}
-        >
+        <div className="container appointments-grid large-padding">
             {appointments.map((appointment, index) => (
                 <CardComponent
                     key={index}
@@ -54,13 +42,6 @@ export default function TuteeAppointmentsPage() {
                     modalContent={appointment.modal_content}
                     modalButtonsRight={[...ConfirmButton, ...CloseButton]}
                     modalButtonsLeft={CancelAppointmentButton}
-                />
-            ))}
-
-            {/* Invisible placeholder cards */}
-            {placeholders.map((_, idx) => (
-                <CardComponent
-                    className="invisible-card" // we’ll hide this via CSS
                 />
             ))}
         </div>

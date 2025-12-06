@@ -15,9 +15,11 @@
     "bootstrap": "^5.3.8",
     "bootstrap-datepicker": "^1.10.1",
     "bootstrap-icons": "^1.13.1",
+    "date-fns": "^4.1.0",
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",
     "react-calendar": "^6.0.0",
+    "react-datepicker": "^8.10.0",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
     "react-select": "^5.10.2"

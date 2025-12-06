@@ -5,6 +5,7 @@ import "./FillOut.css";
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
     const [courses, setCourses] = useState([]);
+    const [displayDate, setDisplayDate] = useState("");
 
     // Fetch programs and courses, and set initial tutee data
     useEffect(() => {
@@ -25,6 +26,25 @@ export default function FillOut({ data, update }) {
             .catch((err) => console.error("Error fetching programs:", err));
     }, []);
 
+    useEffect(() => {
+        if (!data.preferredDate) {
+            const today = getToday();
+            const dayOfWeek = getDayOfWeek(today);
+            update({ preferredDate: today, day_of_week: dayOfWeek });
+            setDisplayDate(formatDisplayDate(today));
+        } else {
+            setDisplayDate(formatDisplayDate(data.preferredDate));
+        }
+    }, []);
+
+
+    const formatDisplayDate = (dateString) => {
+        if (!dateString) return "";
+        const dateParts = dateString.split("-"); // "YYYY-MM-DD"
+        const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+        return date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "2-digit" });
+    };
+
     // Convert date to uppercase weekday string for backend filtering
     const getDayOfWeek = (dateString) => {
         if (!dateString) return null;
@@ -34,11 +54,23 @@ export default function FillOut({ data, update }) {
     };
 
     // Update preferredDate and also compute day_of_week
-    const handleDateChange = (e) => {
-        const preferredDate = e.target.value;
-        const dayOfWeek = getDayOfWeek(preferredDate);
-        update({ preferredDate, day_of_week: dayOfWeek });
+  const handleDateChange = (e) => {
+    const selected = e.target.value;
+    const backendDate = selected;
+    const dayOfWeek = getDayOfWeek(selected);
+    update({ preferredDate: backendDate, day_of_week: dayOfWeek });
+    setDisplayDate(formatDisplayDate(selected));
+};
+
+
+    const getToday = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0"); // months are 0-indexed
+        const day = String(today.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
     };
+
 
     return (
         <div className="p-5 m-5 create-appointment-form-bg">
@@ -141,9 +173,29 @@ export default function FillOut({ data, update }) {
                 <div className="custom-border-label-group">
                     <label className="form-label custom-border-label">Preferred Date</label>
                     <input
-                        type="date"
+                        type="text"
                         className="form-control custom-input"
-                        value={data.preferredDate || ""}
+                        value={displayDate}
+
+                        // Prevent manual typing (but still allow clicking calendar)
+                        onKeyDown={(e) => e.preventDefault()}
+
+                        onFocus={(e) => {
+                            e.target.type = "date";
+
+                            // Convert stored MM/DD/YYYY → YYYY-MM-DD
+                            const stored = data.preferredDate;
+                            if (stored) {
+                                const [mm, dd, yyyy] = stored.split("/");
+                                e.target.value = `${yyyy}-${mm}-${dd}`;
+                            }
+                        }}
+
+                        onBlur={(e) => {
+                            e.target.type = "text";
+                            e.target.value = displayDate; // restore formatted version
+                        }}
+
                         onChange={handleDateChange}
                     />
                 </div>

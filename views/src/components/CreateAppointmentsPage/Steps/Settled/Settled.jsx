@@ -44,7 +44,7 @@ export default function Settled({ data }) {
 
     return (
         <div className="p-5 m-5 create-appointment-form-bg">
-            <h3>Step 4: Settled</h3>
+            <h3>Step 4: Now waiting for confirmation from the tutor</h3>
             <p>{statusMessage}</p>
         </div>
     );

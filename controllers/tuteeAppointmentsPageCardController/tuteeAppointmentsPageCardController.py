@@ -12,10 +12,12 @@ def fetch_appointment_cards(results):
         appointment_date_str = result['appointment_date'].strftime("%B %d, %Y")
         start_time_str = result['start_time'].strftime("%I:%M %p")
         end_time_str = result['end_time'].strftime("%I:%M %p")
+
         modal_content = [
             ModalContentItem(text=result['tutor_name'], role="Tutor", url=f"/tutor/{result['tutor_id']}"),
             ModalContentItem(text=result['tutee_name'], role="Tutee")
         ]
+
         card = AppointmentCard(
             subject_code=result['course_code'],
             tutor_name=result['tutor_name'],
@@ -23,9 +25,12 @@ def fetch_appointment_cards(results):
             appointment_date=appointment_date_str,
             start_time=start_time_str,
             end_time=end_time_str,
-            modal_content=modal_content
+            modal_content=modal_content,
+            status=result["status"]
         )
+
         cards.append(card.__dict__)
+
     return cards
 
 @bp_appointments.route("/appointments")
