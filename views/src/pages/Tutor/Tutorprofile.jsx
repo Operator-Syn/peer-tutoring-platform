@@ -1040,7 +1040,7 @@ useEffect(() => {
         <button
           onClick={async () => {
             try {
-               const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/tutor/update_about`, {
+               const res = await fetch(`/api/tutor/update_about`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -1286,7 +1286,7 @@ useEffect(() => {
 
       try {
         const tuteeRes = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/tutee/by_google/${userGoogleId}`
+          `/api/tutee/by_google/${userGoogleId}`
         );
 
         const tuteeData = await tuteeRes.json();
@@ -1306,7 +1306,7 @@ useEffect(() => {
         };
 
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/tutor/badges`,
+          `/api/tutor/badges`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

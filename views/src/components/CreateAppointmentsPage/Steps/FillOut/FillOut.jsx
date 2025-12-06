@@ -58,6 +58,7 @@ export default function FillOut({ data, update }) {
                                 className="form-control custom-input"
                                 value={data.firstName}
                                 onChange={(e) => update({ firstName: e.target.value })}
+                                readOnly
                             />
                         </div>
 
@@ -68,6 +69,7 @@ export default function FillOut({ data, update }) {
                                 className="form-control custom-input"
                                 value={data.idNumber}
                                 onChange={(e) => update({ idNumber: e.target.value })}
+                                readOnly
                             />
                         </div>
                     </div>
@@ -80,6 +82,7 @@ export default function FillOut({ data, update }) {
                                 className="form-control custom-input"
                                 value={data.lastName}
                                 onChange={(e) => update({ lastName: e.target.value })}
+                                readOnly
                             />
                         </div>
 
@@ -102,6 +105,7 @@ export default function FillOut({ data, update }) {
                         className="form-select custom-select"
                         value={data.programCode || ""}
                         onChange={(e) => update({ programCode: e.target.value })}
+                        disabled
                     >
                         <option value="" disabled>
                             Select a program
