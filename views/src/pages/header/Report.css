@@ -4,10 +4,178 @@
 .report-container{
     min-height: 700px;
     width: 100%;
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .report-title {
   color: #4956AD;   /* dark bluish-purple, change to any color you like */
 }
 .spacing-report{
    padding-top: 20px;  /* dark bluish-purple, change to any color you like */
+}
+.report-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.something{
+  height: 150px;
+   resize: none;
+}
+.fullname{
+  height: 50px;
+}
+/* === Confirm modal overlay === */
+.report-confirm-overlay {
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0 */
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* === Confirm modal box === */
+.report-confirm-modal {
+  background-color: #ffffff;
+  padding: 20px 24px;
+  border-radius: 8px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.report-confirm-modal h5 {
+  margin-bottom: 8px;
+  color: #2e3070;
+  font-weight: 700;
+}
+
+.report-confirm-modal p {
+  margin: 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* === Modal buttons === */
+/* CONFIRM button (purple) */
+.btn.report-confirm-btn,
+.btn.report-confirm-btn:hover,
+
+.btn.report-confirm-btn:active,
+.btn.report-confirm-btn:active:focus {
+  background-color: #4956ad !important;
+  border-color: #4956ad !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* CANCEL button (outline purple) */
+.btn.report-cancel-btn {
+  color: #4956ad !important;
+  border: 2px solid #4956ad !important;  /* ✅ correct */
+  background-color: transparent !important;
+}
+
+.btn.report-cancel-btn:hover,
+
+.btn.report-cancel-btn:active,
+.btn.report-cancel-btn:active:focus {
+  background-color: #4956ad !important;
+  color: #ffffff !important;
+  border-color: #4956ad !important;
+  box-shadow: none !important;
+}
+
+
+/* Unified label style for the Report page */
+.report-label {
+  color: #4956AD;        /* same family as your title color */
+  font-weight: 600;      /* semi-bold */
+  font-size: 0.95rem;    /* slightly smaller than h5 */
+}
+
+/* Optional: make modal text match the theme too */
+.report-modal-title {
+  color: #4956AD;
+  font-weight: 700;
+}
+
+.report-modal-text {
+  color: #555555;
+  font-size: 0.9rem;
+}
+
+
+/* YES button in modal */
+.btn.report-modal-confirm-btn,
+.btn.report-modal-confirm-btn:hover,
+
+.btn.report-modal-confirm-btn:active,
+.btn.report-modal-confirm-btn:active:focus {
+  background-color: #4956ad !important;
+  border-color: #4956ad !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* NO button in modal */
+.btn.report-modal-cancel-btn {
+  color: #4956ad !important;
+  border: 2px solid #4956ad !important;
+  background-color: transparent !important;
+}
+
+.btn.report-modal-cancel-btn:hover,
+
+.btn.report-modal-cancel-btn:active,
+.btn.report-modal-cancel-btn:active:focus {
+  background-color: #4956ad !important;
+  color: #ffffff !important;
+  border-color: #4956ad !important;
+  box-shadow: none !important;
+}
+
+
+
+.name-suggestions {
+  max-height: 200px;   /* adjust height as you like */
+  overflow-y: auto;    /* shows scroll bar when too long */
+  z-index: 9999;       /* just to be extra safe on top */
+}
+
+.report-chip {
+  border: 2px solid #4956AD;
+  background-color: #f2f2ff;
+  color: #4956AD;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  /* only animate colors, no movement */
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* when selected (clicked / active in React) */
+.report-chip.active {
+  background-color: #4956AD;
+  color: #ffffff;
+}
+
+/* optional: small hover effect but NO moving */
+.report-chip:hover {
+  filter: brightness(0.97);
+}
+
+/* remove default browser focus outline if you don't like it */
+.report-chip:focus {
+  outline: none;
+}
+
+.Report-message{
+    font-size: 0.9rem ;
+    color: #555;
 }

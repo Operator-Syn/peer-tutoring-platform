@@ -366,11 +366,7 @@ rows.map((row) => (
         <span className="d-block small text-muted">ID Number</span>
         <span className="d-block small fw-semibold">{row.tutee_id}</span>
       </div>
-      <div className="d-flex flex-column">
-        <span className="d-block small text-muted">Program Code</span>
-        <span className="d-block small fw-semibold">{row.course_code || "N/A"}
-</span>
-      </div>
+     
     </div>
 
     {/* Date / Time */}
