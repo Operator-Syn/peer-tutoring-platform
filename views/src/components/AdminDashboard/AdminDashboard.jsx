@@ -413,6 +413,28 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {showCorModal && (
+        <div className="modal fade show custom-dark-modal">
+          <div className="modal-dialog modal-dialog-centered custom-large-modal">
+            <div className="modal-content custom-dark-content">
+              <div className="modal-body p-0 custom-dark-body">
+                {selectedCorFile ? (
+                    selectedCorFile.toLowerCase().endsWith('.pdf') ? (
+                        <iframe src={selectedCorFile} title="COR PDF" className="cor-frame"></iframe>
+                    ) : (
+                        <img src={selectedCorFile} alt="COR Document" className="cor-image" />
+                    )
+                ) : (
+                    <div className="text-center text-light p-5">No COR available</div>
+                )}
+              </div>
+              <div className="custom-dark-footer">
+                <button className="btn btn-light px-4" onClick={() => setShowCorModal(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
