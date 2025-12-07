@@ -47,6 +47,10 @@ export default function TuteeList() {
 
     }, [page, ascending, sortBy, searchQuery]);
 
+    useEffect(() => {
+        setPage(1);
+    }, [maxPages]);
+
     const sortButtonClick = () => {
         setAscending(!ascending);
     }

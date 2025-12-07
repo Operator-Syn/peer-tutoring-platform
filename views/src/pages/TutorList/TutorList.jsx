@@ -33,7 +33,6 @@ export default function TutorList() {
 			.then(data => {
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
-				console.log(data);
 			})
 			.catch(error => console.error("Error fetching tutors:", error));
 	}, [page, courseSearch, availabilitySearch, nameSearch]);
@@ -73,9 +72,9 @@ export default function TutorList() {
 
 			<div className='tutor-card-grid' style={{minHeight: "33.8rem"}}>
 				{tutors.map((tutor, idx) => (
-					<div key={idx}>
+					// <div key={idx}>
 						<TutorCard {...tutor} />
-					</div>
+					// </div>
 				))}
 			</div>
 
@@ -108,7 +107,7 @@ function TutorCard({tutorName="Tutor Name", courses, tutorId}) {
 	const navigate = useNavigate();
 
 	return (
-		<Card className="column" style={{ width: '18rem', padding: "1rem", gap: "1rem" }}>
+		<Card className="column" style={{ width: '18rem', padding: "1rem", gap: "1rem", height: "fit-content" }}>
 			<Card.Body className="d-flex tutor-info-1" style={{padding: "0"}}>
 				<Card.Img variant="top" src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" style={{width: "58px", height: "58px", padding: "0"}}/>
 				<div className="column m-auto">
