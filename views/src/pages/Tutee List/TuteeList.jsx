@@ -87,7 +87,7 @@ export default function TuteeList() {
             </div>  
 
             <div className='table-container'>
-            {loading && <div className='loading-overlay'>
+            {loading && <div className='loading-overlay' style={{'--topSize': '60px', width: '97%', right: '0', left: '0', margin: 'auto', height: '530px'}}>
                 <img src={loadingIcon} alt="Loading..." />
             </div>}    
                 <table className='tutees-table'>
