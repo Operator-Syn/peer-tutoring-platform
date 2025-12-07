@@ -55,7 +55,7 @@
 }
 
 .loading-overlay {
-    --topSize: 60px;
+    --topSize: 0px;
     position: absolute;
     top: var(--topSize);
     left: 0;

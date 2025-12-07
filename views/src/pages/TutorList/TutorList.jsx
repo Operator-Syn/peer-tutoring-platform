@@ -1,4 +1,5 @@
 import './TutorList.css';
+import loadingIcon from '../../assets/loading.svg';
 
 import { useEffect, useState } from "react";
 import BasicButton from '../../components/BasicButton/BasicButton.jsx';
@@ -26,15 +27,18 @@ export default function TutorList() {
 	const [courseSearch, setCourseSearch] = useState('');
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
 	const [nameSearch, setNameSearch] = useState('');
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		setLoading(true);
 		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}${nameSearch ? `&name=${encodeURIComponent(nameSearch)}` : ''}`)
 			.then(res => res.json())
 			.then(data => {
 				setTutors(Array.isArray(data.tutors) ? data.tutors : []);
 				setMaxPages(data.max_pages);
 			})
-			.catch(error => console.error("Error fetching tutors:", error));
+			.catch(error => console.error("Error fetching tutors:", error))
+			.finally(() => setLoading(false));
 	}, [page, courseSearch, availabilitySearch, nameSearch]);
 
 	const fetchCourses = (search = '') => {
@@ -71,6 +75,13 @@ export default function TutorList() {
 			</div>
 
 			<div className='tutor-card-grid' style={{minHeight: "33.8rem"}}>
+
+				{loading && (
+					<div className="loading-overlay">
+						<img src={loadingIcon} alt="Loading..." />
+					</div>
+				)}
+
 				{tutors.map((tutor, idx) => (
 					// <div key={idx}>
 						<TutorCard {...tutor} />
