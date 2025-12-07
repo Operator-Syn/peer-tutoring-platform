@@ -4,8 +4,8 @@
 
 .tutee-list {
     position: relative;
-    min-height: 728.93px;
-    min-width: 800px;
+    min-height: 900px;
+    /* min-width: 800px; */
     width: 70%;
     max-width: 53rem;
     
@@ -17,7 +17,6 @@
     margin-right: auto;
     margin-top: 100px;
     margin-bottom: 50px;
-
 }
 
 .search-component {
@@ -43,6 +42,7 @@
     border-collapse: separate;
     border-spacing: 0 10px;
     width: 100%;
+    min-width: 545px;
     table-layout: fixed;
     border-radius: 8px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
@@ -51,6 +51,7 @@
 
 .table-container {
     position: relative;
+    overflow-x: scroll;
 }
 
 .loading-overlay {
@@ -59,11 +60,13 @@
     top: var(--topSize);
     left: 0;
     width: 100%;
+    min-width: 545px;
     height: calc(100% - var(--topSize));
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.867);
     backdrop-filter: blur(2px);
     z-index: 10;
+    overflow-x: hidden;
 }
 
 .loading-overlay img {
@@ -95,4 +98,22 @@
 .tutee-card:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
     transition: box-shadow 0.3s ease;
+}
+
+@media (max-width: 800px) {
+    .tutee-list {
+        width: 100%;
+    }
+
+    .tutee-list-search {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* .pagination-container {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        padding: 8px 0;
+    } */
 }

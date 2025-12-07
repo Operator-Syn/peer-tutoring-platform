@@ -65,20 +65,24 @@ export default function TuteeList() {
                         <Form.Control type="search" placeholder="Search" className="me-2" aria-label="Search" onChange={e => {setSearchQuery(e.target.value)}} />
                     </Form>
                 </div>
-                <SortBy 
-                    options={[
-                        { value: 'id_number', label: 'ID Number' },
-                        { value: 'first_name', label: 'First Name' },
-                        { value: 'last_name', label: 'Last Name' },
-                        { value: 'year_level', label: 'Year Level' },
-                        { value: 'program_code', label: 'Program Code' },
-                    ]}
-                    onChange={selectedOption => {
-                        setSortBy(selectedOption ? selectedOption.value : 'last_name');
-                    }}
-                />
+
+                <div className='d-flex row-md gap-2 justify-content-center'>
+                    <SortBy 
+                        options={[
+                            { value: 'id_number', label: 'ID Number' },
+                            { value: 'first_name', label: 'First Name' },
+                            { value: 'last_name', label: 'Last Name' },
+                            { value: 'year_level', label: 'Year Level' },
+                            { value: 'program_code', label: 'Program Code' },
+                        ]}
+                        onChange={selectedOption => {
+                            setSortBy(selectedOption ? selectedOption.value : 'last_name');
+                        }}
+                    />
+                    
+                    <SortButton onClick={sortButtonClick} ascending={ascending} />    
+                </div>
                 
-                <SortButton onClick={sortButtonClick} ascending={ascending} />
             
             </div>  
 
@@ -116,7 +120,10 @@ export default function TuteeList() {
                 </table>    
             </div>
 
-            <Pagination page={page} setPage={setPage} maxPages={maxPages} />
+            <div className='pagination-container'>
+                <Pagination page={page} setPage={setPage} maxPages={maxPages} />            
+            </div>
+
         </div>
     );
 }
