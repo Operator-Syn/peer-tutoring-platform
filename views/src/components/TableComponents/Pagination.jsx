@@ -3,7 +3,7 @@ import { Button, Form } from "react-bootstrap";
 export default function Pagination({ page, setPage, maxPages }) {
 
     return (
-        <div className="d-flex align-items-center justify-content-center gap-2 mt-3">
+        <div className="d-flex align-items-center justify-content-center gap-2">
             <Button variant="outline-primary" onClick={() => setPage(prev => Math.max(1, Number(prev) - 1))}>
                 &lt;
             </Button>
