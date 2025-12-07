@@ -185,3 +185,40 @@ def reject_tutor_application(application_id):
     except Exception as e:
         print("Error rejecting tutor:", e)
         return jsonify({"success": False, "message": str(e)}), 500
+
+@admin_dashboard_bp.route("/api/tutor-applications/admin/users", methods=["GET"])
+def get_all_users_for_admin():
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        query = """
+            SELECT 
+                ua.google_id,
+                ua.email,
+                ua.role,
+                ua.status,
+                ua.last_login,
+                t.first_name,
+                t.last_name,
+                COUNT(r.report_id) FILTER (WHERE r.status = 'PENDING') as pending_reports
+            FROM user_account ua
+            LEFT JOIN tutee t ON ua.google_id = t.google_id
+            LEFT JOIN report r ON t.id_number = r.reported_id
+            GROUP BY ua.google_id, ua.email, ua.role, ua.status, ua.last_login, t.first_name, t.last_name
+        """
+        cur.execute(query)
+        users = cur.fetchall()
+        
+        for user in users:
+            if user['last_login']:
+                user['last_login'] = user['last_login'].strftime("%Y-%m-%d")
+            if not user['status']:
+                user['status'] = 'ACTIVE'
+
+        cur.close()
+        conn.close()
+        return jsonify({"success": True, "users": users}), 200
+    except Exception as e:
+        print("Error fetching users:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
