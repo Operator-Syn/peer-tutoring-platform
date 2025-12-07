@@ -29,6 +29,20 @@ def auth():
 
   
     user_info = token.get('userinfo')
+
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Check status
+                cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user_info['sub'],))
+                user_record = cursor.fetchone()
+
+                if user_record and user_record.get('status') == 'BANNED':
+                    return "Your account has been suspended. Please contact the administrator.", 403
+    except Exception as e:
+        print("Auth Error:", e)
+        return "Internal Server Error", 500
  
     if not user_info['email'].endswith('@g.msuiit.edu.ph'):
         return "Unauthorized: Please use your university email.", 403
