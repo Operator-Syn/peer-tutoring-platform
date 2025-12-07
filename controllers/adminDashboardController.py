@@ -223,3 +223,22 @@ def get_all_users_for_admin():
     except Exception as e:
         print("Error fetching users:", e)
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/tutor-applications/admin/users/status", methods=["PUT"])
+def update_user_status():
+    data = request.get_json()
+    google_id = data.get("google_id")
+    new_status = data.get("status") # 'ACTIVE', 'BANNED', 'PROBATION'
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        cur.execute("UPDATE user_account SET status = %s WHERE google_id = %s", (new_status, google_id))
+        conn.commit()
+        
+        cur.close()
+        conn.close()
+        return jsonify({"success": True, "message": "Status updated"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
