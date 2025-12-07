@@ -7,7 +7,7 @@ tutee_list = Blueprint('tutee_list', __name__)
 def get_tutee_list():
     try:
         page = int(request.args.get('page', 1))
-        per_page = 9
+        per_page = 10
         offset = (page - 1) * per_page
         name = request.args.get('name', '').strip()
 

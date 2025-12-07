@@ -3,7 +3,7 @@
 } */
 
 .tutee-list {
-    /* position: relative; */
+    position: relative;
     min-height: 728.93px;
     min-width: 800px;
     width: 70%;
@@ -27,16 +27,11 @@
     /* border-radius: 8px; */
 }
 
-/* .tutees-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-} */
-
 .tutee-list th, .tutee-list td {
     /* border: 1px solid #ccc; */
     padding: 8px;
     text-align: center;
+    width: 20%;
 }
 
 .tutee-list th {
@@ -45,14 +40,41 @@
 }
 
 .tutees-table {
-    border-collapse: separate; /* Allows spacing between rows */
-    border-spacing: 0 10px; /* Adds space between rows */
+    border-collapse: separate;
+    border-spacing: 0 10px;
     width: 100%;
     table-layout: fixed;
-    /* border: 1px solid #efeeee; */
     border-radius: 8px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
     padding: 0px 10px;
+}
+
+.table-container {
+    position: relative;
+}
+
+.loading-overlay {
+    --topSize: 60px;
+    position: absolute;
+    top: var(--topSize);
+    left: 0;
+    width: 100%;
+    height: calc(100% - var(--topSize));
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.867);
+    backdrop-filter: blur(2px);
+    z-index: 10;
+
+    /* display: none; */
+}
+
+.loading-overlay img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
 }
 
 .tutee-card {
@@ -62,18 +84,15 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.tutee-card td {
+.tutee-card td:first-child {
     border-top-left-radius: 8px;
     border-bottom-left-radius: 8px;
 }
 
-/* .tl-pagination {
-    position: absolute;
-    margin-bottom: 15px;
-    bottom: 0px;
-    left: 0;
-    right: 0;
-} */
+.tutee-card td:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
 
 .tutee-card:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */

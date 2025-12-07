@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import Select from 'react-select';
 import './TuteeList.css';
+import loadingIcon from '../../assets/loading.svg';
 
 export default function TuteeList() {
     const API_URL = import.meta.env.VITE_API_BASE_URL;
     const [tutees, setTutees] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
 	const [maxPages, setMaxPages] = useState(1);
+    const [studentsPerPage, setStudentsPerPage] = useState(0);
 
     useEffect(() => {
 
@@ -22,7 +25,8 @@ export default function TuteeList() {
                 const response = await result.json();
                 setTutees(response.tutees || []);
                 setMaxPages(Math.ceil((response.total_count || 1) / (response.per_page || 1)));
-                console.log(response);      
+                setStudentsPerPage(response.per_page || 0);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching tutees:', error);
             }
@@ -32,11 +36,19 @@ export default function TuteeList() {
 
     }, [page]);
 
+    useEffect(() => {
+        setLoading(true);
+    }, [page]);
 
     return (
         <div className="tutee-list">
             <h1 style={{fontSize: "3rem", color: "#616DBE", fontWeight: "bold"}}>Tutees</h1>
             <SearchComponent />
+
+            <div className='table-container'>
+            {loading && <div className='loading-overlay'>
+                <img src={loadingIcon} alt="Loading..." />
+            </div>}    
             <table className='tutees-table'>
                 <thead>
                     <tr>
@@ -58,10 +70,16 @@ export default function TuteeList() {
                         </tr>
                         
                     ))}
+                    {Array.from({ length: Math.max(0, studentsPerPage - tutees.length) }).map((_, index) => (
+                        <tr key={`empty-${index}`} className="empty-row">
+                            <td colSpan="5">&nbsp;</td>
+                        </tr>
+                    ))}
                 </tbody>
-            </table>
+            </table>    
+            </div>
 
-			<div className="tl-pagination d-flex align-items-center justify-content-center gap-2 mt-3">
+			<div className="d-flex align-items-center justify-content-center gap-2 mt-3">
 				<Button variant="outline-primary" onClick={() => setPage(prev => Math.max(1, Number(prev) - 1))}>
 					&lt;
 				</Button>
