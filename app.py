@@ -15,6 +15,7 @@ from controllers.requestscontroller.requestscontroller import requests_bp
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
 from controllers.adminDashboardController import admin_dashboard_bp
+from controllers.appealsController import bp_appeals
 from api.tutor_list import tutor_list
 
 # Existing controllers
@@ -50,6 +51,7 @@ app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 app.register_blueprint(admin_dashboard_bp)
+app.register_blueprint(bp_appeals)
 @app.route('/uploads/cor/<filename>')
 def serve_cor_file(filename):
     return send_from_directory('uploads/cor', filename)
