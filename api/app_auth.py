@@ -34,7 +34,6 @@ def auth():
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Check status
                 cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user_info['sub'],))
                 user_record = cursor.fetchone()
 
