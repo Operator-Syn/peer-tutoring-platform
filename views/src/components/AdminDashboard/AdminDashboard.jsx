@@ -26,6 +26,8 @@ const AdminDashboard = () => {
   const [selectedCorFile, setSelectedCorFile] = useState(null);
   const [activeTab, setActiveTab] = useState('applications'); 
   const [users, setUsers] = useState([]);
+  const [appeals, setAppeals] = useState([]);
+  const [appealsLoading, setAppealsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -76,6 +78,40 @@ const AdminDashboard = () => {
       setError("Failed to fetch users.");
     }
   };
+
+  const fetchAppeals = async () => {
+    try {
+      setAppealsLoading(true);
+      const res = await fetch("/api/appeals/all");
+      const data = await res.json();
+      if (data.success) setAppeals(data.appeals);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch appeals.");
+    } finally {
+      setAppealsLoading(false);
+    }
+  };
+
+  const resolveAppeal = async (appeal_id, action) => {
+    if(!confirm(`Are you sure you want to ${action} this appeal?`)) return;
+    try {
+      const res = await fetch(`/api/appeals/resolve/${appeal_id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action })
+      });
+      if(res.ok) await fetchAppeals();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to resolve appeal.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'appeals') fetchAppeals();
+  }, [activeTab]);
 
   const handleUpdateStatus = (applicationId, newStatus) => {
     const app = applications.find(a => a.application_id === applicationId);
@@ -241,6 +277,12 @@ const AdminDashboard = () => {
             >
                 User Management
             </button>
+            <button 
+                className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('appeals')}
+            >
+                Appeals
+            </button>
         </div>
 
         {activeTab === 'applications' ? (
@@ -385,6 +427,57 @@ const AdminDashboard = () => {
                 </div>
             </div>
         )}
+
+        {activeTab === 'appeals' && (
+    <div className="user-management-container">
+        {appealsLoading ? (
+            <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading</span>
+                </div>
+            </div>
+        ) : appeals.length === 0 ? (
+            <div className="empty-state">
+                <i className="bi bi-inbox fs-1 text-muted"></i>
+                <p className="text-muted mt-3">No appeals found</p>
+            </div>
+        ) : (
+            <table className="user-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Appeal Message</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {appeals.map((appeal) => (
+                        <tr key={appeal.appeal_id}>
+                            <td>{appeal.first_name} {appeal.last_name}<br/><small className="text-muted">{appeal.id_number}</small></td>
+                            <td style={{maxWidth: "300px"}}>{appeal.appeal_text}</td>
+                            <td>{appeal.date_submitted}</td>
+                            <td>
+                                <span className={`status-badge status-${appeal.status.toLowerCase()}`}>
+                                    {appeal.status}
+                                </span>
+                            </td>
+                            <td>
+                                {appeal.status === 'PENDING' && (
+                                    <div className="action-buttons-group">
+                                        <button className="btn-action btn-activate" onClick={() => resolveAppeal(appeal.appeal_id, 'APPROVE')}>Approve (Unban)</button>
+                                        <button className="btn-action btn-ban" onClick={() => resolveAppeal(appeal.appeal_id, 'REJECT')}>Reject</button>
+                                    </div>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        )}
+    </div>
+)}
       </div>
       
       {showConfirm && selectedApplication && (
