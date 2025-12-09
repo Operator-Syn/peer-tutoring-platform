@@ -38,9 +38,8 @@ const AdminDashboard = () => {
   }, [applications, searchQuery, sortBy, statusFilter]);
 
   useEffect(() => {
-    if (activeTab === 'users') {
-      fetchUsers();
-    }
+    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'appeals') fetchAppeals();
   }, [activeTab]);
 
   const fetchData = async () => {
@@ -93,25 +92,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const resolveAppeal = async (appeal_id, action) => {
-    if(!confirm(`Are you sure you want to ${action} this appeal?`)) return;
-    try {
-      const res = await fetch(`/api/appeals/resolve/${appeal_id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action })
-      });
-      if(res.ok) await fetchAppeals();
-    } catch (err) {
-      console.error(err);
-      setError("Failed to resolve appeal.");
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'users') fetchUsers();
-    if (activeTab === 'appeals') fetchAppeals();
-  }, [activeTab]);
 
   const handleUpdateStatus = (applicationId, newStatus) => {
     const app = applications.find(a => a.application_id === applicationId);
@@ -170,9 +150,30 @@ const AdminDashboard = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ google_id, status: newStatus, note: note })
         });
-        if(res.ok) fetchUsers(); 
+        
+        if (res.ok) {
+            fetchUsers();
+        } else {
+            const errData = await res.json();
+            alert(errData.error || "Failed to update status");
+        }
     } catch(err) {
         console.error(err);
+    }
+  };
+
+  const resolveAppeal = async (appeal_id, action) => {
+    if(!window.confirm(`Are you sure you want to ${action} this appeal?`)) return;
+    try {
+      const res = await fetch(`/api/appeals/resolve/${appeal_id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action })
+      });
+      if(res.ok) await fetchAppeals();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to resolve appeal.");
     }
   };
 
@@ -293,7 +294,7 @@ const AdminDashboard = () => {
             </button>
         </div>
 
-        {activeTab === 'applications' ? (
+        {activeTab === 'applications' && (
             <>
                 <div className="status-filter-tabs mb-3">
                   <button className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>
@@ -383,7 +384,9 @@ const AdminDashboard = () => {
                   )}
                 </div>
             </>
-        ) : (
+        )}
+
+        {activeTab === 'users' && (
             <div className="user-management-container">
                 <div className="user-table-wrapper">
                     <table className="user-table">
@@ -412,7 +415,6 @@ const AdminDashboard = () => {
                                         >
                                             {user.status || 'ACTIVE'}
                                         </span>
-                                        
                                         {user.status_note && (
                                             <div className="text-muted mt-1 fst-italic" style={{fontSize: "0.75rem", maxWidth: "150px"}}>
                                                 "{user.status_note}"
@@ -428,7 +430,7 @@ const AdminDashboard = () => {
                                     <td>
                                         <div className="action-buttons-group">
                                             {user.status !== 'ACTIVE' && (
-                                                <button className="btn-action btn-active" onClick={() => changeUserStatus(user.google_id, 'ACTIVE')}>Active</button>
+                                                <button className="btn-action btn-activate" onClick={() => changeUserStatus(user.google_id, 'ACTIVE')}>Activate</button>
                                             )}
                                             {user.status !== 'PROBATION' && (
                                                 <button className="btn-action btn-probation" onClick={() => changeUserStatus(user.google_id, 'PROBATION')}>Probation</button>
@@ -447,55 +449,56 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === 'appeals' && (
-    <div className="user-management-container">
-        {appealsLoading ? (
-            <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading</span>
-                </div>
+            <div className="user-management-container">
+                {appealsLoading ? (
+                    <div className="text-center py-5">
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="visually-hidden">Loading</span>
+                        </div>
+                    </div>
+                ) : appeals.length === 0 ? (
+                    <div className="empty-state">
+                        <i className="bi bi-inbox fs-1 text-muted"></i>
+                        <p className="text-muted mt-3">No appeals found</p>
+                    </div>
+                ) : (
+                    <table className="user-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Appeal Message</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {appeals.map((appeal) => (
+                                <tr key={appeal.appeal_id}>
+                                    <td>{appeal.first_name} {appeal.last_name}<br/><small className="text-muted">{appeal.id_number}</small></td>
+                                    <td style={{maxWidth: "300px"}}>{appeal.appeal_text}</td>
+                                    <td>{appeal.date_submitted}</td>
+                                    <td>
+                                        <span className={`status-badge status-${appeal.status.toLowerCase()}`}>
+                                            {appeal.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {appeal.status === 'PENDING' && (
+                                            <div className="action-buttons-group">
+                                                <button className="btn-action btn-activate" onClick={() => resolveAppeal(appeal.appeal_id, 'APPROVE')}>Approve (Unban)</button>
+                                                <button className="btn-action btn-ban" onClick={() => resolveAppeal(appeal.appeal_id, 'REJECT')}>Reject</button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
-        ) : appeals.length === 0 ? (
-            <div className="empty-state">
-                <i className="bi bi-inbox fs-1 text-muted"></i>
-                <p className="text-muted mt-3">No appeals found</p>
-            </div>
-        ) : (
-            <table className="user-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Appeal Message</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {appeals.map((appeal) => (
-                        <tr key={appeal.appeal_id}>
-                            <td>{appeal.first_name} {appeal.last_name}<br/><small className="text-muted">{appeal.id_number}</small></td>
-                            <td style={{maxWidth: "300px"}}>{appeal.appeal_text}</td>
-                            <td>{appeal.date_submitted}</td>
-                            <td>
-                                <span className={`status-badge status-${appeal.status.toLowerCase()}`}>
-                                    {appeal.status}
-                                </span>
-                            </td>
-                            <td>
-                                {appeal.status === 'PENDING' && (
-                                    <div className="action-buttons-group">
-                                        <button className="btn-action btn-activate" onClick={() => resolveAppeal(appeal.appeal_id, 'APPROVE')}>Approve (Unban)</button>
-                                        <button className="btn-action btn-ban" onClick={() => resolveAppeal(appeal.appeal_id, 'REJECT')}>Reject</button>
-                                    </div>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
         )}
-    </div>
-)}
+
       </div>
       
       {showConfirm && selectedApplication && (
