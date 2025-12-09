@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 
@@ -235,8 +235,13 @@ def get_all_users_for_admin():
     
 @admin_dashboard_bp.route("/api/tutor-applications/admin/users/status", methods=["PUT"])
 def update_user_status():
+    current_user = session.get('user')
     data = request.get_json()
     google_id = data.get("google_id")
+    
+    if current_user and current_user.get('sub') == google_id:
+        return jsonify({"success": False, "error": "You cannot ban or change the status of your own account."}), 403
+
     new_status = data.get("status")
     note = data.get("note", "")
 

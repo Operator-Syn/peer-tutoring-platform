@@ -15,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
 import TutorList from "./pages/TutorList/TutorList";
 import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
+import Banned from "./pages/Banned"
 
 import TutorProfile from "./pages/Tutor/Tutorprofile";
 
@@ -42,6 +43,7 @@ function App() {
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
+            <Route path ="Banned" element={<Banned />} />
           </Route>
         </Route>
       </Routes>
