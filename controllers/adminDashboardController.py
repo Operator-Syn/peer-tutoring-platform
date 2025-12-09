@@ -206,7 +206,15 @@ def get_all_users_for_admin():
             FROM user_account ua
             LEFT JOIN tutee t ON ua.google_id = t.google_id
             LEFT JOIN report r ON t.id_number = r.reported_id
-            GROUP BY ua.google_id, ua.email, ua.role, ua.status, ua.last_login, t.first_name, t.last_name
+            GROUP BY 
+                ua.google_id, 
+                ua.email, 
+                ua.role, 
+                ua.status, 
+                ua.status_note,
+                ua.last_login, 
+                t.first_name, 
+                t.last_name
             ORDER BY pending_reports DESC, ua.last_login DESC
         """
         cur.execute(query)
