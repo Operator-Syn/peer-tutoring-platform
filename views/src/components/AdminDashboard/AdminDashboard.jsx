@@ -154,13 +154,21 @@ const AdminDashboard = () => {
   };
 
   const changeUserStatus = async (google_id, newStatus) => {
-    if(!window.confirm(`Are you sure you want to set this user to ${newStatus}?`)) return;
+    let note = "";
+
+    if (newStatus === 'BANNED' || newStatus === 'PROBATION') {
+        note = window.prompt(`Please enter a reason for setting this user to ${newStatus}:`);
+        if (note === null) return;
+    } else {
+        if (!window.confirm(`Are you sure you want to set this user to ${newStatus}?`)) return;
+        note = "Account Reactivated";
+    }
     
     try {
         const res = await fetch("/api/tutor-applications/admin/users/status", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ google_id, status: newStatus })
+            body: JSON.stringify({ google_id, status: newStatus, note: note })
         });
         if(res.ok) fetchUsers(); 
     } catch(err) {
@@ -397,9 +405,19 @@ const AdminDashboard = () => {
                                     </td>
                                     <td><span className="badge bg-secondary">{user.role}</span></td>
                                     <td>
-                                        <span className={`status-badge status-${user.status?.toLowerCase() || 'active'}`}>
+                                        <span 
+                                            className={`status-badge status-${user.status?.toLowerCase() || 'active'}`}
+                                            title={user.status_note || "No notes"} 
+                                            style={{ cursor: user.status_note ? "help" : "default" }}
+                                        >
                                             {user.status || 'ACTIVE'}
                                         </span>
+                                        
+                                        {user.status_note && (
+                                            <div className="text-muted mt-1 fst-italic" style={{fontSize: "0.75rem", maxWidth: "150px"}}>
+                                                "{user.status_note}"
+                                            </div>
+                                        )}
                                     </td>
                                     <td>
                                         {user.pending_reports > 0 ? 
