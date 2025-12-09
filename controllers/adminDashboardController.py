@@ -198,6 +198,7 @@ def get_all_users_for_admin():
                 ua.email,
                 ua.role,
                 ua.status,
+                ua.status_note,
                 ua.last_login,
                 t.first_name,
                 t.last_name,
@@ -228,13 +229,19 @@ def get_all_users_for_admin():
 def update_user_status():
     data = request.get_json()
     google_id = data.get("google_id")
-    new_status = data.get("status") # 'ACTIVE', 'BANNED', 'PROBATION'
+    new_status = data.get("status")
+    note = data.get("note", "")
 
     try:
         conn = get_connection()
         cur = conn.cursor()
         
-        cur.execute("UPDATE user_account SET status = %s WHERE google_id = %s", (new_status, google_id))
+        cur.execute("""
+            UPDATE user_account 
+            SET status = %s, status_note = %s 
+            WHERE google_id = %s
+        """, (new_status, note, google_id))
+        
         conn.commit()
         
         cur.close()

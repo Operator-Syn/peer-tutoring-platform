@@ -38,7 +38,7 @@ def auth():
                 user_record = cursor.fetchone()
 
                 if user_record and user_record.get('status') == 'BANNED':
-                    return "Your account has been suspended. Please contact the administrator.", 403
+                    pass
     except Exception as e:
         print("Auth Error:", e)
         return "Internal Server Error", 500
