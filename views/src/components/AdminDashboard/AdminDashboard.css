@@ -93,6 +93,12 @@
   margin-bottom: 2rem;
 }
 
+.statistics-grid-top .home-page-card {
+  width: 100% !important;
+  height: 120px !important;
+  background-color: #fff !important;
+}
+
 .admin-tabs-container {
   display: flex;
   gap: 1rem;
@@ -142,6 +148,15 @@
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   padding: 0.6rem 1rem;
+}
+
+.search-input-user, 
+.search-input-appeal {
+  max-width: 300px;
+}
+
+.role-filter-select {
+  max-width: 150px;
 }
 
 .search-btn {
@@ -339,6 +354,14 @@
   text-transform: uppercase;
 }
 
+.status-badge.has-note {
+    cursor: help;
+}
+
+.status-badge:not(.has-note) {
+    cursor: default;
+}
+
 .status-approved { background: #c6f6d5; color: #22543d; }
 .status-rejected { background: #fed7d7; color: #742a2a; }
 .status-pending { background: #feebc8; color: #7c2d12; }
@@ -375,6 +398,33 @@
   padding: 1rem;
   border-bottom: 1px solid #edf2f7;
   vertical-align: middle;
+}
+
+.status-note-text {
+    max-width: 200px;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.appeal-text-cell {
+    max-width: 350px;
+}
+
+.appeal-message-content {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.appeal-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.evidence-btn {
+    font-size: 0.75rem !important;
+    padding: 0.1rem 0.5rem !important;
 }
 
 .action-buttons-group {
@@ -423,6 +473,28 @@ body.modal-open, .admin-container.modal-open { overflow: hidden !important; }
 
 .custom-alert-bg {
   background-color: #f8f9fa;
+}
+
+.custom-alert-style {
+  padding-right: 4rem !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-alert-style .btn-close {
+  position: absolute;
+  top: 50% !important;
+  right: 1.25rem !important;
+  transform: translateY(-50%);
+  padding: 0.5rem !important;
+  margin: 0 !important;
+  opacity: 0.8;
+  box-shadow: none !important;
+}
+
+.custom-alert-style .btn-close:hover {
+  opacity: 1;
 }
 
 .custom-dark-modal {

@@ -2,40 +2,41 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './AdminDashboard.css';
 import BasicCard from '../HomePageCard/HomePageCard';
+import { Modal, Button, Form } from 'react-bootstrap';
 
 const AdminDashboard = () => {
   const [statistics, setStatistics] = useState({
-    total_applications: 0,
-    pending: 0,
-    total_tutors: 0,
-    total_tutees: 0,
-    total_courses: 0,
+    total_applications: 0, pending: 0, total_tutors: 0, total_tutees: 0, total_courses: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('applications');
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('date_desc');
+  const [appStatusFilter, setAppStatusFilter] = useState('all');
+  const [appSearch, setAppSearch] = useState('');
+  const [appSort, setAppSort] = useState('date_desc');
   const [processingId, setProcessingId] = useState(null);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [appeals, setAppeals] = useState([]);
+  const [filteredAppeals, setFilteredAppeals] = useState([]);
+  const [appealSearch, setAppealSearch] = useState('');
+  const [appealStatusFilter, setAppealStatusFilter] = useState('all');
+  const [appealSort, setAppealSort] = useState('date_desc');
+  const [appealsLoading, setAppealsLoading] = useState(false);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '' });
+  const [actionNote, setActionNote] = useState('');
+  
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
-  const [activeTab, setActiveTab] = useState('applications'); 
-  const [users, setUsers] = useState([]);
-  const [appeals, setAppeals] = useState([]);
-  const [appealsLoading, setAppealsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [applications, searchQuery, sortBy, statusFilter]);
 
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
@@ -45,23 +46,17 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError(null);
-
       const [appsResponse, statsResponse] = await Promise.all([
         fetch(`/admin/applications`),
         fetch(`/admin/statistics`)
       ]);
-
-      if (!appsResponse.ok || !statsResponse.ok) throw new Error('Failed to fetch data');
-
       const appsData = await appsResponse.json();
       const statsData = await statsResponse.json();
-
       setApplications(appsData.applications || []);
       setStatistics(statsData.statistics || {});
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to load data from server.');
+      console.error(err);
+      setError('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -72,10 +67,7 @@ const AdminDashboard = () => {
       const res = await fetch("/api/tutor-applications/admin/users");
       const data = await res.json();
       if (data.success) setUsers(data.users);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch users.");
-    }
+    } catch(err) { console.error(err); }
   };
 
   const fetchAppeals = async () => {
@@ -84,124 +76,139 @@ const AdminDashboard = () => {
       const res = await fetch("/api/appeals/all");
       const data = await res.json();
       if (data.success) setAppeals(data.appeals);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch appeals.");
-    } finally {
-      setAppealsLoading(false);
-    }
+    } catch(err) { console.error(err); } 
+    finally { setAppealsLoading(false); }
   };
 
-
-  const handleUpdateStatus = (applicationId, newStatus) => {
-    const app = applications.find(a => a.application_id === applicationId);
-    if (!app) return;
-    setSelectedApplication(app);
-    setConfirmAction(newStatus);
-    setShowConfirm(true);
-  };
-
-  const confirmActionHandler = async (applicationId, action) => {
-    try {
-      setProcessingId(applicationId);
-      const endpoint = action === 'APPROVED'
-        ? `/admin/applications/${applicationId}/approve`
-        : `/admin/applications/${applicationId}/reject`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Failed to update status');
-
-      setApplications(prev =>
-        prev.map(app => app.application_id === applicationId ? { ...app, status: data.data.status } : app)
-      );
-
-      setShowConfirm(false);
-      setSelectedApplication(null);
-      setConfirmAction(null);
-      fetchData();
-      alert(`Application ${action === 'APPROVED' ? 'approved' : 'rejected'} successfully.`);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const changeUserStatus = async (google_id, newStatus) => {
-    let note = "";
-
-    if (newStatus === 'BANNED' || newStatus === 'PROBATION') {
-        note = window.prompt(`Please enter a reason for setting this user to ${newStatus}:`);
-        if (note === null) return;
-    } else {
-        if (!window.confirm(`Are you sure you want to set this user to ${newStatus}?`)) return;
-        note = "Account Reactivated";
-    }
+  useEffect(() => {
+    let res = [...applications];
     
+    // Filter
+    if (appStatusFilter !== 'all') res = res.filter(a => a.status === appStatusFilter);
+    if (appSearch) res = res.filter(a => 
+      a.student_name?.toLowerCase().includes(appSearch.toLowerCase()) || 
+      a.student_id?.toLowerCase().includes(appSearch.toLowerCase())
+    );
+
+    // Sort
+    res.sort((a, b) => {
+      if (appSort === 'date_desc') return new Date(b.date_submitted) - new Date(a.date_submitted);
+      if (appSort === 'date_asc') return new Date(a.date_submitted) - new Date(b.date_submitted);
+      if (appSort === 'name_asc') return a.student_name.localeCompare(b.student_name);
+      if (appSort === 'name_desc') return b.student_name.localeCompare(a.student_name);
+      return 0;
+    });
+
+    setFilteredApplications(res);
+  }, [applications, appStatusFilter, appSearch, appSort]);
+
+  useEffect(() => {
+    let res = [...users];
+
+    // Filter
+    if (userRoleFilter !== 'all') res = res.filter(u => u.role === userRoleFilter);
+    if (userSearch) res = res.filter(u => 
+        (u.first_name + ' ' + u.last_name).toLowerCase().includes(userSearch.toLowerCase()) || 
+        u.email.toLowerCase().includes(userSearch.toLowerCase())
+    );
+
+    // Default Sort (Name Ascending)
+    res.sort((a, b) => {
+      const nameA = (a.first_name + ' ' + a.last_name).toLowerCase();
+      const nameB = (b.first_name + ' ' + b.last_name).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    setFilteredUsers(res);
+  }, [users, userRoleFilter, userSearch]);
+
+  useEffect(() => {
+    let res = [...appeals];
+
+    // Filter
+    if (appealStatusFilter !== 'all') res = res.filter(a => a.status === appealStatusFilter);
+    if (appealSearch) res = res.filter(a => 
+        (a.first_name + ' ' + a.last_name).toLowerCase().includes(appealSearch.toLowerCase())
+    );
+
+    // Sort
+    res.sort((a, b) => {
+      if (appealSort === 'date_desc') return new Date(b.date_submitted) - new Date(a.date_submitted);
+      if (appealSort === 'date_asc') return new Date(a.date_submitted) - new Date(b.date_submitted);
+      return 0;
+    });
+
+    setFilteredAppeals(res);
+  }, [appeals, appealStatusFilter, appealSearch, appealSort]);
+
+
+  const openActionModal = (type, item, targetStatus) => {
+    let title = "";
+    let noteRequired = false;
+
+    if (type === 'APPLICATION') {
+        title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application for ${item.student_name}`;
+    } else if (type === 'USER') {
+        title = `${targetStatus === 'ACTIVE' ? 'Activate' : targetStatus === 'BANNED' ? 'Ban' : 'Restrict'} User: ${item.first_name}`;
+        noteRequired = (targetStatus === 'BANNED' || targetStatus === 'PROBATION');
+    } else if (type === 'APPEAL') {
+        title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Appeal`;
+    }
+
+    setActionData({ type, id: item.application_id || item.google_id || item.appeal_id, targetStatus, title, noteRequired });
+    setActionNote('');
+    setShowActionModal(true);
+  };
+
+  const submitAction = async () => {
+    if (actionData.noteRequired && !actionNote.trim()) {
+        alert("Please provide a reason.");
+        return;
+    }
+
     try {
-        const res = await fetch("/api/tutor-applications/admin/users/status", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ google_id, status: newStatus, note: note })
-        });
-        
-        if (res.ok) {
+        if (actionData.type === 'APPLICATION') {
+            setProcessingId(actionData.id);
+            const endpoint = actionData.targetStatus === 'APPROVED' ? 'approve' : 'reject';
+            await fetch(`/api/tutor-applications/admin/applications/${actionData.id}/${endpoint}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+            });
+            fetchData();
+        } 
+        else if (actionData.type === 'USER') {
+            await fetch("/api/tutor-applications/admin/users/status", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    google_id: actionData.id, 
+                    status: actionData.targetStatus, 
+                    note: actionData.noteRequired ? actionNote : "Account Reactivated" 
+                })
+            });
             fetchUsers();
-        } else {
-            const errData = await res.json();
-            alert(errData.error || "Failed to update status");
+        } 
+        else if (actionData.type === 'APPEAL') {
+            await fetch(`/api/appeals/resolve/${actionData.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: actionData.targetStatus })
+            });
+            fetchAppeals();
         }
-    } catch(err) {
-        console.error(err);
-    }
-  };
 
-  const resolveAppeal = async (appeal_id, action) => {
-    if(!window.confirm(`Are you sure you want to ${action} this appeal?`)) return;
-    try {
-      const res = await fetch(`/api/appeals/resolve/${appeal_id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action })
-      });
-      if(res.ok) await fetchAppeals();
+        setShowActionModal(false);
     } catch (err) {
-      console.error(err);
-      setError("Failed to resolve appeal.");
+        console.error(err);
+        alert("Action failed.");
+    } finally {
+        setProcessingId(null);
     }
   };
 
-  const handleShowCor = (corFilename) => {
-    setSelectedCorFile(`/uploads/cor/${corFilename}`);
+  const handleShowCor = (filename, isAppeal = false) => {
+    const path = isAppeal ? `/uploads/appeals/${filename}` : `/uploads/cor/${filename}`;
+    setSelectedCorFile(path);
     setShowCorModal(true);
-  };
-
-  const applyFiltersAndSort = () => {
-    let filtered = [...applications];
-    if (statusFilter !== 'all') filtered = filtered.filter(app => app.status === statusFilter);
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(app =>
-        app.student_id?.toLowerCase().includes(query) ||
-        app.student_name?.toLowerCase().includes(query) ||
-        app.college?.toLowerCase().includes(query) ||
-        (app.courses && app.courses.some(c => c.toLowerCase().includes(query)))
-      );
-    }
-    setFilteredApplications(filtered);
-  };
-
-  const statusCounts = {
-    all: applications.length,
-    PENDING: applications.filter(app => app.status === 'PENDING').length,
-    APPROVED: applications.filter(app => app.status === 'APPROVED').length,
-    REJECTED: applications.filter(app => app.status === 'REJECTED').length
   };
 
   const statsCards = [
@@ -212,28 +219,34 @@ const AdminDashboard = () => {
     { key: "active_sessions", title: statistics.active_sessions || 0, description: "Active Sessions" },
   ];
 
-  if (loading) {
-    return (
-      <div className="admin-container">
-        <div className="loading-state">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading</span>
-          </div>
-          <p className="mt-3">Loading dashboard</p>
-        </div>
-      </div>
-    );
-  }
+  const appCounts = {
+    all: applications.length,
+    PENDING: applications.filter(a => a.status === 'PENDING').length,
+    APPROVED: applications.filter(a => a.status === 'APPROVED').length,
+    REJECTED: applications.filter(a => a.status === 'REJECTED').length
+  };
+  
+  const userCounts = {
+      all: users.length,
+      ACTIVE: users.filter(u => u.status === 'ACTIVE').length,
+      BANNED: users.filter(u => u.status === 'BANNED').length,
+      PROBATION: users.filter(u => u.status === 'PROBATION').length
+  };
+
+  const appealCounts = {
+      all: appeals.length,
+      PENDING: appeals.filter(a => a.status === 'PENDING').length,
+      APPROVED: appeals.filter(a => a.status === 'APPROVED').length,
+      REJECTED: appeals.filter(a => a.status === 'REJECTED').length
+  };
+
+  if (loading) return <div className="admin-container"><p className="p-5 text-center">Loading Dashboard...</p></div>;
 
   return (
     <div className={`admin-container ${showCorModal ? 'modal-open-custom' : ''}`}>
       <header className="admin-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <div className="logo-circle">
-              <i className="bi bi-mortarboard-fill"></i>
-            </div>
-          </div>
+         <div className="header-content">
+          <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
           <nav className="header-nav">
             <a href="/" className="custom-nav-link">Home</a>
             <a href="/about" className="custom-nav-link">About</a>
@@ -241,19 +254,13 @@ const AdminDashboard = () => {
             <a href="/messages" className="custom-nav-link">Messages</a>
             <a href="/reports" className="custom-nav-link">Reports</a>
           </nav>
-          <div className="user-section">
-            <div className="user-avatar">
-              <i className="bi bi-person-circle"></i>
-            </div>
-          </div>
+          <div className="user-section"><div className="user-avatar"><i className="bi bi-person-circle"></i></div></div>
         </div>
       </header>
 
       <div className="dashboard-content">
-        <div className="page-title">
-          <h1>Admin Dashboard</h1>
-        </div>
-
+        <div className="page-title"><h1>Admin Dashboard</h1></div>
+        
         {error && (
           <div className="alert alert-warning alert-dismissible fade show custom-alert-style" role="alert">
             <i className="bi bi-exclamation-triangle me-2"></i>
@@ -264,78 +271,44 @@ const AdminDashboard = () => {
 
         <div className="statistics-grid-top">
           {statsCards.map(card => (
-            <BasicCard
-              key={card.key}
-              title={String(card.title)}
-              description={card.description}
-              style={{ width: "100%", height: "120px", backgroundColor: "#fff" }}
-            />
+            <BasicCard key={card.key} title={String(card.title)} description={card.description} />
           ))}
         </div>
 
         <div className="admin-tabs-container">
-            <button 
-                className={`admin-tab-btn ${activeTab === 'applications' ? 'active' : ''}`}
-                onClick={() => setActiveTab('applications')}
-            >
-                Tutor Applications
-            </button>
-            <button 
-                className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-                onClick={() => setActiveTab('users')}
-            >
-                User Management
-            </button>
-            <button 
-                className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('appeals')}
-            >
-                Appeals
-            </button>
+            <button className={`admin-tab-btn ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>Tutor Applications</button>
+            <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>User Management</button>
+            <button className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} onClick={() => setActiveTab('appeals')}>Appeals</button>
         </div>
 
         {activeTab === 'applications' && (
             <>
                 <div className="status-filter-tabs mb-3">
-                  <button className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>
-                    All <span className="count-badge">{statusCounts.all}</span>
-                  </button>
-                  <button className={`filter-tab ${statusFilter === 'PENDING' ? 'active' : ''}`} onClick={() => setStatusFilter('PENDING')}>
-                    Pending <span className="count-badge badge-warning">{statusCounts.PENDING}</span>
-                  </button>
-                  <button className={`filter-tab ${statusFilter === 'APPROVED' ? 'active' : ''}`} onClick={() => setStatusFilter('APPROVED')}>
-                    Approved <span className="count-badge badge-success">{statusCounts.APPROVED}</span>
-                  </button>
-                  <button className={`filter-tab ${statusFilter === 'REJECTED' ? 'active' : ''}`} onClick={() => setStatusFilter('REJECTED')}>
-                    Rejected <span className="count-badge badge-danger">{statusCounts.REJECTED}</span>
-                  </button>
+                  {['all', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
+                      <button key={status} className={`filter-tab ${appStatusFilter === status ? 'active' : ''}`} onClick={() => setAppStatusFilter(status)}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)} <span className="count-badge ms-2">{appCounts[status]}</span>
+                      </button>
+                  ))}
                 </div>
 
                 <div className="controls-section">
                   <div className="sort-dropdown">
-                    <select className="form-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <select className="form-select" value={appSort} onChange={(e) => setAppSort(e.target.value)}>
                       <option value="date_desc">Sort by: Newest First</option>
                       <option value="date_asc">Sort by: Oldest First</option>
                       <option value="name_asc">Sort by: Name (A-Z)</option>
                       <option value="name_desc">Sort by: Name (Z-A)</option>
-                      <option value="status_pending">Sort by: Pending First</option>
-                      <option value="status_approved">Sort by: Approved First</option>
-                      <option value="status_rejected">Sort by: Rejected First</option>
                     </select>
                   </div>
-
                   <div className="search-box">
-                    <input type="text" className="form-control" placeholder="Search applications..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    <input type="text" className="form-control" placeholder="Search applications..." value={appSearch} onChange={(e) => setAppSearch(e.target.value)} />
                     <button className="search-btn"><i className="bi bi-search"></i></button>
                   </div>
                 </div>
 
                 <div className="applications-list">
                   {filteredApplications.length === 0 ? (
-                    <div className="empty-state">
-                      <i className="bi bi-inbox fs-1 text-muted"></i>
-                      <p className="text-muted mt-3">No applications found</p>
-                    </div>
+                    <div className="empty-state"><i className="bi bi-inbox fs-1 text-muted"></i><p className="text-muted mt-3">No applications found</p></div>
                   ) : (
                     filteredApplications.map((app) => (
                       <div key={app.application_id} className="application-card">
@@ -349,26 +322,24 @@ const AdminDashboard = () => {
                         <div className="card-content-row">
                             <div className="avatar-section">
                                 <div className="avatar-circle"><i className="bi bi-person-fill"></i></div>
-                                <span className="college-text">{app.college || 'CCS'}</span>
+                                <span className="college-text">{app.program || 'CCS'}</span>
                             </div>
-                            <div className="name-section"><span className="name-text">{app.student_name || app.student_id}</span></div>
-                            <div className="gender-section"><span className="gender-text">{app.gender || 'Male'}</span></div>
-                            <div className="year-section"><span className="year-text">{app.school_year || '3rd year'}</span></div>
+                            <div className="name-section"><span className="name-text">{app.student_name}</span></div>
+                            <div className="gender-section"><span className="gender-text">N/A</span></div>
+                            <div className="year-section"><span className="year-text">N/A</span></div>
                             <div className="documents-section">
                                 {app.cor_filename ? (
-                                <button type="button" className="btn btn-link p-0 document-icon" onClick={() => handleShowCor(app.cor_filename)}>
-                                    <i className="bi bi-file-earmark-text-fill fs-4"></i>
-                                </button>
-                                ) : (
-                                <div className="document-icon disabled"><i className="bi bi-file-earmark-x fs-4"></i></div>
-                                )}
+                                    <button className="btn btn-link p-0 document-icon" onClick={() => handleShowCor(app.cor_filename, false)}>
+                                        <i className="bi bi-file-earmark-text-fill fs-4"></i>
+                                    </button>
+                                ) : (<div className="document-icon disabled"><i className="bi bi-file-earmark-x fs-4"></i></div>)}
                             </div>
                             <div className="actions-section">
-                                <button className="btn btn-accept" onClick={() => handleUpdateStatus(app.application_id, 'APPROVED')} 
+                                <button className="btn btn-accept" onClick={() => openActionModal('APPLICATION', app, 'APPROVED')} 
                                     disabled={processingId === app.application_id || app.status !== 'PENDING'}>
                                     {processingId === app.application_id ? <span className="spinner-border spinner-border-sm"></span> : 'Accept'}
                                 </button>
-                                <button className="btn btn-decline" onClick={() => handleUpdateStatus(app.application_id, 'REJECTED')}
+                                <button className="btn btn-decline" onClick={() => openActionModal('APPLICATION', app, 'REJECTED')}
                                     disabled={processingId === app.application_id || app.status !== 'PENDING'}>
                                     Decline
                                 </button>
@@ -388,6 +359,30 @@ const AdminDashboard = () => {
 
         {activeTab === 'users' && (
             <div className="user-management-container">
+                 <div className="status-filter-tabs mb-3">
+                  {['all', 'ACTIVE', 'BANNED', 'PROBATION'].map(status => (
+                      <button key={status} className={`filter-tab ${userStatusFilter === status ? 'active' : ''}`} onClick={() => setUserStatusFilter(status)}>
+                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} 
+                        <span className="count-badge ms-2">{userCounts[status]}</span>
+                      </button>
+                  ))}
+                </div>
+
+                <div className="controls-section">
+                    <div className="sort-dropdown">
+                        <select className="form-select role-filter-select" value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)}>
+                            <option value="all">All Roles</option>
+                            <option value="TUTEE">Tutee</option>
+                            <option value="TUTOR">Tutor</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                    <div className="search-box">
+                        <input type="text" className="form-control search-input-user" placeholder="Search users..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+                        <button className="search-btn"><i className="bi bi-search"></i></button>
+                    </div>
+                </div>
+
                 <div className="user-table-wrapper">
                     <table className="user-table">
                         <thead>
@@ -395,48 +390,49 @@ const AdminDashboard = () => {
                                 <th>User</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Pending Reports</th>
+                                <th>Reports</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((user) => (
+                            {filteredUsers.map((user) => (
                                 <tr key={user.google_id}>
                                     <td>
                                         <div className="fw-bold">{user.first_name} {user.last_name}</div>
                                         <div className="text-muted small">{user.email}</div>
                                     </td>
                                     <td><span className="badge bg-secondary">{user.role}</span></td>
+                                    
                                     <td>
                                         <span 
-                                            className={`status-badge status-${user.status?.toLowerCase() || 'active'}`}
+                                            className={`status-badge status-${user.status?.toLowerCase() || 'active'} ${user.status_note ? 'has-note' : ''}`}
                                             title={user.status_note || "No notes"} 
-                                            style={{ cursor: user.status_note ? "help" : "default" }}
                                         >
                                             {user.status || 'ACTIVE'}
                                         </span>
                                         {user.status_note && (
-                                            <div className="text-muted mt-1 fst-italic" style={{fontSize: "0.75rem", maxWidth: "150px"}}>
+                                            <div className="text-muted status-note-text">
                                                 "{user.status_note}"
                                             </div>
                                         )}
                                     </td>
+
                                     <td>
                                         {user.pending_reports > 0 ? 
-                                            <span className="text-danger fw-bold">{user.pending_reports} </span> : 
-                                            <span className="text-muted">None</span>
+                                            <span className="text-danger fw-bold">{user.pending_reports} 🚩</span> : 
+                                            <span className="text-muted">0</span>
                                         }
                                     </td>
                                     <td>
                                         <div className="action-buttons-group">
                                             {user.status !== 'ACTIVE' && (
-                                                <button className="btn-action btn-activate" onClick={() => changeUserStatus(user.google_id, 'ACTIVE')}>Activate</button>
+                                                <button className="btn-action btn-activate" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>
                                             )}
                                             {user.status !== 'PROBATION' && (
-                                                <button className="btn-action btn-probation" onClick={() => changeUserStatus(user.google_id, 'PROBATION')}>Probation</button>
+                                                <button className="btn-action btn-probation" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>
                                             )}
                                             {user.status !== 'BANNED' && (
-                                                <button className="btn-action btn-ban" onClick={() => changeUserStatus(user.google_id, 'BANNED')}>Ban</button>
+                                                <button className="btn-action btn-ban" onClick={() => openActionModal('USER', user, 'BANNED')}>Ban</button>
                                             )}
                                         </div>
                                     </td>
@@ -447,85 +443,126 @@ const AdminDashboard = () => {
                 </div>
             </div>
         )}
-
+        
         {activeTab === 'appeals' && (
             <div className="user-management-container">
-                {appealsLoading ? (
-                    <div className="text-center py-5">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading</span>
-                        </div>
-                    </div>
-                ) : appeals.length === 0 ? (
-                    <div className="empty-state">
-                        <i className="bi bi-inbox fs-1 text-muted"></i>
-                        <p className="text-muted mt-3">No appeals found</p>
-                    </div>
-                ) : (
-                    <table className="user-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Appeal Message</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {appeals.map((appeal) => (
-                                <tr key={appeal.appeal_id}>
-                                    <td>{appeal.first_name} {appeal.last_name}<br/><small className="text-muted">{appeal.id_number}</small></td>
-                                    <td style={{maxWidth: "300px"}}>{appeal.appeal_text}</td>
-                                    <td>{appeal.date_submitted}</td>
-                                    <td>
-                                        <span className={`status-badge status-${appeal.status.toLowerCase()}`}>
-                                            {appeal.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {appeal.status === 'PENDING' && (
-                                            <div className="action-buttons-group">
-                                                <button className="btn-action btn-activate" onClick={() => resolveAppeal(appeal.appeal_id, 'APPROVE')}>Approve (Unban)</button>
-                                                <button className="btn-action btn-ban" onClick={() => resolveAppeal(appeal.appeal_id, 'REJECT')}>Reject</button>
-                                            </div>
-                                        )}
-                                    </td>
+                 <div className="status-filter-tabs mb-3">
+                  {['all', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
+                      <button key={status} className={`filter-tab ${appealStatusFilter === status ? 'active' : ''}`} onClick={() => setAppealStatusFilter(status)}>
+                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} 
+                        <span className="count-badge ms-2">{appealCounts[status]}</span>
+                      </button>
+                  ))}
+                </div>
+
+                <div className="controls-section">
+                  <div className="sort-dropdown">
+                    <select className="form-select" value={appealSort} onChange={(e) => setAppealSort(e.target.value)}>
+                      <option value="date_desc">Sort by: Newest First</option>
+                      <option value="date_asc">Sort by: Oldest First</option>
+                    </select>
+                  </div>
+                  <div className="search-box">
+                    <input type="text" className="form-control search-input-appeal" placeholder="Search appeals..." value={appealSearch} onChange={(e) => setAppealSearch(e.target.value)} />
+                    <button className="search-btn"><i className="bi bi-search"></i></button>
+                  </div>
+                </div>
+
+                <div className="user-table-wrapper">
+                    {appealsLoading ? <p className="text-center py-5">Loading Appeals...</p> : (
+                        <table className="user-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Appeal Message</th>
+                                    <th>Evidence</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
+                            </thead>
+                            <tbody>
+                                {filteredAppeals.map((appeal) => (
+                                    <tr key={appeal.appeal_id}>
+                                        <td>
+                                            <div className="fw-bold">{appeal.first_name} {appeal.last_name}</div>
+                                            <div className="text-muted small">{appeal.id_number}</div>
+                                        </td>
+                                        <td className="appeal-text-cell">
+                                            <div className="appeal-message-content">{appeal.appeal_text}</div>
+                                            <div className="appeal-date">{appeal.date_submitted}</div>
+                                        </td>
+                                        <td>
+                                            {appeal.files && appeal.files.length > 0 ? (
+                                                <div className="d-flex flex-wrap gap-1">
+                                                    {appeal.files.map((file, idx) => (
+                                                        <button key={idx} className="btn btn-outline-secondary evidence-btn" onClick={() => handleShowCor(file, true)}>
+                                                            File {idx + 1}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="no-evidence-text">None</span>
+                                            )}
+                                        </td>
+                                        <td><span className={`status-badge status-${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
+                                        <td>
+                                            {appeal.status === 'PENDING' && (
+                                                <div className="action-buttons-group">
+                                                    <button className="btn-action btn-activate" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
+                                                    <button className="btn-action btn-ban" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
             </div>
         )}
-
       </div>
-      
-      {showConfirm && selectedApplication && (
-        <div className="modal fade show custom-modal-overlay">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content custom-modal-content">
-              <div className="modal-header bg-primary text-white custom-modal-header">
-                <h5 className="modal-title">{confirmAction === 'APPROVED' ? 'Approve Application' : 'Reject Application'}</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setShowConfirm(false)}></button>
-              </div>
-              <div className="modal-body text-center p-4">
-                <p className="fs-5 text-muted mb-4">Are you sure you want to <strong>{confirmAction === 'APPROVED' ? 'approve' : 'reject'}</strong> this application?</p>
-                <div className="alert alert-light text-start border-0 custom-alert-bg">
-                  <strong>{selectedApplication.student_name}</strong><br />
-                  Program: {selectedApplication.program || 'N/A'}
-                </div>
-              </div>
-              <div className="modal-footer border-0 d-flex justify-content-center gap-3 pb-4">
-                <button className="btn btn-secondary px-4" onClick={() => setShowConfirm(false)}>Cancel</button>
-                <button className={`btn px-4 ${confirmAction === 'APPROVED' ? 'btn-success' : 'btn-danger'}`} onClick={() => confirmActionHandler(selectedApplication.application_id, confirmAction)}>
-                  {confirmAction === 'APPROVED' ? 'Approve' : 'Reject'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
+      <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
+        <Modal.Header closeButton>
+            <Modal.Title>{actionData.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+            {actionData.type === 'USER' && actionData.targetStatus === 'ACTIVE' && (
+                <p>Are you sure you want to reactivate this user account? They will regain access immediately.</p>
+            )}
+            
+            {actionData.type === 'APPEAL' && (
+                <p>Are you sure you want to <strong>{actionData.targetStatus}</strong> this appeal? {actionData.targetStatus === 'APPROVE' ? 'The user will be automatically unbanned.' : ''}</p>
+            )}
+
+            {actionData.type === 'APPLICATION' && (
+                <p>Are you sure you want to <strong>{actionData.targetStatus}</strong> this Tutor Application?</p>
+            )}
+
+            {actionData.noteRequired && (
+                <Form.Group>
+                    <Form.Label>Reason / Note:</Form.Label>
+                    <Form.Control 
+                        as="textarea" 
+                        rows={3} 
+                        value={actionNote} 
+                        onChange={(e) => setActionNote(e.target.value)} 
+                        placeholder="Enter the reason for this action (Required)..."
+                    />
+                </Form.Group>
+            )}
+        </Modal.Body>
+        <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
+            <Button 
+                variant={actionData.targetStatus === 'REJECTED' || actionData.targetStatus === 'BANNED' || actionData.targetStatus === 'REJECT' ? 'danger' : 'success'} 
+                onClick={submitAction}
+            >
+                Confirm
+            </Button>
+        </Modal.Footer>
+      </Modal>
 
       {showCorModal && (
         <div className="modal fade show custom-dark-modal">
@@ -534,12 +571,12 @@ const AdminDashboard = () => {
               <div className="modal-body p-0 custom-dark-body">
                 {selectedCorFile ? (
                     selectedCorFile.toLowerCase().endsWith('.pdf') ? (
-                        <iframe src={selectedCorFile} title="COR PDF" className="cor-frame"></iframe>
+                        <iframe src={selectedCorFile} title="Document Preview" className="cor-frame"></iframe>
                     ) : (
-                        <img src={selectedCorFile} alt="COR Document" className="cor-image" />
+                        <img src={selectedCorFile} alt="Document Preview" className="cor-image" />
                     )
                 ) : (
-                    <div className="text-center text-light p-5">No COR available</div>
+                    <div className="text-center text-light p-5">No Document available</div>
                 )}
               </div>
               <div className="custom-dark-footer">
