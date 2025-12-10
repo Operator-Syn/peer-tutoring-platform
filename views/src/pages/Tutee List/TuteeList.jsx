@@ -82,12 +82,10 @@ export default function TuteeList() {
                     
                     <SortButton onClick={sortButtonClick} ascending={ascending} />    
                 </div>
-                
-            
             </div>  
 
             <div className='table-container'>
-            {loading && <div className='loading-overlay' style={{'--topSize': '60px', width: '97%', right: '0', left: '0', margin: 'auto', height: '530px'}}>
+            {loading && <div className='loading-overlay' style={{'--topSize': '0px', right: '0', left: '0', margin: 'auto'}}>
                 <img src={loadingIcon} alt="Loading..." />
             </div>}    
                 <table className='tutees-table'>

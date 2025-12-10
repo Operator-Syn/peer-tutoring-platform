@@ -44,16 +44,21 @@
     width: 100%;
     min-width: 545px;
     table-layout: fixed;
-    border-radius: 8px;
+    /* border-radius: 8px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-    padding: 0px 10px;
+    padding: 0px 10px; */
 }
 
 .table-container {
+    margin-bottom: 10px;
     position: relative;
     overflow-x: scroll;
     scrollbar-width: none;
     padding: 10px;
+
+    border-radius: 8px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    padding: 0px 10px;
 }
 
 .loading-overlay {
