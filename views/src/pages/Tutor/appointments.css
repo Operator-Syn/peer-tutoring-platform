@@ -1,5 +1,56 @@
 
+.my-no-btn{
+   background-color: #ffffff;   
+  border-color: #4956AD;
+  color: #4956AD;
+}
+.my-yes-btn {
+  background-color: #4956AD;   
+  border-color: #4956AD;
+  color: #fff;
+}
 
+
+.my-no-btn:hover{
+     background-color: #ffffff;   
+  border-color: #4956AD;
+  color: #4956AD;
+}
+.my-yes-btn:hover {
+  background-color: #4956AD;  
+  border-color: #4956AD;      
+  color: #fff;                 
+  box-shadow: none;           
+  transform: none;            
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;                
+  background: rgba(0, 0, 0, 0.5);  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+}
+
+.confirm-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+
+.no-appointments{
+  color: #4956AD; 
+}
+
+.request-title{
+   color: #4956AD; 
+}
 .appointments-wrapper {
   position: relative;
   max-height: 80vh; 

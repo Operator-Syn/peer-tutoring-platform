@@ -291,15 +291,18 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @tutee_bp.route("/report", methods=["POST"])
 def create_report():
     try:
-  
         reporter_id = request.form.get("reporter_id")
         reported_id = request.form.get("reported_id")
         description = request.form.get("description", "")  
         report_type = request.form.get("type", "TUTOR_REPORT")
-        reasons = request.form.getlist("reasons")  
+        reasons = request.form.getlist("reasons")
 
         if not reporter_id or not reported_id:
             return jsonify({"error": "Missing reporter_id or reported_id"}), 400
+
+      
+        if reporter_id == reported_id:
+            return jsonify({"error": "You cannot report yourself."}), 400
 
         file_list = []
         files = request.files.getlist("files")
@@ -310,7 +313,6 @@ def create_report():
                 file.save(save_path)
                 file_list.append(unique_filename)
 
-       
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -337,6 +339,7 @@ def create_report():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 
 @tutee_bp.route("/reports/files/<filename>", methods=["GET"])

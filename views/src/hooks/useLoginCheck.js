@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 
+let cachedBackendUrl = null;
+
 /**
  * Custom React hook for checking user login status.
  *
@@ -8,16 +10,28 @@ import { useNavigate } from 'react-router-dom';
  * @param {string|null} [options.route=null] - If provided, navigates to this route after successful authentication. If null, no navigation occurs.
  * @returns {Function} loginCheck - Async function to check login status and handle authentication flow.
  */
-export function useLoginCheck({ login=true, route=null } = {}) {
+export function useLoginCheck({ login = true, route = null } = {}) {
     const navigate = useNavigate();
-    const backendUrl = import.meta.env.VITE_API_BASE_URL;
+
+    // Fetch backend URL from Flask only once
+    const loadConfig = async () => {
+        if (!cachedBackendUrl) {
+            const res = await fetch('/api/config');
+            const config = await res.json();
+            cachedBackendUrl = config.VITE_API_BASE_URL;
+        }
+        return cachedBackendUrl;
+    };
 
     return async function loginCheck() {
-        const res = await fetch(`${backendUrl}/api/auth/get_user`, { credentials: "include" });
+        const backendUrl = await loadConfig();
+
+        const res = await fetch(`${backendUrl}/api/auth/get_user`, { credentials: 'include' });
         const user = await res.json();
+
         if (res.ok) {
             if (!user.registered_tutee) {
-                navigate("/AccountCreation");
+                navigate('/AccountCreation');
             } else if (route) {
                 navigate(route);
             }

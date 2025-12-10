@@ -1,5 +1,5 @@
-import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
 import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
 import CardComponent from "../CardComponent/CardComponent";
 import { ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons";
@@ -8,9 +8,15 @@ import "./TuteeAppointmentsPage.css";
 export default function TuteeAppointmentsPage() {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 992);
 
     useEffect(() => {
-        // Fetch all appointments from the Flask API
+        const handleResize = () => setIsSmallScreen(window.innerWidth < 992);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    useEffect(() => {
         fetch("/api/appointments")
             .then((res) => res.json())
             .then((data) => {
@@ -21,19 +27,20 @@ export default function TuteeAppointmentsPage() {
                 console.error("Error fetching appointments:", err);
                 setLoading(false);
             });
-
     }, []);
 
-    if (loading) {
-        return <div className="container">Loading appointments...</div>;
-    }
+    if (loading) return <div className="container">Loading appointments...</div>;
+    if (appointments.length === 0) return <div className="container">No appointments found.</div>;
 
-    if (appointments.length === 0) {
-        return <div className="container">No appointments found.</div>;
-    }
+    const cardsPerRow = 3;
+    const remainder = appointments.length % cardsPerRow;
+    const placeholders = remainder > 0 ? Array(cardsPerRow - remainder).fill(null) : [];
 
     return (
-        <div className="d-flex container gap-4 flex-wrap align-items-start large-padding">
+        <div
+            className={`container d-flex flex-wrap gap-3 align-items-center large-padding ${isSmallScreen ? "flex-column" : "flex-row justify-content-between"
+                }`}
+        >
             {appointments.map((appointment, index) => (
                 <CardComponent
                     key={index}
@@ -43,10 +50,17 @@ export default function TuteeAppointmentsPage() {
                     rightAlignTop={appointment.appointment_date}
                     rightAlignBottom={`${appointment.start_time} — ${appointment.end_time}`}
                     footer={appointment.footer}
-                    image={placeholderImage} // still static
+                    image={placeholderImage}
                     modalContent={appointment.modal_content}
-                    modalButtonsRight={[...ConfirmButton, ...CloseButton]} // static
-                    modalButtonsLeft={CancelAppointmentButton} // static
+                    modalButtonsRight={[...ConfirmButton, ...CloseButton]}
+                    modalButtonsLeft={CancelAppointmentButton}
+                />
+            ))}
+
+            {/* Invisible placeholder cards */}
+            {placeholders.map((_, idx) => (
+                <CardComponent
+                    className="invisible-card" // we’ll hide this via CSS
                 />
             ))}
         </div>
