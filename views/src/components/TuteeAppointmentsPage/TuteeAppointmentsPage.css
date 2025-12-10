@@ -1,3 +1,7 @@
 .large-padding {
-    padding-top: 12rem;
+    padding-top: 9rem;
+}
+
+.invisible-card {
+    visibility: hidden;
 }
