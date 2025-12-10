@@ -8,7 +8,7 @@ export default function Events() {
   useEffect(() => {
     async function fetchUserData() {
       try {
-        // 1️⃣ Fetch logged-in user info
+   
         const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
         if (resUser.status === 401) {
           window.location.href = "/api/auth/login";
@@ -16,18 +16,18 @@ export default function Events() {
         }
         const loggedInUser = await resUser.json();
 
-        // 2️⃣ Fetch all tutees
+      
         const resTutees = await fetch("/api/tutee/all");
         const tutees = await resTutees.json();
 
-        // 3️⃣ Fetch all tutors
+
         const resTutors = await fetch("/api/tutor/all");
         const tutors = await resTutors.json();
 
-        // 4️⃣ Match logged-in user in tutees
+      
         const userData = tutees.find(u => u.google_id === loggedInUser.sub);
 
-        // 5️⃣ Check if user exists in tutors
+     
         const tutorExists = tutors.some(t => t.tutor_id === userData?.id_number);
 
         setCurrentUser(userData || null);

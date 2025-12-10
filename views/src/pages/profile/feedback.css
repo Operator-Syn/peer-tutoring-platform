@@ -1,17 +1,1 @@
-.spacing{
-   background-color: #F8F9FF;
-  width: 95%;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  padding: 300px;
-  margin-top: 120px;
-  min-height: 700px;
-  
-  
-}
-.space-center{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100px;
-}
+
