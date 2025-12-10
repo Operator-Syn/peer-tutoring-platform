@@ -138,12 +138,15 @@
   box-shadow: none !important;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
 
 
 .name-suggestions {
-  max-height: 200px;   /* adjust height as you like */
-  overflow-y: auto;    /* shows scroll bar when too long */
-  z-index: 9999;       /* just to be extra safe on top */
+  max-height: 200px; 
+  overflow-y: auto;   
+  z-index: 9999;       
 }
 
 .report-chip {

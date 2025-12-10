@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "./Report.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -7,23 +7,18 @@ function Report() {
   const [selectedReasons, setSelectedReasons] = useState([]);
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
+
   const [showOptions, setShowOptions] = useState(false);
   const [nameOptions, setNameOptions] = useState([]);
-  const [nameToIdMap, setNameToIdMap] = useState({});   // 🔹 fullName -> id_number
+  const [nameToIdMap, setNameToIdMap] = useState({});
   const [files, setFiles] = useState([]);
 
-  // confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // logged in user & ids
   const [userGoogleId, setUserGoogleId] = useState(null);
-  const [tuteeId, setTuteeId] = useState(null);         // 🔹 reporter_id
-  const [reportedId, setReportedId] = useState("");     // 🔹 reported_id (from chosen name)
+  const [tuteeId, setTuteeId] = useState(null);
+  const [reportedId, setReportedId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const filteredOptions = nameOptions.filter((opt) =>
-    opt.toLowerCase().includes(name.toLowerCase())
-  );
 
   const reasons = [
     "Harassment",
@@ -35,25 +30,54 @@ function Report() {
     "Other",
   ];
 
+  // ✅ derived filtered list (safe + fast)
+  const filteredOptions = useMemo(() => {
+    return nameOptions.filter((opt) =>
+      opt.toLowerCase().includes(name.toLowerCase())
+    );
+  }, [nameOptions, name]);
+
   // 1) Get all tutees → build name list & map fullName -> id_number
+  // ✅ EXCLUDES self once tuteeId is known
   useEffect(() => {
     const fetchTutees = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/tutee/all`);
+        if (!API_BASE_URL) return;
+
+        const res = await fetch(`${API_BASE_URL}/api/tutee/all`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          console.error("tutee/all failed:", res.status, await res.text());
+          return;
+        }
+
         const data = await res.json();
 
         const nameMap = {};
-        const names = data.map((tutee) => {
-          const fullName = [tutee.first_name, tutee.middle_name, tutee.last_name]
-            .filter(Boolean)
-            .join(" ");
-          if (fullName) {
-            nameMap[fullName] = tutee.id_number;
-          }
-          return fullName;
-        });
+        const names = data
+          .filter((t) => {
+            // if tuteeId not loaded yet, don't filter
+            if (!tuteeId) return true;
+            return t.id_number !== tuteeId; // ✅ remove self
+          })
+          .map((tutee) => {
+            const fullName = [
+              tutee.first_name,
+              tutee.middle_name,
+              tutee.last_name,
+            ]
+              .filter(Boolean)
+              .join(" ");
 
-        const uniqueNames = [...new Set(names)];
+            if (fullName) {
+              nameMap[fullName] = tutee.id_number;
+            }
+            return fullName;
+          });
+
+        const uniqueNames = [...new Set(names)].filter(Boolean);
         setNameOptions(uniqueNames);
         setNameToIdMap(nameMap);
       } catch (err) {
@@ -62,41 +86,62 @@ function Report() {
     };
 
     fetchTutees();
-  }, []);
+  }, [tuteeId]); // ✅ refetch when your id is known
 
   // 2) Get logged-in user (google id)
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/auth/get_user`);
-        if (!res.ok) throw new Error("Not authenticated");
+        if (!API_BASE_URL) return;
+
+        const res = await fetch(`${API_BASE_URL}/api/auth/get_user`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          console.error("get_user failed:", res.status, await res.text());
+          return;
+        }
+
         const data = await res.json();
+        console.log("get_user data:", data);
+
         setUserGoogleId(data.sub || data.google_id);
       } catch (err) {
         console.error("Failed to fetch logged-in user:", err);
       }
     };
+
     fetchUser();
   }, []);
 
   // 3) Get tutee id_number (reporter_id) from google id
   useEffect(() => {
     const fetchTuteeId = async () => {
-      if (!userGoogleId) return;
+      if (!userGoogleId || !API_BASE_URL) return;
+
       try {
         const res = await fetch(
-          `${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`
+          `${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`,
+          { credentials: "include" }
         );
+
+        if (!res.ok) {
+          console.error("by_google failed:", res.status, await res.text());
+          return;
+        }
+
         const data = await res.json();
-        if (res.ok && data.id_number) {
+        console.log("by_google data:", data);
+
+        if (data.id_number) {
           setTuteeId(data.id_number);
-        } else {
-          console.error("Failed to fetch tutee ID:", data.error);
         }
       } catch (err) {
         console.error("Error fetching tutee ID:", err);
       }
     };
+
     fetchTuteeId();
   }, [userGoogleId]);
 
@@ -109,15 +154,13 @@ function Report() {
   };
 
   const handleFileChange = (e) => {
-    const selected = Array.from(e.target.files);
-    setFiles(selected);
+    setFiles(Array.from(e.target.files));
   };
 
   const handleConfirmClick = () => {
     setShowConfirmModal(true);
   };
 
-  // ✅ Submit to DB
   const handleConfirmYes = async () => {
     setShowConfirmModal(false);
 
@@ -141,29 +184,23 @@ function Report() {
       const formData = new FormData();
       formData.append("reporter_id", tuteeId);
       formData.append("reported_id", reportedId);
-      formData.append("type", "TUTOR_REPORT"); // or another type if you want
+      formData.append("type", "TUTOR_REPORT");
       formData.append("description", description);
-      // status is defaulted in backend, no need to send unless you want
-      // formData.append("status", "PENDING");
 
-      selectedReasons.forEach((reason) =>
-        formData.append("reasons", reason)
-      );
+      selectedReasons.forEach((reason) => formData.append("reasons", reason));
       files.forEach((file) => formData.append("files", file));
 
       const res = await fetch(`${API_BASE_URL}/api/tutee/report`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit report");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
       alert("Report submitted successfully!");
 
-      // reset form
       setSelectedReasons([]);
       setDescription("");
       setName("");
@@ -177,17 +214,7 @@ function Report() {
     }
   };
 
-  const handleConfirmNo = () => {
-    setShowConfirmModal(false);
-  };
-
-  const handleCancel = () => {
-    setSelectedReasons([]);
-    setDescription("");
-    setName("");
-    setReportedId("");
-    setFiles([]);
-  };
+  const handleConfirmNo = () => setShowConfirmModal(false);
 
   return (
     <div className="spacing">
@@ -195,7 +222,7 @@ function Report() {
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-9">
             <div className="border rounded-3 bg-white p-4 report-container d-flex flex-column align-items-start">
-              <div className="spacing-report">
+              <div className="spacing-report w-100">
                 <div className="w-100 px-3 px-md-5">
                   <div className="text-start fw-bold fs-2 fs-md-1 h1 mb-4 report-title">
                     Report a Violation
@@ -285,30 +312,27 @@ function Report() {
                       onChange={(e) => {
                         const value = e.target.value;
                         setName(value);
-                        // If user typed an exact existing fullName, set reportedId
-                        if (nameToIdMap[value]) {
-                          setReportedId(nameToIdMap[value]);
-                        } else {
+
+                        const chosenId = nameToIdMap[value] || "";
+
+                        // ✅ if user typed self name manually, block it
+                        if (chosenId && chosenId === tuteeId) {
                           setReportedId("");
+                          setShowOptions(false);
+                          return;
                         }
 
-                        if (
-                          value.trim().length > 0 &&
-                          filteredOptions.length > 0
-                        ) {
+                        setReportedId(chosenId);
+
+                        if (value.trim().length > 0 && filteredOptions.length > 0) {
                           setShowOptions(true);
                         } else {
                           setShowOptions(false);
                         }
                       }}
-                      onBlur={() => {
-                        setTimeout(() => setShowOptions(false), 150);
-                      }}
+                      onBlur={() => setTimeout(() => setShowOptions(false), 150)}
                       onFocus={() => {
-                        if (
-                          name.trim().length > 0 &&
-                          filteredOptions.length > 0
-                        ) {
+                        if (name.trim().length > 0 && filteredOptions.length > 0) {
                           setShowOptions(true);
                         }
                       }}
@@ -316,47 +340,47 @@ function Report() {
 
                     {showOptions && filteredOptions.length > 0 && (
                       <div className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm z-3 name-suggestions">
-                        {filteredOptions.map((opt) => (
-                          <div
-                            key={opt}
-                            className="px-3 py-2 option-item"
-                            style={{ cursor: "pointer" }}
-                            onMouseDown={() => {
-                              setName(opt);
-                              setReportedId(nameToIdMap[opt] || "");
-                              setShowOptions(false);
-                            }}
-                          >
-                            {opt}
-                          </div>
-                        ))}
+                        {filteredOptions.map((opt) => {
+                          const optId = nameToIdMap[opt];
+                          if (optId === tuteeId) return null; 
+                          return (
+                            <div
+                              key={opt}
+                              className="px-3 py-2 option-item cursor-pointer"
+                           
+                              onMouseDown={() => {
+                                if (nameToIdMap[opt] === tuteeId) return; 
+                                setName(opt);
+                                setReportedId(nameToIdMap[opt] || "");
+                                setShowOptions(false);
+                              }}
+                            >
+                              {opt}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
 
-                  {/* Buttons: Confirm + Cancel */}
+                  {/* Buttons (Confirm only) */}
                   <div className="mt-4 d-flex justify-content-center gap-4">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-lg px-4 report-cancel-btn"
-                      onClick={handleCancel}
-                    >
-                      Cancel
-                    </button>
-
                     <button
                       type="button"
                       className="btn btn-primary btn-lg px-4 report-confirm-btn"
                       onClick={handleConfirmClick}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !tuteeId}
                     >
-                      {isSubmitting ? "Submitting..." : "Confirm"}
+                      {!tuteeId
+                        ? "Loading user..."
+                        : isSubmitting
+                        ? "Submitting..."
+                        : "Confirm"}
                     </button>
                   </div>
                 </div>
               </div>
-
-              {/*End container*/}
+              {/* End container */}
             </div>
           </div>
         </div>
