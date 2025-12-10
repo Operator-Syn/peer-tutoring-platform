@@ -195,8 +195,14 @@ function Header() {
                 >
                   <img src={applyIcon} alt="Apply" /> Apply as tutor
                 </p>
-                <p>
-                  <img src={feedIcon} alt="Feedback" /> Feedback
+
+                <p   onClick = {()=>{
+                  setPopup(false);
+                  handleNavClick();
+                  navigate("/Feedback");
+                }}>
+                 
+                    < img src={feedIcon} alt="Feedback" /> Rate Session
                 </p>
                 <p>
                   <img src={webIcon} alt="Website" /> Myiit

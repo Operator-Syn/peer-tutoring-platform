@@ -10,6 +10,13 @@ export default function TuteeAppointmentsPage() {
     useRoleRedirect('TUTEE');
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 992);
+
+    useEffect(() => {
+        const handleResize = () => setIsSmallScreen(window.innerWidth < 992);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useEffect(() => {
         fetch("/api/appointments")

@@ -431,6 +431,7 @@ useEffect(() => {
           "Cursing",
           "Inappropriate Profile",
           "Mocking",
+          "Other"
         ].map((reason) => (
           <button
             key={reason}
@@ -573,8 +574,8 @@ useEffect(() => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
-      // 4️⃣ Success feedback
-      alert("✅ Report submitted successfully!");
+  
+      alert(" Report submitted successfully!");
       setIsReportModalOpen(false);
       setSelectedReasons([]);
       setReportDetails("");
