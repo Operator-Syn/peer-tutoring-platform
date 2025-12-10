@@ -1,7 +1,7 @@
 import './TutorList.css';
 import loadingIcon from '../../assets/loading.svg';
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import BasicButton from '../../components/BasicButton/BasicButton.jsx';
 import Select from 'react-select';
 import { Form, Card, Button } from 'react-bootstrap';
@@ -30,7 +30,7 @@ export default function TutorList() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		setLoading(true);
+		if (!page) return;
 		fetch(`/api/tutor-list/all?page=${page ? page : 1}${courseSearch ? `&course=${encodeURIComponent(courseSearch.value)}` : ''}&availability=${availabilitySearch ? encodeURIComponent(availabilitySearch.value) : ''}${nameSearch ? `&name=${encodeURIComponent(nameSearch)}` : ''}`)
 			.then(res => res.json())
 			.then(data => {
@@ -39,7 +39,14 @@ export default function TutorList() {
 			})
 			.catch(error => console.error("Error fetching tutors:", error))
 			.finally(() => setLoading(false));
+		setLoading(true);
 	}, [page, courseSearch, availabilitySearch, nameSearch]);
+
+	useEffect(() => {
+		if (!page) {
+			setLoading(true);
+		}
+	}, [page]);
 
 	const fetchCourses = (search = '') => {
 		fetch(`/api/tutor-list/courses?search=${encodeURIComponent(search)}`)
@@ -76,7 +83,7 @@ export default function TutorList() {
 
 			<div className='tutor-card-grid' style={{minHeight: "33.8rem"}}>
 
-				{loading && (
+				{(loading) && (
 					<div className="loading-overlay">
 						<img src={loadingIcon} alt="Loading..." />
 					</div>
@@ -118,13 +125,19 @@ function TutorCard({tutorName="Tutor Name", courses, tutorId}) {
 	const navigate = useNavigate();
 
 	return (
-		<Card className="column" style={{ width: '18rem', padding: "1rem", gap: "1rem", height: "fit-content" }}>
+		<Card className="column tutor-card-a" style={{ width: '18rem', padding: "1rem", gap: "1rem", height: "fit-content", minHeight: "166.24px" }}>
 			<Card.Body className="d-flex tutor-info-1" style={{padding: "0"}}>
 				<Card.Img variant="top" src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg" style={{width: "58px", height: "58px", padding: "0"}}/>
 				<div className="column m-auto">
-					<Card.Title className='text-center'>{tutorName}</Card.Title>
+					<Card.Title className='tutor-card-a-name text-center'>{tutorName}</Card.Title>
 					<Card.Text className='text-center'>Tutor</Card.Text>
 				</div>
+			</Card.Body>
+			<Card.Body className="row tutor-info-2-preview gap-2" style={{padding: "0rem", margin: "0", maxWidth: "254px", overflowX: "auto"}}>
+				{courses.slice(0,3).map((course, idx) => (
+					<CourseTag key={idx} courseCode={course} />
+				))}
+				{courses.length > 3 && <CourseTag courseCode={'...'} />}
 			</Card.Body>
 			<Card.Body className="row tutor-info-2 gap-2" style={{padding: "0rem", margin: "0", maxWidth: "254px", overflowX: "auto"}}>
 				{courses.map((course, idx) => (

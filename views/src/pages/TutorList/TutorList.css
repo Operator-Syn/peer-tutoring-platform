@@ -6,12 +6,42 @@
     padding: 3rem;
 }
 
+.tutor-card-a-name {
+  width: 100%;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .tutor-info-1 {
 
 }
 
-.tutor-info-2 {
+.tutor-info-2-preview {
+  display: flex;
+}
 
+.tutor-info-2 {
+  display: none;
+}
+
+.tutor-card-a:hover {
+  .tutor-info-2 {
+    display: flex;
+  }
+  .tutor-info-2-preview {
+    display: none;
+  }
+
+  .tutor-card-a-name {
+    max-width: none;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
 }
 
 .course-tag-list {
