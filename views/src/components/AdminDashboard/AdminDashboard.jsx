@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './AdminDashboard.css';
 import BasicCard from '../HomePageCard/HomePageCard';
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Toast, ToastContainer } from 'react-bootstrap';
 
 const AdminDashboard = () => {
   const [statistics, setStatistics] = useState({
@@ -10,45 +10,62 @@ const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('applications');
-  const [applications, setApplications] = useState([]);
-  const [filteredApplications, setFilteredApplications] = useState([]);
-  const [appStatusFilter, setAppStatusFilter] = useState('all');
-  const [appSearch, setAppSearch] = useState('');
-  const [appSort, setAppSort] = useState('date_desc');
-  const [processingId, setProcessingId] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [userSearch, setUserSearch] = useState('');
-  const [userRoleFilter, setUserRoleFilter] = useState('all');
-  const [appeals, setAppeals] = useState([]);
-  const [filteredAppeals, setFilteredAppeals] = useState([]);
-  const [appealSearch, setAppealSearch] = useState('');
-  const [appealStatusFilter, setAppealStatusFilter] = useState('all');
-  const [appealSort, setAppealSort] = useState('date_desc');
-  const [appealsLoading, setAppealsLoading] = useState(false);
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '' });
-  const [actionNote, setActionNote] = useState('');
   
+  const [activeTab, setActiveTab] = useState('applications');
+
+  const [applications, setApplications] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [appeals, setAppeals] = useState([]);
+  
+  const [filteredApplications, setFilteredApplications] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [filteredAppeals, setFilteredAppeals] = useState([]);
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date_desc');
+  
+  const [appCollegeFilter, setAppCollegeFilter] = useState('all');
+  const [appYearFilter, setAppYearFilter] = useState('all');
+
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [] });
+  const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
+  
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
+  
+  const [appealsLoading, setAppealsLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'appeals') fetchAppeals();
+    
+    setStatusFilter('all');
+    setSearchQuery('');
+    setSortBy(activeTab === 'users' ? 'name_asc' : 'date_desc');
+    setAppCollegeFilter('all');
+    setAppYearFilter('all');
+    setCurrentPage(1);
   }, [activeTab]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [appsResponse, statsResponse] = await Promise.all([
-        fetch(`/admin/applications`),
-        fetch(`/admin/statistics`)
+        fetch(`/api/tutor-applications/admin/applications`),
+        fetch(`/api/tutor-applications/admin/statistics`)
       ]);
       const appsData = await appsResponse.json();
       const statsData = await statsResponse.json();
@@ -81,197 +98,207 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    let res = [...applications];
-    
-    // Filter
-    if (appStatusFilter !== 'all') res = res.filter(a => a.status === appStatusFilter);
-    if (appSearch) res = res.filter(a => 
-      a.student_name?.toLowerCase().includes(appSearch.toLowerCase()) || 
-      a.student_id?.toLowerCase().includes(appSearch.toLowerCase())
-    );
+    let data = [];
+    let setData = null;
 
-    // Sort
-    res.sort((a, b) => {
-      if (appSort === 'date_desc') return new Date(b.date_submitted) - new Date(a.date_submitted);
-      if (appSort === 'date_asc') return new Date(a.date_submitted) - new Date(b.date_submitted);
-      if (appSort === 'name_asc') return a.student_name.localeCompare(b.student_name);
-      if (appSort === 'name_desc') return b.student_name.localeCompare(a.student_name);
-      return 0;
+    if (activeTab === 'applications') { data = [...applications]; setData = setFilteredApplications; }
+    else if (activeTab === 'users') { data = [...users]; setData = setFilteredUsers; }
+    else if (activeTab === 'appeals') { data = [...appeals]; setData = setFilteredAppeals; }
+
+    if (statusFilter !== 'all') {
+        data = data.filter(item => item.status === statusFilter);
+    }
+
+    if (activeTab === 'applications') {
+        if (appCollegeFilter !== 'all') {
+            data = data.filter(app => (app.program || '').toUpperCase() === appCollegeFilter);
+        }
+        if (appYearFilter !== 'all') {
+            data = data.filter(app => (app.school_year || '').toString().includes(appYearFilter));
+        }
+    }
+
+    if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        data = data.filter(item => {
+            const name = (item.student_name || item.first_name + ' ' + item.last_name || '').toLowerCase();
+            const id = (item.student_id || item.email || item.id_number || '').toLowerCase();
+            return name.includes(query) || id.includes(query);
+        });
+    }
+
+    data.sort((a, b) => {
+        const dateA = new Date(a.date_submitted || a.last_login || 0);
+        const dateB = new Date(b.date_submitted || b.last_login || 0);
+        const nameA = (a.student_name || a.first_name || '').toLowerCase();
+        const nameB = (b.student_name || b.first_name || '').toLowerCase();
+
+        if (sortBy === 'date_desc') return dateB - dateA;
+        if (sortBy === 'date_asc') return dateA - dateB;
+        if (sortBy === 'name_asc') return nameA.localeCompare(nameB);
+        if (sortBy === 'name_desc') return nameB.localeCompare(nameA);
+        
+        if (sortBy === 'college_asc') return (a.program || '').localeCompare(b.program || '');
+        if (sortBy === 'college_desc') return (b.program || '').localeCompare(a.program || '');
+        if (sortBy === 'year_asc') return parseInt(a.school_year||0) - parseInt(b.school_year||0);
+        if (sortBy === 'year_desc') return parseInt(b.school_year||0) - parseInt(a.school_year||0);
+
+        return 0;
     });
 
-    setFilteredApplications(res);
-  }, [applications, appStatusFilter, appSearch, appSort]);
+    if(setData) setData(data);
+    setCurrentPage(1);
+  }, [activeTab, applications, users, appeals, statusFilter, searchQuery, sortBy, appCollegeFilter, appYearFilter]);
 
-  useEffect(() => {
-    let res = [...users];
+  const getPaginatedData = (data) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return data.slice(startIndex, startIndex + itemsPerPage);
+  };
 
-    // Filter
-    if (userRoleFilter !== 'all') res = res.filter(u => u.role === userRoleFilter);
-    if (userSearch) res = res.filter(u => 
-        (u.first_name + ' ' + u.last_name).toLowerCase().includes(userSearch.toLowerCase()) || 
-        u.email.toLowerCase().includes(userSearch.toLowerCase())
+  const renderPagination = (totalItems) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalItems === 0) return null;
+
+    return (
+        <div className="pagination-container">
+            <span className="page-info">
+                Page {currentPage} of {totalPages || 1}
+            </span>
+
+            <div className="d-flex align-items-center gap-2">
+                <button className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Previous</button>
+                <button className="pagination-btn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Next</button>
+            </div>
+            
+            <div className="d-flex align-items-center gap-2 ms-3">
+                <span className="small text-muted">Rows:</span>
+                <select className="rows-per-page-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                </select>
+            </div>
+        </div>
     );
+  };
 
-    // Default Sort (Name Ascending)
-    res.sort((a, b) => {
-      const nameA = (a.first_name + ' ' + a.last_name).toLowerCase();
-      const nameB = (b.first_name + ' ' + b.last_name).toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
+  const handleUpdateStatus = (applicationId, newStatus) => {
+    const app = applications.find(a => a.application_id === applicationId);
+    if (!app) return;
+    setSelectedApplication(app);
+    setConfirmAction(newStatus);
+    setShowConfirm(true);
+  };
 
-    setFilteredUsers(res);
-  }, [users, userRoleFilter, userSearch]);
-
-  useEffect(() => {
-    let res = [...appeals];
-
-    // Filter
-    if (appealStatusFilter !== 'all') res = res.filter(a => a.status === appealStatusFilter);
-    if (appealSearch) res = res.filter(a => 
-        (a.first_name + ' ' + a.last_name).toLowerCase().includes(appealSearch.toLowerCase())
-    );
-
-    // Sort
-    res.sort((a, b) => {
-      if (appealSort === 'date_desc') return new Date(b.date_submitted) - new Date(a.date_submitted);
-      if (appealSort === 'date_asc') return new Date(a.date_submitted) - new Date(b.date_submitted);
-      return 0;
-    });
-
-    setFilteredAppeals(res);
-  }, [appeals, appealStatusFilter, appealSearch, appealSort]);
-
+  const confirmActionHandler = async (applicationId, action) => {
+    try {
+      setProcessingId(applicationId);
+      const endpoint = action === 'APPROVED' ? 'approve' : 'reject';
+      const response = await fetch(`/api/tutor-applications/admin/applications/${applicationId}/${endpoint}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+      });
+      if (response.ok) {
+        fetchData();
+        setShowConfirm(false);
+      }
+    } catch (err) { console.error(err); } 
+    finally { setProcessingId(null); }
+  };
 
   const openActionModal = (type, item, targetStatus) => {
     let title = "";
     let noteRequired = false;
+    let files = [];
+    let selectedId = null; // New variable to safely store the correct ID
 
-    if (type === 'APPLICATION') {
-        title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application for ${item.student_name}`;
-    } else if (type === 'USER') {
-        title = `${targetStatus === 'ACTIVE' ? 'Activate' : targetStatus === 'BANNED' ? 'Ban' : 'Restrict'} User: ${item.first_name}`;
-        noteRequired = (targetStatus === 'BANNED' || targetStatus === 'PROBATION');
+    if (type === 'USER') {
+        selectedId = item.google_id;
+        const name = item.first_name ? `${item.first_name} ${item.last_name}` : item.email;
+        title = `${targetStatus === 'ACTIVE' ? 'Activate' : targetStatus} User: ${name}`;
+        noteRequired = ['BANNED', 'PROBATION'].includes(targetStatus);
     } else if (type === 'APPEAL') {
+        selectedId = item.appeal_id; // Explicitly grab appeal_id
         title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Appeal`;
+        files = item.files || [];
+    } else {
+        // Fallback for applications if you use this modal for them later
+        selectedId = item.application_id; 
     }
 
-    setActionData({ type, id: item.application_id || item.google_id || item.appeal_id, targetStatus, title, noteRequired });
+    setActionData({ type, id: selectedId, targetStatus, title, noteRequired, files });
     setActionNote('');
     setShowActionModal(true);
   };
 
   const submitAction = async () => {
     if (actionData.noteRequired && !actionNote.trim()) {
-        alert("Please provide a reason.");
+        setToastMessage("A reason is required.");
+        setShowToast(true);
         return;
     }
 
     try {
-        if (actionData.type === 'APPLICATION') {
-            setProcessingId(actionData.id);
-            const endpoint = actionData.targetStatus === 'APPROVED' ? 'approve' : 'reject';
-            await fetch(`/api/tutor-applications/admin/applications/${actionData.id}/${endpoint}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
-            });
-            fetchData();
-        } 
-        else if (actionData.type === 'USER') {
+        if (actionData.type === 'USER') {
             await fetch("/api/tutor-applications/admin/users/status", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    google_id: actionData.id, 
-                    status: actionData.targetStatus, 
-                    note: actionData.noteRequired ? actionNote : "Account Reactivated" 
-                })
+                method: "PUT", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ google_id: actionData.id, status: actionData.targetStatus, note: actionData.noteRequired ? actionNote : "Account Reactivated" })
             });
             fetchUsers();
-        } 
-        else if (actionData.type === 'APPEAL') {
+        } else if (actionData.type === 'APPEAL') {
             await fetch(`/api/appeals/resolve/${actionData.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                method: "PUT", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: actionData.targetStatus })
             });
             fetchAppeals();
         }
-
         setShowActionModal(false);
-    } catch (err) {
-        console.error(err);
-        alert("Action failed.");
-    } finally {
-        setProcessingId(null);
-    }
+    } catch (err) { console.error(err); alert("Action failed."); }
   };
 
-  const handleShowCor = (filename, isAppeal = false) => {
-    const path = isAppeal ? `/uploads/appeals/${filename}` : `/uploads/cor/${filename}`;
+  const handleShowCor = (url, isAppeal = false) => {
+    const path = url.startsWith('http') ? url : (isAppeal ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
     setSelectedCorFile(path);
     setShowCorModal(true);
   };
 
-  const statsCards = [
-    { key: "total_tutors", title: statistics.total_tutors || 0, description: "Number of Tutors" },
-    { key: "total_applications", title: statistics.total_applications || 0, description: "Number of Applications" },
-    { key: "total_tutees", title: statistics.total_tutees || 0, description: "Number of Tutees" },
-    { key: "total_courses", title: statistics.total_courses || 0, description: "Total Courses" },
-    { key: "active_sessions", title: statistics.active_sessions || 0, description: "Active Sessions" },
-  ];
+  const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
-  const appCounts = {
-    all: applications.length,
-    PENDING: applications.filter(a => a.status === 'PENDING').length,
-    APPROVED: applications.filter(a => a.status === 'APPROVED').length,
-    REJECTED: applications.filter(a => a.status === 'REJECTED').length
+  const getCounts = (tab) => {
+      let data = tab === 'applications' ? applications : (tab === 'users' ? users : appeals);
+      const counts = { all: data.length };
+      data.forEach(item => { counts[item.status] = (counts[item.status] || 0) + 1; });
+      return counts;
   };
-  
-  const userCounts = {
-      all: users.length,
-      ACTIVE: users.filter(u => u.status === 'ACTIVE').length,
-      BANNED: users.filter(u => u.status === 'BANNED').length,
-      PROBATION: users.filter(u => u.status === 'PROBATION').length
-  };
+  const counts = getCounts(activeTab);
 
-  const appealCounts = {
-      all: appeals.length,
-      PENDING: appeals.filter(a => a.status === 'PENDING').length,
-      APPROVED: appeals.filter(a => a.status === 'APPROVED').length,
-      REJECTED: appeals.filter(a => a.status === 'REJECTED').length
-  };
-
-  if (loading) return <div className="admin-container"><p className="p-5 text-center">Loading Dashboard...</p></div>;
+  if (loading) return <div className="admin-container"><p className="p-5 text-center">Loading...</p></div>;
 
   return (
     <div className={`admin-container ${showCorModal ? 'modal-open-custom' : ''}`}>
       <header className="admin-header">
-         <div className="header-content">
+        <div className="header-content">
           <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
           <nav className="header-nav">
-            <a href="/" className="custom-nav-link">Home</a>
-            <a href="/about" className="custom-nav-link">About</a>
-            <a href="/events" className="custom-nav-link">Events</a>
-            <a href="/messages" className="custom-nav-link">Messages</a>
-            <a href="/reports" className="custom-nav-link">Reports</a>
+            {['Home','About','Events','Messages','Reports'].map(l => <a key={l} href={`/${l.toLowerCase()}`} className="custom-nav-link">{l}</a>)}
           </nav>
           <div className="user-section"><div className="user-avatar"><i className="bi bi-person-circle"></i></div></div>
         </div>
       </header>
 
+      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000}}>
+        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger">
+            <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+
       <div className="dashboard-content">
         <div className="page-title"><h1>Admin Dashboard</h1></div>
-        
-        {error && (
-          <div className="alert alert-warning alert-dismissible fade show custom-alert-style" role="alert">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            {error}
-            <button type="button" className="btn-close" onClick={() => setError(null)}></button>
-          </div>
-        )}
+        {error && <div className="alert alert-warning alert-dismissible fade show custom-alert-style">{error}<button className="btn-close" onClick={()=>setError(null)}></button></div>}
 
         <div className="statistics-grid-top">
-          {statsCards.map(card => (
-            <BasicCard key={card.key} title={String(card.title)} description={card.description} />
+          {[{k:"total_tutors",t:statistics.total_tutors,d:"Tutors"}, {k:"total_applications",t:statistics.total_applications,d:"Applications"}, {k:"total_tutees",t:statistics.total_tutees,d:"Tutees"}, {k:"total_courses",t:statistics.total_courses,d:"Courses"}, {k:"active_sessions",t:0,d:"Sessions"}].map(c => (
+            <BasicCard key={c.k} title={String(c.t)} description={c.d} />
           ))}
         </div>
 
@@ -281,309 +308,150 @@ const AdminDashboard = () => {
             <button className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} onClick={() => setActiveTab('appeals')}>Appeals</button>
         </div>
 
+        <div className="status-filter-tabs">
+             <button className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>All <span className="count-badge ms-2">{counts.all}</span></button>
+             {(activeTab === 'applications' ? ['PENDING','APPROVED','REJECTED'] : activeTab === 'users' ? ['ACTIVE','BANNED','PROBATION'] : ['PENDING','APPROVED','REJECTED']).map(s => (
+                 <button key={s} className={`filter-tab ${statusFilter === s ? 'active' : ''}`} onClick={() => setStatusFilter(s)}>{formatStatusLabel(s)} <span className="count-badge ms-2">{counts[s]||0}</span></button>
+             ))}
+        </div>
+
+        <div className="controls-section">
+            <div className="sort-dropdown">
+                <select className="form-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="date_desc">Newest First</option>
+                    <option value="date_asc">Oldest First</option>
+                    <option value="name_asc">Name (A-Z)</option>
+                    <option value="name_desc">Name (Z-A)</option>
+                    {activeTab === 'applications' && <><option value="college_asc">College (A-Z)</option><option value="college_desc">College (Z-A)</option><option value="year_asc">Year (Low-High)</option><option value="year_desc">Year (High-Low)</option></>}
+                </select>
+            </div>
+            
+            {activeTab === 'applications' && (
+                <>
+                <select className="form-select filter-dropdown" value={appCollegeFilter} onChange={(e) => setAppCollegeFilter(e.target.value)}>
+                    <option value="all">All Colleges</option><option value="CCS">CCS</option><option value="COE">COE</option><option value="CAS">CAS</option><option value="CBA">CBA</option><option value="CON">CON</option>
+                </select>
+                <select className="form-select filter-dropdown" value={appYearFilter} onChange={(e) => setAppYearFilter(e.target.value)}>
+                    <option value="all">All Years</option><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option>
+                </select>
+                </>
+            )}
+
+            <div className="search-box">
+                <input type="text" className="form-control" placeholder={`Search ${activeTab}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                <button className="search-btn"><i className="bi bi-search"></i></button>
+            </div>
+        </div>
+
         {activeTab === 'applications' && (
             <>
-                <div className="status-filter-tabs mb-3">
-                  {['all', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
-                      <button key={status} className={`filter-tab ${appStatusFilter === status ? 'active' : ''}`} onClick={() => setAppStatusFilter(status)}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)} <span className="count-badge ms-2">{appCounts[status]}</span>
-                      </button>
-                  ))}
-                </div>
-
-                <div className="controls-section">
-                  <div className="sort-dropdown">
-                    <select className="form-select" value={appSort} onChange={(e) => setAppSort(e.target.value)}>
-                      <option value="date_desc">Sort by: Newest First</option>
-                      <option value="date_asc">Sort by: Oldest First</option>
-                      <option value="name_asc">Sort by: Name (A-Z)</option>
-                      <option value="name_desc">Sort by: Name (Z-A)</option>
-                    </select>
-                  </div>
-                  <div className="search-box">
-                    <input type="text" className="form-control" placeholder="Search applications..." value={appSearch} onChange={(e) => setAppSearch(e.target.value)} />
-                    <button className="search-btn"><i className="bi bi-search"></i></button>
-                  </div>
-                </div>
-
-                <div className="applications-list">
-                  {filteredApplications.length === 0 ? (
-                    <div className="empty-state"><i className="bi bi-inbox fs-1 text-muted"></i><p className="text-muted mt-3">No applications found</p></div>
-                  ) : (
-                    filteredApplications.map((app) => (
-                      <div key={app.application_id} className="application-card">
-                        <div className="card-header-row">
-                            <span className="header-label">College</span>
-                            <span className="header-label">Name</span>
-                            <span className="header-label">Gender</span>
-                            <span className="header-label">School year</span>
-                            <span className="header-label">Documents</span>
-                        </div>
+            <div className="applications-list">
+                {filteredApplications.length === 0 ? <div className="empty-state">No applications found</div> : getPaginatedData(filteredApplications).map(app => (
+                    <div key={app.application_id} className="application-card">
+                        <div className="card-header-row"><span className="header-label">College</span><span className="header-label">Name</span><span className="header-label">Gender</span><span className="header-label">School year</span><span className="header-label">Documents</span><span className="header-label">Actions</span></div>
                         <div className="card-content-row">
-                            <div className="avatar-section">
-                                <div className="avatar-circle"><i className="bi bi-person-fill"></i></div>
-                                <span className="college-text">{app.program || 'CCS'}</span>
-                            </div>
-                            <div className="name-section"><span className="name-text">{app.student_name}</span></div>
-                            <div className="gender-section"><span className="gender-text">N/A</span></div>
-                            <div className="year-section"><span className="year-text">N/A</span></div>
-                            <div className="documents-section">
-                                {app.cor_filename ? (
-                                    <button className="btn btn-link p-0 document-icon" onClick={() => handleShowCor(app.cor_filename, false)}>
-                                        <i className="bi bi-file-earmark-text-fill fs-4"></i>
-                                    </button>
-                                ) : (<div className="document-icon disabled"><i className="bi bi-file-earmark-x fs-4"></i></div>)}
-                            </div>
+                            <div className="avatar-section"><div className="avatar-circle"><i className="bi bi-person-fill"></i></div><span className="college-text">{app.program || 'CCS'}</span></div>
+                            <span className="name-text">{app.student_name}</span><span className="gender-text">N/A</span><span className="year-text">{app.school_year || 'N/A'}</span>
+                            <div className="documents-section">{app.cor_filename ? <button className="document-icon" onClick={() => handleShowCor(app.cor_filename, false)}><i className="bi bi-file-earmark-text-fill fs-4"></i></button> : <div className="document-icon disabled"><i className="bi bi-file-earmark-x fs-4"></i></div>}</div>
                             <div className="actions-section">
-                                <button className="btn btn-accept" onClick={() => openActionModal('APPLICATION', app, 'APPROVED')} 
-                                    disabled={processingId === app.application_id || app.status !== 'PENDING'}>
-                                    {processingId === app.application_id ? <span className="spinner-border spinner-border-sm"></span> : 'Accept'}
-                                </button>
-                                <button className="btn btn-decline" onClick={() => openActionModal('APPLICATION', app, 'REJECTED')}
-                                    disabled={processingId === app.application_id || app.status !== 'PENDING'}>
-                                    Decline
-                                </button>
+                                <button className="btn-accept me-2" onClick={() => handleUpdateStatus(app.application_id, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
+                                <button className="btn-decline" onClick={() => handleUpdateStatus(app.application_id, 'REJECT')} disabled={app.status !== 'PENDING'}>Decline</button>
                             </div>
                         </div>
-                        {app.status && app.status !== 'PENDING' && (
-                            <div className="status-badge-container">
-                                <span className={`status-badge status-${app.status.toLowerCase()}`}>{app.status}</span>
-                            </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                        {app.status !== 'PENDING' && <div className="status-badge-container"><span className={`status-badge status-${app.status.toLowerCase()}`}>{app.status}</span></div>}
+                    </div>
+                ))}
+            </div>
+            {renderPagination(filteredApplications.length)}
             </>
         )}
 
         {activeTab === 'users' && (
             <div className="user-management-container">
-                 <div className="status-filter-tabs mb-3">
-                  {['all', 'ACTIVE', 'BANNED', 'PROBATION'].map(status => (
-                      <button key={status} className={`filter-tab ${userStatusFilter === status ? 'active' : ''}`} onClick={() => setUserStatusFilter(status)}>
-                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} 
-                        <span className="count-badge ms-2">{userCounts[status]}</span>
-                      </button>
-                  ))}
-                </div>
-
-                <div className="controls-section">
-                    <div className="sort-dropdown">
-                        <select className="form-select role-filter-select" value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)}>
-                            <option value="all">All Roles</option>
-                            <option value="TUTEE">Tutee</option>
-                            <option value="TUTOR">Tutor</option>
-                            <option value="ADMIN">Admin</option>
-                        </select>
-                    </div>
-                    <div className="search-box">
-                        <input type="text" className="form-control search-input-user" placeholder="Search users..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
-                        <button className="search-btn"><i className="bi bi-search"></i></button>
-                    </div>
-                </div>
-
                 <div className="user-table-wrapper">
                     <table className="user-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Reports</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-action">Actions</th></tr></thead>
                         <tbody>
-                            {filteredUsers.map((user) => (
+                            {getPaginatedData(filteredUsers).map(user => (
                                 <tr key={user.google_id}>
-                                    <td>
-                                        <div className="fw-bold">{user.first_name} {user.last_name}</div>
-                                        <div className="text-muted small">{user.email}</div>
-                                    </td>
+                                    <td><div className="fw-bold">{user.first_name} {user.last_name}</div><div className="text-muted small">{user.email}</div></td>
                                     <td><span className="badge bg-secondary">{user.role}</span></td>
-                                    
-                                    <td>
-                                        <span 
-                                            className={`status-badge status-${user.status?.toLowerCase() || 'active'} ${user.status_note ? 'has-note' : ''}`}
-                                            title={user.status_note || "No notes"} 
-                                        >
-                                            {user.status || 'ACTIVE'}
-                                        </span>
-                                        {user.status_note && (
-                                            <div className="text-muted status-note-text">
-                                                "{user.status_note}"
-                                            </div>
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {user.pending_reports > 0 ? 
-                                            <span className="text-danger fw-bold">{user.pending_reports} 🚩</span> : 
-                                            <span className="text-muted">0</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div className="action-buttons-group">
-                                            {user.status !== 'ACTIVE' && (
-                                                <button className="btn-action btn-activate" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>
-                                            )}
-                                            {user.status !== 'PROBATION' && (
-                                                <button className="btn-action btn-probation" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>
-                                            )}
-                                            {user.status !== 'BANNED' && (
-                                                <button className="btn-action btn-ban" onClick={() => openActionModal('USER', user, 'BANNED')}>Ban</button>
-                                            )}
-                                        </div>
-                                    </td>
+                                    <td><span className={`status-badge status-${user.status?.toLowerCase()}`}>{user.status}</span>{user.status_note && <div className="status-note-text">"{user.status_note}"</div>}</td>
+                                    <td>{user.pending_reports > 0 ? <span className="text-danger fw-bold">{user.pending_reports} 🚩</span> : <span className="text-muted">0</span>}</td>
+                                    <td><div className="action-buttons-group">
+                                        {user.status !== 'ACTIVE' && <button className="btn-action btn-activate" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>}
+                                        {user.status !== 'PROBATION' && <button className="btn-action btn-probation" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>}
+                                        {user.status !== 'BANNED' && <button className="btn-action btn-ban" onClick={() => openActionModal('USER', user, 'BANNED')}>Ban</button>}
+                                    </div></td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+                {renderPagination(filteredUsers.length)}
             </div>
         )}
-        
+
         {activeTab === 'appeals' && (
             <div className="user-management-container">
-                 <div className="status-filter-tabs mb-3">
-                  {['all', 'PENDING', 'APPROVED', 'REJECTED'].map(status => (
-                      <button key={status} className={`filter-tab ${appealStatusFilter === status ? 'active' : ''}`} onClick={() => setAppealStatusFilter(status)}>
-                        {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} 
-                        <span className="count-badge ms-2">{appealCounts[status]}</span>
-                      </button>
-                  ))}
-                </div>
-
-                <div className="controls-section">
-                  <div className="sort-dropdown">
-                    <select className="form-select" value={appealSort} onChange={(e) => setAppealSort(e.target.value)}>
-                      <option value="date_desc">Sort by: Newest First</option>
-                      <option value="date_asc">Sort by: Oldest First</option>
-                    </select>
-                  </div>
-                  <div className="search-box">
-                    <input type="text" className="form-control search-input-appeal" placeholder="Search appeals..." value={appealSearch} onChange={(e) => setAppealSearch(e.target.value)} />
-                    <button className="search-btn"><i className="bi bi-search"></i></button>
-                  </div>
-                </div>
-
                 <div className="user-table-wrapper">
-                    {appealsLoading ? <p className="text-center py-5">Loading Appeals...</p> : (
-                        <table className="user-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Appeal Message</th>
-                                    <th>Evidence</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                    <table className="user-table">
+                        <thead><tr><th className="col-user">User</th><th className="col-msg">Message</th><th className="col-evidence">Evidence</th><th className="col-status">Status</th><th className="col-action">Actions</th></tr></thead>
+                        <tbody>
+                            {getPaginatedData(filteredAppeals).map(appeal => (
+                                <tr key={appeal.appeal_id}>
+                                    <td><div className="fw-bold">{appeal.first_name} {appeal.last_name}</div><div className="text-muted small">{appeal.id_number}</div></td>
+                                    <td className="appeal-text-cell"><div className="appeal-message-content">{appeal.appeal_text}</div><div className="appeal-date">{appeal.date_submitted}</div></td>
+                                    <td>{appeal.files?.length > 0 ? appeal.files.map((f, i) => <button key={i} className="btn btn-outline-secondary evidence-btn me-1" onClick={()=>handleShowCor(f, true)}>File {i+1}</button>) : <span className="text-muted small">None</span>}</td>
+                                    <td><span className={`status-badge status-${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
+                                    <td>{appeal.status === 'PENDING' && <div className="action-buttons-group">
+                                        <button className="btn-action btn-activate" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
+                                        <button className="btn-action btn-ban" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
+                                    </div>}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {filteredAppeals.map((appeal) => (
-                                    <tr key={appeal.appeal_id}>
-                                        <td>
-                                            <div className="fw-bold">{appeal.first_name} {appeal.last_name}</div>
-                                            <div className="text-muted small">{appeal.id_number}</div>
-                                        </td>
-                                        <td className="appeal-text-cell">
-                                            <div className="appeal-message-content">{appeal.appeal_text}</div>
-                                            <div className="appeal-date">{appeal.date_submitted}</div>
-                                        </td>
-                                        <td>
-                                            {appeal.files && appeal.files.length > 0 ? (
-                                                <div className="d-flex flex-wrap gap-1">
-                                                    {appeal.files.map((file, idx) => (
-                                                        <button key={idx} className="btn btn-outline-secondary evidence-btn" onClick={() => handleShowCor(file, true)}>
-                                                            File {idx + 1}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="no-evidence-text">None</span>
-                                            )}
-                                        </td>
-                                        <td><span className={`status-badge status-${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
-                                        <td>
-                                            {appeal.status === 'PENDING' && (
-                                                <div className="action-buttons-group">
-                                                    <button className="btn-action btn-activate" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
-                                                    <button className="btn-action btn-ban" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
+                {renderPagination(filteredAppeals.length)}
             </div>
         )}
       </div>
 
       <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
-        <Modal.Header closeButton>
-            <Modal.Title>{actionData.title}</Modal.Title>
-        </Modal.Header>
+        <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
-            {actionData.type === 'USER' && actionData.targetStatus === 'ACTIVE' && (
-                <p>Are you sure you want to reactivate this user account? They will regain access immediately.</p>
-            )}
-            
-            {actionData.type === 'APPEAL' && (
-                <p>Are you sure you want to <strong>{actionData.targetStatus}</strong> this appeal? {actionData.targetStatus === 'APPROVE' ? 'The user will be automatically unbanned.' : ''}</p>
-            )}
-
-            {actionData.type === 'APPLICATION' && (
-                <p>Are you sure you want to <strong>{actionData.targetStatus}</strong> this Tutor Application?</p>
-            )}
-
-            {actionData.noteRequired && (
-                <Form.Group>
-                    <Form.Label>Reason / Note:</Form.Label>
-                    <Form.Control 
-                        as="textarea" 
-                        rows={3} 
-                        value={actionNote} 
-                        onChange={(e) => setActionNote(e.target.value)} 
-                        placeholder="Enter the reason for this action (Required)..."
-                    />
-                </Form.Group>
-            )}
+            <p>Are you sure you want to proceed?</p>
+            {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && <div className="mb-3 p-2 border rounded bg-light"><strong>Evidence:</strong> {actionData.files.map((f, i) => <Button key={i} variant="link" size="sm" onClick={()=>handleShowCor(f, true)}>File {i+1}</Button>)}</div>}
+            {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder="Required..." /></Form.Group>}
         </Modal.Body>
         <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
-            <Button 
-                variant={actionData.targetStatus === 'REJECTED' || actionData.targetStatus === 'BANNED' || actionData.targetStatus === 'REJECT' ? 'danger' : 'success'} 
-                onClick={submitAction}
-            >
-                Confirm
-            </Button>
+            <Button variant={actionData.targetStatus.includes('REJECT') || actionData.targetStatus.includes('BAN') ? 'danger' : 'success'} onClick={submitAction}>Confirm</Button>
         </Modal.Footer>
       </Modal>
 
+      {showConfirm && selectedApplication && (
+        <Modal show={showConfirm} onHide={() => setShowConfirm(false)} centered>
+          <Modal.Header closeButton><Modal.Title>Application Action</Modal.Title></Modal.Header>
+          <Modal.Body><p>Confirm {confirmAction} for {selectedApplication.student_name}?</p></Modal.Body>
+          <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
+              <Button variant="primary" onClick={() => confirmActionHandler(selectedApplication.application_id, confirmAction)}>Confirm</Button>
+          </Modal.Footer>
+        </Modal>
+      )}
+
       {showCorModal && (
         <div className="modal fade show custom-dark-modal">
-          <div className="modal-dialog modal-dialog-centered custom-large-modal">
-            <div className="modal-content custom-dark-content">
-              <div className="modal-body p-0 custom-dark-body">
-                {selectedCorFile ? (
-                    selectedCorFile.toLowerCase().endsWith('.pdf') ? (
-                        <iframe src={selectedCorFile} title="Document Preview" className="cor-frame"></iframe>
-                    ) : (
-                        <img src={selectedCorFile} alt="Document Preview" className="cor-image" />
-                    )
-                ) : (
-                    <div className="text-center text-light p-5">No Document available</div>
-                )}
-              </div>
-              <div className="custom-dark-footer">
-                <button className="btn btn-light px-4" onClick={() => setShowCorModal(false)}>Close</button>
-              </div>
+            <div className="modal-dialog modal-dialog-centered custom-large-modal">
+                <div className="modal-content custom-dark-content">
+                    <div className="modal-body p-0 custom-dark-body">
+                        {selectedCorFile ? (selectedCorFile.toLowerCase().endsWith('.pdf') ? <iframe src={selectedCorFile} className="cor-frame" title="Doc"></iframe> : <img src={selectedCorFile} className="cor-image" alt="Doc" />) : <div className="text-white p-5">No File</div>}
+                    </div>
+                    <div className="custom-dark-footer"><button className="btn btn-light" onClick={() => setShowCorModal(false)}>Close</button></div>
+                </div>
             </div>
-          </div>
         </div>
       )}
     </div>
