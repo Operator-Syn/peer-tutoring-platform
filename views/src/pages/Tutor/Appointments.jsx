@@ -9,6 +9,9 @@ const [selectedTuteeName, setSelectedTuteeName] = useState("");
 const [tutorId, setTutorId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
 const [allRows, setAllRows] = useState([]); // backup for filtering
+const [showConfirm,setShowConfirm] = useState(false);
+const [pendingAction,setPendingAction] = useState([]);
+const [pendingAppId, setPendingAppId] = useState(null);  
 
 useEffect(() => {
   async function fetchData() {
@@ -140,6 +143,18 @@ const handleSearch = () => {
   setRows(filtered);
 };
 
+const openConfirm = (appointment_id,action) =>{
+  setPendingAppId(appointment_id);
+  setPendingAction(action);
+  setShowConfirm(true);
+}
+
+const handleConfirmYes = async () => {
+  await handleAction(pendingAppId, pendingAction);  // <- you already have this
+  setShowConfirm(false);
+  setPendingAppId(null);
+  setPendingAction(null);
+};
 const handleAction = async (appointment_id, action) => {
   if (!tutorId) return;
 
@@ -179,11 +194,17 @@ const handleAction = async (appointment_id, action) => {
   return (
     <div className="appointments_page">
       <div
-  className="container d-flex flex-column align-items-center requests py-4"
+  className="container d-flex flex-column align-items-start requests py-4"
   style={{ minHeight: "600px", marginTop: "180px"}} 
 >
   
+<div className="w-80 px-3 px-md-5">
+  <div className = "text-start fw-bold  display-5 mb-4 request-title">Requests</div>
+</div>
+
+
 {/* Search & Filter */}
+
 <div
   className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-5 mt-md-n2 mb-3 gap-3 w-100"
   style={{ marginTop: "10px", marginBottom: "200px" }}
@@ -196,11 +217,10 @@ const handleAction = async (appointment_id, action) => {
 
 
  
-
 {/* Search Input + Enter Button */}
 <div 
   className="d-flex justify-content-center w-100 px-3 px-md-5"
-  style={{ marginBottom: "1rem" }}
+  style={{ marginBottom: "1rem" , marginTop: "-30px"}}
 >
   <div 
     className="d-flex w-100" 
@@ -288,7 +308,7 @@ const handleAction = async (appointment_id, action) => {
         transform: "translateX(5rem)",
       }}
     >
-  Sorry unavailable...
+  Sorry No tutoring request
 </div>
 
   ) : (
@@ -346,11 +366,7 @@ rows.map((row) => (
         <span className="d-block small text-muted">ID Number</span>
         <span className="d-block small fw-semibold">{row.tutee_id}</span>
       </div>
-      <div className="d-flex flex-column">
-        <span className="d-block small text-muted">Program Code</span>
-        <span className="d-block small fw-semibold">{row.course_code || "N/A"}
-</span>
-      </div>
+     
     </div>
 
     {/* Date / Time */}
@@ -387,8 +403,9 @@ rows.map((row) => (
       fontSize: "1.1rem",
       padding: "14px 80px",
       borderRadius: "6px",
+      
     }}
-    onClick={() => handleAction(row.appointment_id, "decline")}
+    onClick={() => openConfirm(row.appointment_id, "decline")}
   >
     Decline
   </button>
@@ -403,7 +420,7 @@ rows.map((row) => (
       padding: "14px 80px",
       borderRadius: "6px",
     }}
-    onClick={() => handleAction(row.appointment_id, "accept")}
+    onClick={() => openConfirm(row.appointment_id, "accept")}
   >
     Accept
   </button>
@@ -427,7 +444,7 @@ rows.map((row) => (
    
       {/* No Issues Found */}
 <div
-      className="container d-flex flex-column align-items-center justify-content-center py-4"
+      className="container d-flex flex-column align-items-start justify-content-center py-4"
       style={{
         minHeight: "600px",
         marginTop: "180px",
@@ -436,6 +453,11 @@ rows.map((row) => (
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
       }}
     >
+
+      <div className="w-80 px-3 px-md-5">
+      <div className="text-start fw-bold display-5 mb-4 request-title">Appointments</div>
+      </div>
+
       <div className="appointments-wrapper container my-5"
         style={{ backgroundColor: "transparent" }}>
   {appointments.length === 0 ? (
@@ -543,13 +565,34 @@ rows.map((row) => (
         <p className="card-text">
           <strong>Date:</strong> {selectedApp?.appointment_date || "N/A"}
         </p>
-        <p className="card-text">
-          <strong>Course:</strong> {selectedApp?.course_code || "N/A"}
-        </p>
+       
       </div>
     </div>
   </div>
 )}
+
+
+{showConfirm && (
+  <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
+    <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
+      <h5>Confirm Action</h5>
+      <p>
+        {pendingAction === "accept"
+          ? "Are you sure you want to accept this request?"
+          : "Are you sure you want to decline this request?"}
+      </p>
+      <div className="d-flex justify-content-end gap-2 mt-3">
+        <button className="btn my-no-btn" onClick={() => setShowConfirm(false)}>
+          No
+        </button>
+        <button className="btn my-yes-btn" onClick={handleConfirmYes}>
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
     </div>

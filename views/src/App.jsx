@@ -17,6 +17,7 @@ import TutorList from "./pages/TutorList/TutorList";
 import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
 import TuteeList from "./pages/Tutee List/TuteeList";
 
+import Feedback from "./pages/profile/feedback"
 import TutorProfile from "./pages/Tutor/Tutorprofile";
 
 
@@ -39,11 +40,13 @@ function App() {
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
             <Route path="tutor/:tutor_id" element={<TutorProfile />} />
-              
+            
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
             <Route path="TuteeList" element={<TuteeList />} />
+            <Route path= "Feedback" element = {<Feedback/>}/>
+
           </Route>
         </Route>
       </Routes>

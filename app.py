@@ -12,6 +12,7 @@ from controllers.createAppointmentFormController.createAppointmentFormController
 from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
 from controllers.createNewPendingAppointmentController.createNewPendingAppointmentController import bp_create_pending
 from controllers.requestscontroller.requestscontroller import requests_bp  
+from controllers.loadConfig.loadConfig import load_config_bp
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
 from controllers.adminDashboardController import admin_dashboard_bp
@@ -52,6 +53,7 @@ app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 app.register_blueprint(tutee_list, url_prefix="/api/tutee-list")
 app.register_blueprint(admin_dashboard_bp)
+app.register_blueprint(load_config_bp)
 @app.route('/uploads/cor/<filename>')
 def serve_cor_file(filename):
     return send_from_directory('uploads/cor', filename)

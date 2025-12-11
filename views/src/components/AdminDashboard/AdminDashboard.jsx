@@ -41,8 +41,8 @@ const AdminDashboard = () => {
       setError(null);
 
       const [appsResponse, statsResponse] = await Promise.all([
-        fetch(`/admin/applications`),
-        fetch(`/admin/statistics`)
+        fetch(`/api/tutor-applications/admin/applications`),
+        fetch(`/api/tutor-applications/admin/statistics`)
       ]);
 
       if (!appsResponse.ok || !statsResponse.ok) {
@@ -102,8 +102,8 @@ const AdminDashboard = () => {
 
     const endpoint =
       action === 'APPROVED'
-        ? `/admin/applications/${applicationId}/approve`
-        : `/admin/applications/${applicationId}/reject`;
+        ? `/api/tutor-applications/admin/applications/${applicationId}/approve`
+        : `/api/tutor-applications/admin/applications/${applicationId}/reject`;
 
     console.log("Sending request to:", endpoint);
 
