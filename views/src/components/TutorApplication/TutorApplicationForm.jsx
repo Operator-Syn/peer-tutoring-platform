@@ -20,7 +20,6 @@ const TutorApplicationForm = () => {
     fetchCourses();
   }, []);
 
-  // fetch student info when student ID changes
   useEffect(() => {
     const fetchStudentInfo = async () => {
       if (!studentId || studentId.trim().length === 0) {
@@ -35,7 +34,7 @@ const TutorApplicationForm = () => {
       setError(null);
 
       try {
-        const response = await fetch(`/student/${studentId.trim()}`);
+        const response = await fetch(`/api/tutor-applications/student/${studentId.trim()}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -65,11 +64,10 @@ const TutorApplicationForm = () => {
   }, [studentId]);
 
   const fetchCourses = async () => {
-    let data = null;
     try {
       setLoadingCourses(true);
       setError(null)
-      const response = await fetch(`/courses`);
+      const response = await fetch(`/api/tutor-applications/courses`);
       const data = await response.json();
 
       if (response.ok) {
@@ -121,7 +119,7 @@ const TutorApplicationForm = () => {
     }
 
     try {
-      const response = await fetch(`/tutor-applications`, {
+      const response = await fetch(`/api/tutor-applications/tutor-applications`, {
         method: "POST",
         body: formData,
       });
