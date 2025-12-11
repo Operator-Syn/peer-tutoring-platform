@@ -1,0 +1,131 @@
+# controllers/ratesessioncontroller/ratesessioncontroller.py
+
+from flask import Blueprint, jsonify, request
+from utils.db import get_connection
+from psycopg2.extras import RealDictCursor
+
+rate_session_bp = Blueprint(
+    "rate_session_bp", __name__, url_prefix="/api/rate-session"
+)
+
+
+@rate_session_bp.route("/pending/<tutee_id>", methods=["GET"])
+def get_pending_ratings(tutee_id):
+    """
+    Return all sessions for this tutee that:
+      - have rating = 0
+      - join enough tables to show tutor name, time, etc.
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        cur.execute(
+            """
+            SELECT
+                sr.appointment_id,
+                sr.tutee_id,
+                sr.tutor_id,
+                sr.rating,
+                a.course_code,
+                a.appointment_date,
+                av.start_time,
+                av.end_time,
+                tt.first_name  AS tutor_first_name,
+                tt.middle_name AS tutor_middle_name,
+                tt.last_name   AS tutor_last_name
+            FROM session_rating sr
+            JOIN appointment a
+              ON sr.appointment_id = a.appointment_id
+            JOIN availability av
+              ON a.vacant_id = av.vacant_id
+            JOIN tutor tu
+              ON sr.tutor_id = tu.tutor_id
+            JOIN tutee tt
+              ON tu.tutor_id = tt.id_number
+            WHERE sr.tutee_id = %s
+              AND sr.rating = 0
+            ORDER BY a.appointment_date DESC, av.start_time DESC
+            """,
+            (tutee_id,),
+        )
+
+        rows = cur.fetchall()
+
+        # Format date/time so React can show nicely
+        for r in rows:
+            if r.get("appointment_date"):
+                r["appointment_date"] = r["appointment_date"].isoformat()
+            if r.get("start_time"):
+                r["start_time"] = r["start_time"].strftime("%H:%M")
+            if r.get("end_time"):
+                r["end_time"] = r["end_time"].strftime("%H:%M")
+
+        return jsonify(rows), 200
+
+    except Exception as e:
+        print("❌ Error in get_pending_ratings:", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+@rate_session_bp.route("/rate/<int:appointment_id>", methods=["PUT"])
+def submit_rating(appointment_id):
+    """
+    Update a session_rating row for this appointment to a value 1–5.
+    (We assume there is already a row with rating = 0 created when
+    the tutor clicked “Mark as finished”.)
+    """
+    data = request.get_json(silent=True) or {}
+    rating = data.get("rating")
+
+    # basic validation
+    try:
+        rating = int(rating)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Rating must be an integer"}), 400
+
+    if rating < 1 or rating > 5:
+        return jsonify({"error": "Rating must be between 1 and 5"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # make sure the row exists
+        cur.execute(
+            """
+            SELECT rating_id
+            FROM session_rating
+            WHERE appointment_id = %s
+            """,
+            (appointment_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "Session rating row not found"}), 404
+
+        # update rating
+        cur.execute(
+            """
+            UPDATE session_rating
+            SET rating = %s
+            WHERE appointment_id = %s
+            """,
+            (rating, appointment_id),
+        )
+
+        conn.commit()
+        return jsonify({"message": "Rating submitted successfully"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error in submit_rating:", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        cur.close()
+        conn.close()

@@ -3,6 +3,9 @@ from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
+# 👉 import the model + custom error
+
+
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
@@ -49,10 +52,6 @@ def get_pending_requests(tutor_id):
     return jsonify(results)
 
 
-
-
-
-
 @requests_bp.route("/update-status/<int:appointment_id>", methods=["PUT"])
 def update_appointment_status(appointment_id):
     data = request.get_json(silent=True) or {}
@@ -66,12 +65,15 @@ def update_appointment_status(appointment_id):
 
     try:
         # Fetch appointment info
-        cur.execute("""
+        cur.execute(
+            """
             SELECT a.vacant_id, a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
-        """, (appointment_id,))
+            """,
+            (appointment_id,),
+        )
         appt = cur.fetchone()
 
         if not appt:
@@ -80,26 +82,42 @@ def update_appointment_status(appointment_id):
         vacant_id, tutee_id, course_code, tutor_id, start_time, end_time = appt
 
         # Update the appointment status
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
-        """, (new_status, appointment_id))
+            """,
+            (new_status, appointment_id),
+        )
 
         # If the status is BOOKED, log in history and send notification
         if new_status == "BOOKED":
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (tutor_id, tutee_id, start_time, end_time, course_code))
+                """,
+                (tutor_id, tutee_id, start_time, end_time, course_code),
+            )
 
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO notifications (tutor_id, tutee_id)
                 VALUES (%s, %s)
-            """, (tutor_id, tutee_id))
+                """,
+                (tutor_id, tutee_id),
+            )
 
         conn.commit()
-        return jsonify({"message": f"Appointment {appointment_id} updated to {new_status}!"}), 200
+        return (
+            jsonify(
+                {
+                    "message": f"Appointment {appointment_id} updated to {new_status}!"
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         conn.rollback()
@@ -109,7 +127,6 @@ def update_appointment_status(appointment_id):
     finally:
         cur.close()
         conn.close()
-
 
 
 @requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
@@ -171,9 +188,15 @@ def search_requests():
                 )
             """
 
-            sql = base_select + search_filter + " ORDER BY a.appointment_date, av.start_time"
+            sql = (
+                base_select
+                + search_filter
+                + " ORDER BY a.appointment_date, av.start_time"
+            )
             like = f"%{query}%"
-            cur.execute(sql, (tutor_id, like, like, like, like, like, like))
+            cur.execute(
+                sql, (tutor_id, like, like, like, like, like, like)
+            )
 
         else:
             sql = base_select + " ORDER BY a.appointment_date, av.start_time"
@@ -200,16 +223,15 @@ def search_requests():
         conn.close()
 
 
-
-
 @requests_bp.route("/appointments/<tutor_id>", methods=["GET"])
 def get_appointments(tutor_id):
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute("""
+    cur.execute(
+        """
         SELECT 
-            a.appointment_id AS request_id,
+            a.appointment_id,
             t.first_name,
             t.middle_name,
             t.last_name,
@@ -223,7 +245,9 @@ def get_appointments(tutor_id):
         WHERE av.tutor_id = %s
           AND a.status = 'BOOKED'
         ORDER BY a.appointment_date ASC, av.start_time ASC
-    """, (tutor_id,))
+        """,
+        (tutor_id,),
+    )
 
     results = cur.fetchall()
     cur.close()
@@ -235,6 +259,36 @@ def get_appointments(tutor_id):
         row["end_time"] = row["end_time"].strftime("%H:%M")
 
     return jsonify(results)
+
+
+@requests_bp.route("/appointments/clear/<int:appointment_id>", methods=["DELETE"])
+def clear_appointment(appointment_id):
+    """
+    (Legacy) Hard delete an appointment.
+    You can keep or remove this if you only want the 'finish' behaviour.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            "DELETE FROM appointment WHERE appointment_id = %s",
+            (appointment_id,),
+        )
+        conn.commit()
+        return (
+            jsonify({"message": f"Appointment {appointment_id} cleared"}),
+            200,
+        )
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error in clear_appointment:", e)
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        cur.close()
+        conn.close()
 
 
 @requests_bp.route("/update-status-and-log/<int:appointment_id>", methods=["PUT"])
@@ -257,12 +311,15 @@ def update_appointment_status_and_log(appointment_id):
 
     try:
         # Fetch appointment info first (including tutor_id from availability)
-        cur.execute("""
+        cur.execute(
+            """
             SELECT a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
-        """, (appointment_id,))
+            """,
+            (appointment_id,),
+        )
 
         appt = cur.fetchone()
         if not appt:
@@ -271,32 +328,113 @@ def update_appointment_status_and_log(appointment_id):
         tutee_id, course_code, tutor_id, start_time, end_time = appt
 
         # Update appointment status
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
-        """, (new_status, appointment_id))
+            """,
+            (new_status, appointment_id),
+        )
 
         # Log to history table if accepted
         if new_status == "BOOKED":
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (tutor_id, tutee_id, start_time, end_time, course_code))
+                """,
+                (tutor_id, tutee_id, start_time, end_time, course_code),
+            )
 
         # Insert notification with action column
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO notifications (tutor_id, tutee_id, action)
             VALUES (%s, %s, %s)
-        """, (tutor_id, tutee_id, new_status))
+            """,
+            (tutor_id, tutee_id, new_status),
+        )
 
         conn.commit()
-        return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
+        return (
+            jsonify({"message": f"Appointment {new_status} successfully!"}),
+            200,
+        )
 
     except Exception as e:
         conn.rollback()
         print("❌ Error in update_appointment_status_and_log:", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+@requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
+def finish_appointment(appointment_id):
+    """
+    Mark an appointment as COMPLETED and create an entry in session_rating
+    with initial rating = 0.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # 1) Get tutee_id and tutor_id from appointment + availability
+        cur.execute(
+            """
+            SELECT a.tutee_id, av.tutor_id
+            FROM appointment a
+            JOIN availability av ON a.vacant_id = av.vacant_id
+            WHERE a.appointment_id = %s
+            """,
+            (appointment_id,),
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return jsonify({"error": "Appointment not found"}), 404
+
+        tutee_id, tutor_id = row
+
+        # 2) Mark appointment as COMPLETED
+        cur.execute(
+            """
+            UPDATE appointment
+            SET status = 'COMPLETED'
+            WHERE appointment_id = %s
+            """,
+            (appointment_id,),
+        )
+
+        # 3) Insert into session_rating with rating = 0
+        cur.execute(
+            """
+            INSERT INTO session_rating (appointment_id, tutee_id, tutor_id, rating)
+            VALUES (%s, %s, %s, 0)
+            ON CONFLICT (appointment_id, tutee_id) DO NOTHING
+            """,
+            (appointment_id, tutee_id, tutor_id),
+        )
+
+        conn.commit()
+        return (
+            jsonify(
+                {
+                    "message": "Appointment finished and session_rating created with rating = 0",
+                    "appointment_id": appointment_id,
+                    "tutee_id": tutee_id,
+                    "tutor_id": tutor_id,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error in finish_appointment:", e)
+        return jsonify({"error": "Internal server error"}), 500
 
     finally:
         cur.close()
