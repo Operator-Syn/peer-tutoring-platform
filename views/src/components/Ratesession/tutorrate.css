@@ -1,0 +1,21 @@
+.tutor-rate-page {
+  padding: 20px;
+}
+
+.stars {
+  display: flex;
+  gap: 6px;
+}
+
+.star-btn {
+  font-size: 28px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ccc;
+  transition: 0.15s;
+}
+
+.star-btn.active {
+  color: #4956ad;
+}
