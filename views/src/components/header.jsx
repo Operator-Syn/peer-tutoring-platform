@@ -195,8 +195,14 @@ function Header() {
                 >
                   <img src={applyIcon} alt="Apply" /> Apply as tutor
                 </p>
-                <p>
-                  <img src={feedIcon} alt="Feedback" /> Feedback
+
+                <p   onClick = {()=>{
+                  setPopup(false);
+                  handleNavClick();
+                  navigate("/Feedback");
+                }}>
+                 
+                    < img src={feedIcon} alt="Feedback" /> Rate Session
                 </p>
                 <p>
                   <img src={webIcon} alt="Website" /> Myiit
@@ -215,7 +221,7 @@ function Header() {
                   <p onClick={() => {
                     setPopup(false);
                     handleNavClick();
-                    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`;
+                    window.location.href = `/api/auth/logout`;
                   }}>
                     <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
                   </p>
