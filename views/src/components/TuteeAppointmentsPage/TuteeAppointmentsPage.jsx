@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import placeholderImage from "../../assets/cropped-waiting.png";
+import waitingImage from "../../assets/cropped-waiting.png";
+import approvedImage from "../../assets/approving-owl.png"
+import sadOwl from "../../assets/sad-owl.png"
 import CardComponent from "../CardComponent/CardComponent";
 import { ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons";
 import "./TuteeAppointmentsPage.css";
@@ -36,21 +38,36 @@ export default function TuteeAppointmentsPage() {
 
     return (
         <div className="container appointments-grid large-padding">
-            {appointments.map((appointment, index) => (
-                <CardComponent
-                    key={index}
-                    title={{ label: "Subject Code:", value: appointment.subject_code }}
-                    modalTitle="Appointment Details"
-                    leftAlignText={`Tutor: ${appointment.tutor_name}`}
-                    rightAlignTop={appointment.appointment_date}
-                    rightAlignBottom={`${appointment.start_time} — ${appointment.end_time}`}
-                    footer={appointment.footer}
-                    image={placeholderImage}
-                    modalContent={appointment.modal_content}
-                    modalButtonsRight={[...ConfirmButton, ...CloseButton]}
-                    modalButtonsLeft={CancelAppointmentButton}
-                />
-            ))}
+            {appointments.map((appointment, index) => {
+                // Determine which image to use
+                let imageToShow;
+                const footerLower = appointment.footer.toLowerCase();
+                if (footerLower.includes("pending") || footerLower.includes("left")) {
+                    imageToShow = waitingImage;
+                } else if (footerLower.includes("started")) {
+                    imageToShow = approvedImage;
+                } else if (footerLower.includes("cancelled") || footerLower.includes("declined")) {
+                    imageToShow = sadOwl;
+                } else {
+                    imageToShow = null;
+                }
+
+                return (
+                    <CardComponent
+                        key={index}
+                        title={{ label: "Subject Code:", value: appointment.subject_code }}
+                        modalTitle="Appointment Details"
+                        leftAlignText={`Tutor: ${appointment.tutor_name}`}
+                        rightAlignTop={appointment.appointment_date}
+                        rightAlignBottom={`${appointment.start_time} — ${appointment.end_time}`}
+                        footer={appointment.footer}
+                        image={imageToShow}
+                        modalContent={appointment.modal_content}
+                        modalButtonsRight={[...ConfirmButton, ...CloseButton]}
+                        modalButtonsLeft={CancelAppointmentButton}
+                    />
+                );
+            })}
         </div>
     );
 }

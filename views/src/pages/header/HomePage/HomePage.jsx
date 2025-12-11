@@ -45,7 +45,7 @@ export default function HomePage() {
                                 </p>
                             </div>
 
-                            <div className='d-flex flex-row justify-content-evenly gap-5'>
+                            <div className='stats'>
                                 <Stat top_text='100%' bottom_text='Effective' />
                                 <Stat top_text='60+' bottom_text='Offered Subjects' />
                                 <Stat top_text='Peer' bottom_text='Tutoring' />

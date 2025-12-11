@@ -1,6 +1,7 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useState } from "react";
 import placeholderImage from "../../../../assets/images/placeholders/placeholderImage.jpeg";
+import scheduleOwl from "../../../../assets/schedule-owl.png";
 import CardComponent from "../../../CardComponent/CardComponent";
 import "./Schedule.css";
 
@@ -100,7 +101,7 @@ export default function Schedule({ data, update }) {
                             rightAlignTop={`Course: ${a.course_code}`}
                             rightAlignBottom={`Time: ${a.formatted_time}`}
                             footer={isSelected ? "Selected" : ""}
-                            image={placeholderImage}
+                            image={scheduleOwl}
                             modalContent={[
                                 { role: "Tutor ID", text: ` ${a.tutor_id}` },
                                 { text: `Vacant Slot ID: ${a.vacant_id}` },
