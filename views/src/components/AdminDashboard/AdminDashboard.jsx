@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   
   const [appCollegeFilter, setAppCollegeFilter] = useState('all');
   const [appYearFilter, setAppYearFilter] = useState('all');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
 
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,6 +58,7 @@ const AdminDashboard = () => {
     setSortBy(activeTab === 'users' ? 'name_asc' : 'date_desc');
     setAppCollegeFilter('all');
     setAppYearFilter('all');
+    setUserRoleFilter('all');
     setCurrentPage(1);
   }, [activeTab]);
 
@@ -110,12 +112,12 @@ const AdminDashboard = () => {
     }
 
     if (activeTab === 'applications') {
-        if (appCollegeFilter !== 'all') {
-            data = data.filter(app => (app.program || '').toUpperCase() === appCollegeFilter);
-        }
-        if (appYearFilter !== 'all') {
-            data = data.filter(app => (app.school_year || '').toString().includes(appYearFilter));
-        }
+        if (appCollegeFilter !== 'all') data = data.filter(app => (app.program || '').toUpperCase() === appCollegeFilter);
+        if (appYearFilter !== 'all') data = data.filter(app => (app.school_year || '').toString().includes(appYearFilter));
+    }
+    
+    if (activeTab === 'users') {
+        if (userRoleFilter !== 'all') data = data.filter(u => (u.role || '').toUpperCase() === userRoleFilter);
     }
 
     if (searchQuery) {
@@ -137,18 +139,21 @@ const AdminDashboard = () => {
         if (sortBy === 'date_asc') return dateA - dateB;
         if (sortBy === 'name_asc') return nameA.localeCompare(nameB);
         if (sortBy === 'name_desc') return nameB.localeCompare(nameA);
-        
+
         if (sortBy === 'college_asc') return (a.program || '').localeCompare(b.program || '');
         if (sortBy === 'college_desc') return (b.program || '').localeCompare(a.program || '');
-        if (sortBy === 'year_asc') return parseInt(a.school_year||0) - parseInt(b.school_year||0);
-        if (sortBy === 'year_desc') return parseInt(b.school_year||0) - parseInt(a.school_year||0);
+        if (sortBy === 'year_asc') return parseInt(a.school_year || 0) - parseInt(b.school_year || 0);
+        if (sortBy === 'year_desc') return parseInt(b.school_year || 0) - parseInt(a.school_year || 0);
+
+        if (sortBy === 'role_asc') return (a.role || '').localeCompare(b.role || '');
+        if (sortBy === 'role_desc') return (b.role || '').localeCompare(a.role || '');
 
         return 0;
     });
 
     if(setData) setData(data);
-    setCurrentPage(1);
-  }, [activeTab, applications, users, appeals, statusFilter, searchQuery, sortBy, appCollegeFilter, appYearFilter]);
+    setCurrentPage(1); 
+  }, [activeTab, applications, users, appeals, statusFilter, searchQuery, sortBy, appCollegeFilter, appYearFilter, userRoleFilter]);
 
   const getPaginatedData = (data) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -161,56 +166,43 @@ const AdminDashboard = () => {
 
     return (
         <div className="pagination-container">
-            <span className="page-info">
-                Page {currentPage} of {totalPages || 1}
-            </span>
-
+            <span className="page-info">Page {currentPage} of {totalPages || 1}</span>
             <div className="d-flex align-items-center gap-2">
                 <button className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Previous</button>
                 <button className="pagination-btn" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Next</button>
             </div>
-            
             <div className="d-flex align-items-center gap-2 ms-3">
                 <span className="small text-muted">Rows:</span>
                 <select className="rows-per-page-select" value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
+                    <option value={5}>5</option><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option>
                 </select>
             </div>
         </div>
     );
   };
 
-  const handleUpdateStatus = (applicationId, newStatus) => {
-    const app = applications.find(a => a.application_id === applicationId);
+  const handleUpdateStatus = (appId, newStatus) => {
+    const app = applications.find(a => a.application_id === appId);
     if (!app) return;
     setSelectedApplication(app);
     setConfirmAction(newStatus);
     setShowConfirm(true);
   };
 
-  const confirmActionHandler = async (applicationId, action) => {
+  const confirmActionHandler = async (appId, action) => {
     try {
-      setProcessingId(applicationId);
+      setProcessingId(appId);
       const endpoint = action === 'APPROVED' ? 'approve' : 'reject';
-      const response = await fetch(`/api/tutor-applications/admin/applications/${applicationId}/${endpoint}`, {
+      const res = await fetch(`/api/tutor-applications/admin/applications/${appId}/${endpoint}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
       });
-      if (response.ok) {
-        fetchData();
-        setShowConfirm(false);
-      }
+      if (res.ok) { fetchData(); setShowConfirm(false); }
     } catch (err) { console.error(err); } 
     finally { setProcessingId(null); }
   };
 
   const openActionModal = (type, item, targetStatus) => {
-    let title = "";
-    let noteRequired = false;
-    let files = [];
-    let selectedId = null; // New variable to safely store the correct ID
+    let title = "", noteRequired = false, files = [], selectedId = null;
 
     if (type === 'USER') {
         selectedId = item.google_id;
@@ -218,12 +210,9 @@ const AdminDashboard = () => {
         title = `${targetStatus === 'ACTIVE' ? 'Activate' : targetStatus} User: ${name}`;
         noteRequired = ['BANNED', 'PROBATION'].includes(targetStatus);
     } else if (type === 'APPEAL') {
-        selectedId = item.appeal_id; // Explicitly grab appeal_id
+        selectedId = item.appeal_id;
         title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Appeal`;
         files = item.files || [];
-    } else {
-        // Fallback for applications if you use this modal for them later
-        selectedId = item.application_id; 
     }
 
     setActionData({ type, id: selectedId, targetStatus, title, noteRequired, files });
@@ -233,11 +222,8 @@ const AdminDashboard = () => {
 
   const submitAction = async () => {
     if (actionData.noteRequired && !actionNote.trim()) {
-        setToastMessage("A reason is required.");
-        setShowToast(true);
-        return;
+        setToastMessage("A reason is required."); setShowToast(true); return;
     }
-
     try {
         if (actionData.type === 'USER') {
             await fetch("/api/tutor-applications/admin/users/status", {
@@ -322,7 +308,9 @@ const AdminDashboard = () => {
                     <option value="date_asc">Oldest First</option>
                     <option value="name_asc">Name (A-Z)</option>
                     <option value="name_desc">Name (Z-A)</option>
+                    
                     {activeTab === 'applications' && <><option value="college_asc">College (A-Z)</option><option value="college_desc">College (Z-A)</option><option value="year_asc">Year (Low-High)</option><option value="year_desc">Year (High-Low)</option></>}
+                    {activeTab === 'users' && <><option value="role_asc">Role (A-Z)</option><option value="role_desc">Role (Z-A)</option></>}
                 </select>
             </div>
             
@@ -335,6 +323,14 @@ const AdminDashboard = () => {
                     <option value="all">All Years</option><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option>
                 </select>
                 </>
+            )}
+
+            {activeTab === 'users' && (
+                <select className="form-select filter-dropdown" value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)}>
+                    <option value="all">All Roles</option>
+                    <option value="TUTEE">Tutee</option>
+                    <option value="TUTOR">Tutor</option>
+                </select>
             )}
 
             <div className="search-box">
