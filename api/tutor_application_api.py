@@ -67,7 +67,7 @@ def submit_tutor_application():
         file.filename = random_filename
 
         try:
-            cor_url = upload_file("cor_documents", file, folder_name=student_id)
+            cor_url = upload_file("cor-uploads", file, folder_name=student_id)
         except Exception as e:
             print(f"Supabase Upload Error: {e}")
             return jsonify({'error': 'Failed to upload document to cloud storage'}), 500
