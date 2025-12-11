@@ -19,16 +19,10 @@ const AdminDashboard = () => {
   const [selectedCorFile, setSelectedCorFile] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Counts Helper
-  const getCounts = (tab) => {
-    return {}; 
-  };
-  
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
-  const handleShowCor = (url) => {
-    const path = url.startsWith('http') ? url : (activeTab === 'appeals' ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
+  const handleShowCor = (url, isAppeal = false) => {
+    const path = url.startsWith('http') ? url : (isAppeal ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
     setSelectedCorFile(path);
     setShowCorModal(true);
   };
@@ -112,7 +106,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000, position:'fixed'}}>
+      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000, position: 'fixed'}}>
         <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger">
             <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
@@ -123,7 +117,7 @@ const AdminDashboard = () => {
         {error && <div className="alert alert-warning">{error}</div>}
 
         <div className="statistics-grid-top">
-          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}, {k:"total_courses",t:stats.total_courses,d:"Courses"}, {k:"active_sessions",t:0,d:"Sessions"}].map(c => (
+          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}].map(c => (
             <BasicCard key={c.k} title={String(c.t || 0)} description={c.d} />
           ))}
         </div>
@@ -146,8 +140,7 @@ const AdminDashboard = () => {
                 <select className="form-select" value={filters.sort} onChange={(e) => filters.setSort(e.target.value)}>
                     <option value="date_desc">Newest First</option>
                     <option value="date_asc">Oldest First</option>
-                    {activeTab !== 'appeals' && <option value="name_asc">Name (A-Z)</option>}
-                    {activeTab !== 'appeals' && <option value="name_desc">Name (Z-A)</option>}
+                    {activeTab !== 'appeals' && <><option value="name_asc">Name (A-Z)</option><option value="name_desc">Name (Z-A)</option></>}
                     
                     {activeTab === 'applications' && <><option value="college_asc">College (A-Z)</option><option value="college_desc">College (Z-A)</option><option value="year_asc">Year (Low-High)</option><option value="year_desc">Year (High-Low)</option></>}
                     {activeTab === 'users' && <><option value="role_asc">Role (A-Z)</option><option value="role_desc">Role (Z-A)</option></>}
@@ -167,10 +160,7 @@ const AdminDashboard = () => {
 
             {activeTab === 'users' && (
                 <select className="form-select filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
-                    <option value="all">All Roles</option>
-                    <option value="TUTEE">Tutee</option>
-                    <option value="TUTOR">Tutor</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option><option value="ADMIN">Admin</option>
                 </select>
             )}
 
@@ -190,7 +180,7 @@ const AdminDashboard = () => {
                             <div className="card-content-row">
                                 <div className="avatar-section"><div className="avatar-circle"><i className="bi bi-person-fill"></i></div><span className="college-text">{app.program || 'CCS'}</span></div>
                                 <span className="name-text">{app.student_name}</span><span className="gender-text">N/A</span><span className="year-text">{app.school_year || 'N/A'}</span>
-                                <div className="documents-section">{app.cor_filename ? <button className="document-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-earmark-text-fill fs-4"></i></button> : <div className="document-icon disabled"><i className="bi bi-file-earmark-x fs-4"></i></div>}</div>
+                                <div className="documents-section">{app.cor_filename ? <button className="document-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button> : <div className="document-icon disabled"><i className="bi bi-file-x"></i></div>}</div>
                                 <div className="actions-section">
                                     <button className="btn-accept me-2" onClick={() => openActionModal('APP', app, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
                                     <button className="btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')} disabled={app.status !== 'PENDING'}>Decline</button>
@@ -206,7 +196,7 @@ const AdminDashboard = () => {
                 <div className="user-management-container">
                     <div className="user-table-wrapper">
                         <table className="user-table">
-                            <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-action">Actions</th></tr></thead>
+                            <thead><tr><th className="col-user-name">User</th><th className="col-user-role">Role</th><th className="col-user-status">Status</th><th className="col-user-reports">Reports</th><th className="col-user-action">Actions</th></tr></thead>
                             <tbody>
                                 {data.map(user => (
                                     <tr key={user.google_id}>
@@ -231,13 +221,39 @@ const AdminDashboard = () => {
                 <div className="user-management-container">
                     <div className="user-table-wrapper">
                         <table className="user-table">
-                            <thead><tr><th className="col-user">User</th><th className="col-msg">Message</th><th className="col-evidence">Evidence</th><th className="col-status">Status</th><th className="col-action">Actions</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th className="col-app-user">User</th>
+                                    <th className="col-app-msg">Message</th>
+                                    <th className="col-app-file">Evidence</th>
+                                    <th className="col-app-status">Status</th>
+                                    <th className="col-app-action">Actions</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {data.map(appeal => (
                                     <tr key={appeal.appeal_id}>
                                         <td><div className="fw-bold">{appeal.first_name} {appeal.last_name}</div><div className="text-muted small">{appeal.id_number}</div></td>
                                         <td className="appeal-text-cell"><div className="appeal-message-content">{appeal.appeal_text}</div><div className="appeal-date">{appeal.date_submitted}</div></td>
-                                        <td>{appeal.files?.length > 0 ? appeal.files.map((f, i) => <button key={i} className="btn btn-outline-secondary evidence-btn me-1" onClick={()=>handleShowCor(f, true)}>File {i+1}</button>) : <span className="text-muted small">None</span>}</td>
+                                        <td>
+                                            <div className="d-flex gap-2 flex-wrap">
+                                                {appeal.files && appeal.files.length > 0 ? (
+                                                    appeal.files.map((file, index) => (
+                                                        <button 
+                                                            key={index} 
+                                                            className="document-icon" 
+                                                            onClick={() => handleShowCor(file, true)}
+                                                            title={`View Evidence ${index + 1}`}
+                                                        >
+                                                            <i className="bi bi-file-text"></i>
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-muted small">None</span>
+                                                )}
+                                            </div>
+                                        </td>
+
                                         <td><span className={`status-badge status-${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
                                         <td>{appeal.status === 'PENDING' && <div className="action-buttons-group">
                                             <button className="btn-action btn-activate" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
@@ -250,7 +266,7 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
-
+            
             {renderPagination()}
             </>
         )}
@@ -260,7 +276,18 @@ const AdminDashboard = () => {
         <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
             <p>Are you sure you want to proceed?</p>
-            {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && <div className="mb-3 p-2 border rounded bg-light"><strong>Evidence:</strong> {actionData.files.map((f, i) => <Button key={i} variant="link" size="sm" onClick={()=>handleShowCor(f, true)}>File {i+1}</Button>)}</div>}
+            {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && (
+                <div className="mb-3 p-3 bg-light rounded border">
+                    <strong>Attached Evidence:</strong>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                        {actionData.files.map((file, idx) => (
+                            <Button key={idx} variant="outline-primary" size="sm" onClick={() => handleShowCor(file, true)}>
+                                <i className="bi bi-file-earmark-image me-1"></i> View File {idx + 1}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
             {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} placeholder="Required..." /></Form.Group>}
         </Modal.Body>
         <Modal.Footer>
