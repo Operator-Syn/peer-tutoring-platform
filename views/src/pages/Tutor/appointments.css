@@ -101,8 +101,9 @@
 }
 
 .appointments_page {
-  min-height: 400px;
-  padding-bottom: 100px;
+  min-height: 100vh;        /* just fill the viewport */
+  padding-top: 120px;       /* distance from navbar/header */
+  padding-bottom: 60px;     /* little space at bottom */
 }
 
 .requests {
@@ -346,16 +347,15 @@
 
   margin: 0 auto;
 
-  min-height: 40vh;
-  padding-top: 80px;      /* ⬅️ was effectively 140 before, now closer to top */
-  padding-bottom: 80px;
+  /* 👇 make the "page" tall */
+  min-height: 100vh;       /* at least full screen */
+  padding-top: 10px;      /* space from navbar/top */
+  padding-bottom: 80px;    /* space at the bottom */
   box-sizing: border-box;
 
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow-x: hidden;      /* keep slider clean */
+  overflow-y: visible;     /* allow full vertical height */
 }
-
-
 
 /* The sliding strip that contains both pages */
 .appointments-slider {
