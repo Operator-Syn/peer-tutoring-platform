@@ -150,7 +150,7 @@ const TutorApplicationForm = () => {
         
         {success && (
           <div className="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <h5 className="alert-heading">Application Submitted Successfully! ✓</h5>
+            <h5 className="alert-heading">Application Submitted Successfully! </h5>
             <hr />
             <div className="success-details">
               <p><strong>Application ID:</strong> {success.application_id}</p>

@@ -112,7 +112,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000}}>
+      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000, position:'fixed'}}>
         <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger">
             <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
