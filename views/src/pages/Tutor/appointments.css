@@ -1,4 +1,3 @@
-
 .my-no-btn{
    background-color: #ffffff;   
   border-color: #4956AD;
@@ -10,9 +9,8 @@
   color: #fff;
 }
 
-
 .my-no-btn:hover{
-     background-color: #ffffff;   
+  background-color: #ffffff;   
   border-color: #4956AD;
   color: #4956AD;
 }
@@ -43,7 +41,6 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-
 .no-appointments{
   color: #4956AD; 
 }
@@ -51,16 +48,14 @@
 .request-title{
    color: #4956AD; 
 }
+
 .appointments-wrapper {
   position: relative;
   max-height: 80vh; 
   overflow-y: auto; 
   background-color: #f8f9ff;
- 
-
   padding: 2rem;
 }
-
 
 .appointments-wrapper::-webkit-scrollbar {
   width: 10px;
@@ -75,17 +70,14 @@
   background-color: #555;
 }
 
-
 .no-appointments {
   color: white;
   text-align: center;
 }
 
-
 .appointments-scroll {
   gap: 3rem;
 }
-
 
 .appointment-card {
   width: 23rem;
@@ -103,14 +95,13 @@
   height: 250px;
 }
 
-
 .schedules {
   min-height: 100px; 
   background-color: #ffffff; 
 }
 
 .appointments_page {
-  min-height: 1400px;
+  min-height: 400px;
   padding-bottom: 100px;
 }
 
@@ -128,12 +119,8 @@
   align-items: center;
   width: 100%;
   padding-bottom: 5vh;
-  
   padding-top: 9rem; 
-
-
 }
-
 
 .custom-alert {
   background-color: #F8F9FF;
@@ -150,7 +137,6 @@
   transition: all 0.2s ease;
 }
 
-
 .profile-wrapper {
   display: flex;
   flex-direction: column;
@@ -158,9 +144,6 @@
   text-align: center;
   margin-right: 1rem; 
 }
-
-
-
 
 .profile-info {
   display: flex;
@@ -180,12 +163,10 @@
   font-weight: bold;
 }
 
-
 .box-name {
   font-weight: bold;
   font-size: 0.9rem;
 }
-
 
 .message-cell {
   flex-grow: 1;
@@ -193,18 +174,17 @@
   margin: 0.5rem 0;
 }
 
-
 .actions-cell {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-
 .actions-cell .btn {
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
 }
+
 .form-control {
   box-shadow: none !important;
   outline: none !important;
@@ -213,10 +193,8 @@
 .form-control:focus {
   box-shadow: none !important;
   outline: none !important;
-    border-color: #ced4da !important; 
+  border-color: #ced4da !important; 
 }
-
-
 
 @media (max-width: 768px) {
   .action-buttons {
@@ -241,7 +219,6 @@
   padding: 0.5rem 1rem;
 }
 
-
 @media (min-width: 768px) {
   .alert.custom-alert {
     display: flex;
@@ -260,7 +237,6 @@
     text-align: left;
   }
 }
-
 
 @media (max-width: 767px) {
   .alert.custom-alert {
@@ -282,12 +258,10 @@
     padding-top: 1rem;
   }
 
-
   .custom-alert .text-center.me-52 {
     margin-right: 0 !important;
     margin-bottom: 1rem !important;
   }
-
 
   .action-buttons {
     position: static !important; 
@@ -361,5 +335,83 @@
   }
 }
 
+/* ============================
+   Slider + Arrow Styles
+   ============================ */
+
+/* Slider viewport */
+.appointments-page-wrapper {
+  position: relative;
+  width: 100%;
+
+  margin: 0 auto;
+
+  min-height: 40vh;
+  padding-top: 80px;      /* ⬅️ was effectively 140 before, now closer to top */
+  padding-bottom: 80px;
+  box-sizing: border-box;
+
+  overflow-x: hidden;
+  overflow-y: visible;
+}
 
 
+
+/* The sliding strip that contains both pages */
+.appointments-slider {
+  display: flex;
+  width: 200%;              /* two panels (appointments + requests) */
+  transition: transform 0.4s ease-in-out;
+}
+
+/* Each page panel */
+.appointments-panel {
+  width: 50%;
+  flex-shrink: 0;
+}
+
+/* When showing Appointments page */
+.appointments-slider.show-appointments {
+  transform: translateX(0%);
+}
+
+/* When showing Requests page */
+.appointments-slider.show-requests {
+  transform: translateX(-50%);
+}
+
+/* Arrow buttons */
+.page-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4956ad;
+  color: #ffffff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.page-arrow-right {
+  right: 15px;
+}
+
+.page-arrow-left {
+  left: 15px;
+}
+
+.page-arrow:hover {
+  filter: brightness(1.08);
+}
+
+.page-arrow:focus {
+  outline: none;
+}

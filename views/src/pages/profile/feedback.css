@@ -1,1 +1,19 @@
+.feedback-page {
+  padding-top: 100px;
+  padding-bottom: 80px;
+}
 
+.feedback-title {
+  color: #4956ad;
+}
+
+.feedback-card {
+  border-radius: 12px;
+  border: 2px solid #4956ad20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.rating-select:focus {
+  box-shadow: none !important;
+  border-color: #4956ad !important;
+}
