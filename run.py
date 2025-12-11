@@ -1,5 +1,10 @@
-from app import app
+from app import create_app, socketio
 from config import Config
+import eventlet
+import eventlet.wsgi
+
+app = create_app()
 
 if __name__ == "__main__":
-    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
+    # Use eventlet server instead of the default Flask dev server
+    socketio.run(app, use_reloader=True)

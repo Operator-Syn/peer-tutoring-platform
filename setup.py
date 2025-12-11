@@ -45,7 +45,7 @@ def run_backend_install():
 
 def run_flask():
     proc = subprocess.Popen(
-        "pipenv run flask run",
+        "pipenv run python3 run.py",
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
