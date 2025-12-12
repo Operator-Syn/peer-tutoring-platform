@@ -182,3 +182,21 @@
     font-size: 0.9rem ;
     color: #555;
 }
+.report-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9ff; /* match app theme */
+}
+
+.report-loading-box {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: #4956ad;
+  font-weight: 500;
+}

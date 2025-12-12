@@ -20,6 +20,8 @@ function Report() {
   const [reportedId, setReportedId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [loading, setLoading] = useState(true); // 👈 NEW
+
   const reasons = [
     "Harassment",
     "Racist",
@@ -37,8 +39,7 @@ function Report() {
     );
   }, [nameOptions, name]);
 
-  // 1) Get all tutees → build name list & map fullName -> id_number
-  // ✅ EXCLUDES self once tuteeId is known
+  // 1) Get all tutees → build name list & map fullName -> id_number (exclude self)
   useEffect(() => {
     const fetchTutees = async () => {
       try {
@@ -58,7 +59,6 @@ function Report() {
         const nameMap = {};
         const names = data
           .filter((t) => {
-            // if tuteeId not loaded yet, don't filter
             if (!tuteeId) return true;
             return t.id_number !== tuteeId; // ✅ remove self
           })
@@ -86,7 +86,7 @@ function Report() {
     };
 
     fetchTutees();
-  }, [tuteeId]); // ✅ refetch when your id is known
+  }, [tuteeId]);
 
   // 2) Get logged-in user (google id)
   useEffect(() => {
@@ -100,15 +100,15 @@ function Report() {
 
         if (!res.ok) {
           console.error("get_user failed:", res.status, await res.text());
+          setLoading(false); // stop loading if we can't get user
           return;
         }
 
         const data = await res.json();
-        console.log("get_user data:", data);
-
         setUserGoogleId(data.sub || data.google_id);
       } catch (err) {
         console.error("Failed to fetch logged-in user:", err);
+        setLoading(false);
       }
     };
 
@@ -132,13 +132,13 @@ function Report() {
         }
 
         const data = await res.json();
-        console.log("by_google data:", data);
-
         if (data.id_number) {
           setTuteeId(data.id_number);
         }
       } catch (err) {
         console.error("Error fetching tutee ID:", err);
+      } finally {
+        setLoading(false); // ✅ done trying to identify user
       }
     };
 
@@ -215,6 +215,18 @@ function Report() {
   };
 
   const handleConfirmNo = () => setShowConfirmModal(false);
+
+  // ✅ Full-page loading UI (no random "Loading..." text)
+  if (loading) {
+    return (
+      <div className="report-loading">
+        <div className="report-loading-box">
+          <div className="spinner-border" role="status" />
+          <span className="ms-2">Loading report form...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="spacing">
@@ -315,7 +327,6 @@ function Report() {
 
                         const chosenId = nameToIdMap[value] || "";
 
-                        // ✅ if user typed self name manually, block it
                         if (chosenId && chosenId === tuteeId) {
                           setReportedId("");
                           setShowOptions(false);
@@ -324,7 +335,10 @@ function Report() {
 
                         setReportedId(chosenId);
 
-                        if (value.trim().length > 0 && filteredOptions.length > 0) {
+                        if (
+                          value.trim().length > 0 &&
+                          filteredOptions.length > 0
+                        ) {
                           setShowOptions(true);
                         } else {
                           setShowOptions(false);
@@ -332,7 +346,10 @@ function Report() {
                       }}
                       onBlur={() => setTimeout(() => setShowOptions(false), 150)}
                       onFocus={() => {
-                        if (name.trim().length > 0 && filteredOptions.length > 0) {
+                        if (
+                          name.trim().length > 0 &&
+                          filteredOptions.length > 0
+                        ) {
                           setShowOptions(true);
                         }
                       }}
@@ -342,14 +359,13 @@ function Report() {
                       <div className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm z-3 name-suggestions">
                         {filteredOptions.map((opt) => {
                           const optId = nameToIdMap[opt];
-                          if (optId === tuteeId) return null; 
+                          if (optId === tuteeId) return null;
                           return (
                             <div
                               key={opt}
                               className="px-3 py-2 option-item cursor-pointer"
-                           
                               onMouseDown={() => {
-                                if (nameToIdMap[opt] === tuteeId) return; 
+                                if (nameToIdMap[opt] === tuteeId) return;
                                 setName(opt);
                                 setReportedId(nameToIdMap[opt] || "");
                                 setShowOptions(false);
@@ -363,7 +379,7 @@ function Report() {
                     )}
                   </div>
 
-                  {/* Buttons (Confirm only) */}
+                  {/* Buttons */}
                   <div className="mt-4 d-flex justify-content-center gap-4">
                     <button
                       type="button"
@@ -371,11 +387,7 @@ function Report() {
                       onClick={handleConfirmClick}
                       disabled={isSubmitting || !tuteeId}
                     >
-                      {!tuteeId
-                        ? "Loading user..."
-                        : isSubmitting
-                        ? "Submitting..."
-                        : "Confirm"}
+                      {isSubmitting ? "Submitting..." : "Confirm"}
                     </button>
                   </div>
                 </div>

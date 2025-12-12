@@ -16,10 +16,25 @@ function Appointments() {
   const [pendingAppId, setPendingAppId] = useState(null);
 
   const [activePage, setActivePage] = useState("appointments");
+  const [loading, setLoading] = useState(true); // loading flag
+
+  // helper: check if appointment date is in the past
+  const isPastAppointment = (appointmentDate) => {
+    if (!appointmentDate) return false;
+
+    const today = new Date();
+    const appt = new Date(appointmentDate);
+
+    // treat whole day as valid; mark past only when day is strictly before today
+    appt.setHours(23, 59, 59, 999);
+
+    return appt < today;
+  };
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // 1) get logged in user
         const resUser = await fetch("/api/auth/get_user", {
           credentials: "include",
         });
@@ -30,32 +45,50 @@ function Appointments() {
         const loggedInUser = await resUser.json();
         const googleId = loggedInUser.sub;
 
-        const resTutees = await fetch("/api/tutee/all");
+        // 2) find tutee row
+        const resTutees = await fetch("/api/tutee/all", {
+          credentials: "include",
+        });
         const tutees = await resTutees.json();
         const currentTutee = tutees.find((t) => t.google_id === googleId);
-        if (!currentTutee) return;
+        if (!currentTutee) {
+          setLoading(false);
+          return;
+        }
         const tuteeId = currentTutee.id_number;
 
-        const resTutors = await fetch("/api/tutor/all");
+        // 3) find tutor row
+        const resTutors = await fetch("/api/tutor/all", {
+          credentials: "include",
+        });
         const tutors = await resTutors.json();
         const currentTutor = tutors.find((t) => t.tutor_id === tuteeId);
-        if (!currentTutor) return;
+        if (!currentTutor) {
+          setLoading(false);
+          return;
+        }
         setTutorId(currentTutor.tutor_id);
 
+        // 4) pending requests
         const resPending = await fetch(
-          `/api/requests/pending/${currentTutor.tutor_id}`
+          `/api/requests/pending/${currentTutor.tutor_id}`,
+          { credentials: "include" }
         );
         const pendingData = await resPending.json();
         setRows(pendingData);
         setAllRows(pendingData);
 
+        // 5) booked appointments
         const resAppointments = await fetch(
-          `/api/requests/appointments/${currentTutor.tutor_id}`
+          `/api/requests/appointments/${currentTutor.tutor_id}`,
+          { credentials: "include" }
         );
         const appointmentsData = await resAppointments.json();
         setAppointments(appointmentsData);
       } catch (err) {
         console.error("Error fetching appointments:", err);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -115,6 +148,7 @@ function Appointments() {
         return;
       }
 
+      // remove from pending list
       setRows((prev) =>
         prev.filter((r) => r.appointment_id !== appointment_id)
       );
@@ -122,8 +156,10 @@ function Appointments() {
         prev.filter((r) => r.appointment_id !== appointment_id)
       );
 
+      // refresh appointments list
       const resAppointments = await fetch(
-        `/api/requests/appointments/${tutorId}`
+        `/api/requests/appointments/${tutorId}`,
+        { credentials: "include" }
       );
       const appointmentsData = await resAppointments.json();
       setAppointments(appointmentsData);
@@ -132,6 +168,60 @@ function Appointments() {
       alert("Network error. Check console.");
     }
   };
+
+  // call /api/requests/appointments/finish/<appointment_id>
+  const handleFinishAppointment = async (appointmentId) => {
+    if (!appointmentId) {
+      alert("Missing appointment ID.");
+      return;
+    }
+
+    const ok = window.confirm(
+      "Mark this session as finished? The tutee will then be able to rate it."
+    );
+    if (!ok) return;
+
+    try {
+      const res = await fetch(
+        `/api/requests/appointments/finish/${appointmentId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Failed to finish appointment.");
+        return;
+      }
+
+      // remove from appointments list in UI
+      setAppointments((prev) =>
+        prev.filter((a) => a.appointment_id !== appointmentId)
+      );
+
+      alert("Appointment marked as COMPLETED and added to session_rating.");
+    } catch (err) {
+      console.error("Error finishing appointment:", err);
+      alert("Network error while finishing appointment.");
+    }
+  };
+
+  // While loading, show loading UI instead of rendering the whole layout empty
+  if (loading) {
+    return (
+      <div className="appointments-page-wrapper">
+        <div className="appointments-loading">
+          <div className="appointments-loading-box">
+            <div className="spinner-border" role="status" />
+            <span className="ms-2">Loading your appointments...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="appointments-page-wrapper">
@@ -161,7 +251,7 @@ function Appointments() {
           activePage === "requests" ? "show-requests" : "show-appointments"
         }`}
       >
-      
+        {/* ===== PAGE 1: APPOINTMENTS ===== */}
         <div className="appointments-panel">
           <div
             className="container d-flex flex-column align-items-start justify-content-center py-4"
@@ -187,46 +277,65 @@ function Appointments() {
                 <p className="no-appointments">No appointments available.</p>
               ) : (
                 <div className="appointments-scroll d-flex flex-wrap justify-content-center">
-                  {appointments.map((app) => (
-                    <div
-                      className="card appointment-card"
-                      key={app.request_id}
-                      onClick={() => setSelectedApp(app)}
-                    >
-                      <img
-                        className="card-img-top"
-                        src={placeholderImage}
-                        alt="Card cap"
-                      />
-                      <div className="card-body">
-                        <h5 className="card-title">
-                          Subject Code: {app.course_code}
-                        </h5>
-                        <p className="card-text">
-                          Tutee:{" "}
-                          {`${app.first_name || ""} ${app.middle_name || ""} ${
-                            app.last_name || ""
-                          }`
-                            .trim()
-                            .trim() || "N/A"}
-                        </p>
+                  {appointments.map((app) => {
+                    const past = isPastAppointment(app.appointment_date);
 
-                        <div className="card px-2 px-sm-3 px-md-1 border-0 shadow-none">
-                          <div className="card-body text-end">
-                            <p className="card-text mb-1">
-                              {app.appointment_date}
-                            </p>
-                            <p className="card-text">
-                              {app.start_time} - {app.end_time}
-                            </p>
+                    return (
+                      <div
+                        className="card appointment-card"
+                        key={app.appointment_id}
+                        onClick={() => setSelectedApp(app)}
+                      >
+                        <img
+                          className="card-img-top"
+                          src={placeholderImage}
+                          alt="Card cap"
+                        />
+                        <div className="card-body">
+                          <h5 className="card-title">
+                            Subject Code: {app.course_code}
+                          </h5>
+                          <p className="card-text">
+                            Tutee:{" "}
+                            {`${app.first_name || ""} ${
+                              app.middle_name || ""
+                            } ${app.last_name || ""}`
+                              .trim()
+                              .trim() || "N/A"}
+                          </p>
+
+                          <div className="card px-2 px-sm-3 px-md-1 border-0 shadow-none">
+                            <div className="card-body text-end">
+                              <p className="card-text mb-1">
+                                {app.appointment_date}
+                              </p>
+                              <p className="card-text">
+                                {app.start_time} - {app.end_time}
+                              </p>
+                            </div>
                           </div>
                         </div>
+
+                        <div className="card-footer d-flex justify-content-between align-items-center">
+                          <small className="text-muted">
+                            {past ? "Session finished" : "Session upcoming"}
+                          </small>
+
+                          {past && (
+                            <button
+                              className="btn btn-sm btn-outline-success"
+                              onClick={(e) => {
+                                e.stopPropagation(); // don’t open the modal
+                                handleFinishAppointment(app.appointment_id);
+                              }}
+                            >
+                              Mark as done
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="card-footer d-flex justify-content-between">
-                        <small className="text-muted">Session started</small>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -415,3 +415,22 @@
 .page-arrow:focus {
   outline: none;
 }
+
+.appointments-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appointments-loading-box {
+  background-color: #f8f9ff;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: #4956ad;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
