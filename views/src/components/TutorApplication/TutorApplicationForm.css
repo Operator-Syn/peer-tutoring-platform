@@ -1,144 +1,147 @@
+/* Layout & Container */
 .tutor-app-container {
-  display: flex;
-  justify-content: center;
-  padding: 50px 20px;
+  display: flex; 
+  justify-content: center; 
+  padding: 50px 20px; 
   background-color: #f5f7fa;
-}
-
-.tutor-app-card {
-  background: white;
+  min-height: 100vh;
   width: 100%;
-  max-width: 600px;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-.tutor-form-title {
-  color: #4956AD;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  text-align: center;
+.tutor-app-wrapper {
+  width: 100%; max-width: 650px; background: #F8F9FF; border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(73, 86, 173, 0.1); padding: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: fit-content;
 }
 
-.tutor-form-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
+.tutor-app-wrapper:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(73, 86, 173, 0.15);
 }
 
-.tutor-row {
-  display: flex;
-  gap: 1rem;
+.tutor-app-form-card { background: transparent; padding: 0; }
+
+.tutor-app-title {
+  color: #4956AD; font-size: 28px; font-weight: bold; margin-bottom: 30px;
+  padding-bottom: 15px; border-bottom: 2px solid #edf2f7;
 }
 
-.tutor-row > .tutor-form-group {
-  flex: 1;
+/* Loading State */
+.tutor-loading-page {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  width: 100%; 
+  height: 100vh;
+  position: absolute;
+  top: 0; left: 0;
+  background-color: #f5f7fa;
+  color: #4956AD; font-weight: 600;
+  z-index: 10;
 }
 
-.tutor-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.tutor-app-spinner {
+  display: inline-block; width: 1.5rem; height: 1.5rem; vertical-align: text-bottom;
+  border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
 }
 
-.tutor-form-group label {
-  font-weight: 600;
-  color: #4a5568;
-  font-size: 0.9rem;
+.tutor-spinner-large {
+  width: 3rem; height: 3rem; border-width: 4px; margin-bottom: 1rem;
 }
 
-.tutor-input, .tutor-select {
-  width: 100%;
-  padding: 0.8rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 1rem;
-  background-color: white;
+@keyframes spinner-border { 100% { transform: rotate(360deg); } }
+
+/* Grid Layout */
+.tutor-app-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
+.tutor-app-col { display: flex; flex-direction: column; gap: 20px; }
+.tutor-app-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+/* Inputs & Labels */
+.tutor-app-label { color: #2d3748; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+
+.tutor-app-input, .tutor-app-select, .tutor-app-file-input {
+  width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; background-color: #f8fafc; color: #4a5568;
+  transition: all 0.2s ease-in-out;
   box-sizing: border-box;
 }
 
-.tutor-input:focus, .tutor-select:focus {
-  border-color: #4956AD;
-  outline: none;
+.tutor-app-input:focus, .tutor-app-select:focus {
+  outline: none; border-color: #4956AD; background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(73, 86, 173, 0.1); transform: scale(1.01);
 }
 
-.tutor-input.read-only {
-  background-color: #f7fafc;
-  color: #718096;
+.tutor-app-readonly { background-color: #f7fafc; cursor: not-allowed; color: #6c757d; }
+
+/* Dropdown */
+.tutor-app-dropdown-wrapper { position: relative; width: 100%; }
+.tutor-app-dropdown-icon {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: #5a67d8; pointer-events: none; font-size: 12px;
 }
 
-.tutor-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+/* Courses Tags */
+.tutor-app-selected-courses { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.tutor-app-tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tutor-app-tag {
+  display: inline-flex; align-items: center; gap: 8px; background: #edf2f7;
+  color: #4956AD; border: 1px solid #4956AD; padding: 6px 12px;
+  border-radius: 20px; font-size: 13px; font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.tutor-tag {
-  background-color: #e0e7ff;
-  color: #4338ca;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.tutor-app-tag:hover { background: #e2e8f0; transform: scale(1.05); }
+
+.tutor-app-tag-close {
+  background: none; border: none; color: #718096; font-size: 20px; line-height: 1;
+  cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
 }
 
-.tutor-tag button {
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
+.tutor-app-tag-close:hover { color: #e53e3e; }
+
+/* Submit Button */
+.tutor-app-submit-wrapper { display: flex; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+
+.tutor-app-submit-btn {
+  background: linear-gradient(135deg, #4956AD 0%, #3a4589 100%);
+  color: white; border: none; padding: 14px 40px; border-radius: 8px;
+  font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(73, 86, 173, 0.2);
 }
 
-.tutor-submit-btn {
-  background-color: #4956AD;
-  color: white;
-  padding: 1rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: background 0.2s;
+.tutor-app-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3a4589 0%, #2d3748 100%);
+  transform: translateY(-2px); box-shadow: 0 6px 12px rgba(73, 86, 173, 0.3);
 }
 
-.tutor-submit-btn:hover:not(:disabled) {
-  background-color: #3b469b;
+.tutor-app-submit-btn:active:not(:disabled) { transform: translateY(0); }
+.tutor-app-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tutor-app-submit-arrow { font-size: 20px; transition: transform 0.3s ease; }
+.tutor-app-submit-btn:hover .tutor-app-submit-arrow { transform: translateX(5px); }
+
+/* Alerts */
+.tutor-app-alert { padding: 20px; border-radius: 12px; margin-bottom: 20px; position: relative; animation: fadeIn 0.4s ease-out; }
+.tutor-app-alert-success { background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%); color: #22543d; border-left: 4px solid #48bb78; }
+.tutor-app-alert-danger { background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%); color: #742a2a; border-left: 4px solid #f56565; }
+.tutor-app-alert-info { background: #ebf8ff; border: 1px solid #bee3f8; color: #2b6cb0; display: flex; align-items: center; gap: 10px; }
+
+.tutor-app-alert-header { display: flex; justify-content: space-between; align-items: center; }
+.tutor-app-alert-heading { font-size: 18px; font-weight: 600; margin: 0; }
+.tutor-app-btn-close { background: none; border: none; font-size: 1.5rem; line-height: 1; color: inherit; cursor: pointer; opacity: 0.5; transition: opacity 0.2s; }
+.tutor-app-btn-close:hover { opacity: 1; }
+.tutor-app-alert-hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 15px 0; }
+
+/* Helpers */
+.tutor-app-text-muted { color: #6c757d; font-size: 0.875em; }
+.tutor-app-text-danger { color: #dc3545; font-size: 0.875em; }
+.tutor-app-badge-pending { background-color: #ffc107; color: #000; padding: 0.35em 0.65em; font-size: .75em; font-weight: 700; border-radius: 0.25rem; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .tutor-app-grid { grid-template-columns: 1fr; gap: 20px; }
+  .tutor-app-wrapper { padding: 20px; }
+  .tutor-app-submit-btn { width: 100%; justify-content: center; }
 }
-
-.tutor-submit-btn:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-}
-
-.tutor-alert {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  position: relative;
-}
-
-.tutor-alert-success { background: #f0fff4; border: 1px solid #c6f6d5; color: #2f855a; }
-.tutor-alert-danger { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
-
-.tutor-close-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: inherit;
-}
-
-.tutor-error-text { color: #e53e3e; font-size: 0.8rem; }
-.tutor-helper-text { color: #718096; font-size: 0.8rem; }

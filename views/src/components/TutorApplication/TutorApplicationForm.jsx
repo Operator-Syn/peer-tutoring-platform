@@ -59,6 +59,10 @@ const TutorApplicationForm = () => {
     setSelectedCourses(prev => prev.includes(courseCode) ? prev.filter(c => c !== courseCode) : [...prev, courseCode]);
   };
 
+  const removeCourse = (courseCode) => {
+    setSelectedCourses(prev => prev.filter(c => c !== courseCode));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (studentNotFound) { setError('Please enter a valid Student ID'); return; }
@@ -86,71 +90,148 @@ const TutorApplicationForm = () => {
     }
   };
 
+  if (loadingCourses) {
+    return (
+      <div className="tutor-app-container">
+        <div className="tutor-loading-page">
+          <div className="tutor-app-spinner tutor-spinner-large"></div>
+          <p>Loading Application Form...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="tutor-app-container">
-      <div className="tutor-app-card">
+      <div className="tutor-app-wrapper">
         {success && (
-          <div className="tutor-alert tutor-alert-success">
-            <h5>Application Submitted! ✓</h5>
-            <p><strong>Status:</strong> PENDING</p>
-            <button className="tutor-close-btn" onClick={() => setSuccess(null)}>×</button>
+          <div className="tutor-app-alert tutor-app-alert-success">
+            <div className="tutor-app-alert-header">
+                <h5 className="tutor-app-alert-heading">Application Submitted Successfully! ✓</h5>
+                <button type="button" className="tutor-app-btn-close" onClick={() => setSuccess(null)}>×</button>
+            </div>
+            <hr className="tutor-app-alert-hr"/>
+            <div className="tutor-app-success-details">
+              <p><strong>Application ID:</strong> {success.application_id}</p>
+              <p><strong>Message:</strong> {success.message}</p>
+              {success.courses && success.courses.length > 0 && (
+                <>
+                  <p><strong>Courses:</strong></p>
+                  <ul>
+                    {success.courses.map((course, idx) => (
+                      <li key={idx}>{course.course_code ? `${course.course_code} - ${course.course_name}` : course}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <p><strong>Status:</strong> <span className="tutor-app-badge-pending">PENDING</span></p>
+            </div>
           </div>
         )}
+
         {error && (
-          <div className="tutor-alert tutor-alert-danger">
+          <div className="tutor-app-alert tutor-app-alert-danger">
             <strong>Error:</strong> {error}
-            <button className="tutor-close-btn" onClick={() => setError(null)}>×</button>
+            <button type="button" className="tutor-app-btn-close" onClick={() => setError(null)}>×</button>
           </div>
         )}
 
-        <h2 className="tutor-form-title">Tutor Application</h2>
+        <div className="tutor-app-form-card">
+          <h2 className="tutor-app-title">Application Form</h2>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="tutor-app-grid">
+              <div className="tutor-app-col">
+                <div className="tutor-app-group">
+                  <label className="tutor-app-label">Student ID</label>
+                  <input
+                    type="text"
+                    className="tutor-app-input"
+                    placeholder="Enter student ID"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                  {loadingStudent && <small className="tutor-app-text-muted">Fetching student information...</small>}
+                  {studentNotFound && !loadingStudent && <small className="tutor-app-text-danger">Student ID not found in the system</small>}
+                </div>
 
-        <form onSubmit={handleSubmit} className="tutor-form-layout">
-          <div className="tutor-form-group">
-            <label>Student ID</label>
-            <input type="text" className="tutor-input" value={studentId} onChange={e => setStudentId(e.target.value)} required />
-            {loadingStudent && <small className="tutor-helper-text">Checking ID...</small>}
-            {studentNotFound && !loadingStudent && <small className="tutor-error-text">Student not found</small>}
-          </div>
+                <div className="tutor-app-group">
+                  <label className="tutor-app-label">First Name</label>
+                  <input
+                    type="text"
+                    className="tutor-app-input tutor-app-readonly"
+                    placeholder="Auto-filled from Student ID"
+                    value={firstName}
+                    readOnly
+                    disabled
+                  />
+                </div>
 
-          <div className="tutor-row">
-            <div className="tutor-form-group">
-              <label>First Name</label>
-              <input type="text" className="tutor-input read-only" value={firstName} readOnly disabled />
+                <div className="tutor-app-group">
+                  <label className="tutor-app-label">Last Name</label>
+                  <input
+                    type="text"
+                    className="tutor-app-input tutor-app-readonly"
+                    placeholder="Auto-filled from Student ID"
+                    value={lastName}
+                    readOnly
+                    disabled
+                  />
+                </div>
+
+                <div className="tutor-app-group">
+                  <label className="tutor-app-label">Subject Code</label>
+                  <div className="tutor-app-dropdown-wrapper">
+                    <select 
+                      className="tutor-app-select"
+                      onChange={(e) => {
+                        if (e.target.value && !selectedCourses.includes(e.target.value)) handleCourseToggle(e.target.value);
+                        e.target.value = '';
+                      }}
+                      disabled={loading || loadingCourses}
+                    >
+                      <option value="">{availableCourses.length === 0 ? 'No courses available' : 'Select Subject Code'}</option>
+                      {availableCourses.map(course => (
+                        <option key={course.course_code} value={course.course_code} disabled={selectedCourses.includes(course.course_code)}>
+                          {course.course_code} - {course.course_name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="tutor-app-dropdown-icon">▼</span>
+                  </div>
+                </div>
+
+                {selectedCourses.length > 0 && (
+                  <div className="tutor-app-selected-courses mb-3">
+                    <label className="tutor-app-label">Selected Courses:</label>
+                    <div className="tutor-app-tags-container">
+                      {selectedCourses.map(courseCode => (
+                        <span key={courseCode} className="tutor-app-tag">
+                          {courseCode}
+                          <button type="button" className="tutor-app-tag-close" onClick={() => removeCourse(courseCode)} disabled={loading}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="tutor-app-group">
+                  <label htmlFor="corFile" className="tutor-app-label">Certificate of Registration (COR) *</label>
+                  <input type="file" className="tutor-app-file-input" id="corFile" accept=".jpg,.jpeg,.png" required />
+                  <small className="tutor-app-text-muted">Accepted formats: JPG, PNG (Max 5MB)</small>
+                </div>
+              </div>
             </div>
-            <div className="tutor-form-group">
-              <label>Last Name</label>
-              <input type="text" className="tutor-input read-only" value={lastName} readOnly disabled />
+
+            <div className="tutor-app-submit-wrapper">
+              <button type="submit" className="tutor-app-submit-btn" disabled={loading || studentNotFound || !firstName}>
+                {loading ? <><span className="tutor-app-spinner"></span> Submitting...</> : <>Submit <span className="tutor-app-submit-arrow">→</span></>}
+              </button>
             </div>
-          </div>
-
-          <div className="tutor-form-group">
-            <label>Subject Code</label>
-            <div className="tutor-select-wrapper">
-              <select className="tutor-select" onChange={e => { handleCourseToggle(e.target.value); e.target.value = ''; }}>
-                <option value="">{loadingCourses ? 'Loading...' : 'Select Subject'}</option>
-                {availableCourses.map(c => <option key={c.course_code} value={c.course_code} disabled={selectedCourses.includes(c.course_code)}>{c.course_code} - {c.course_name}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {selectedCourses.length > 0 && (
-            <div className="tutor-tags-container">
-              {selectedCourses.map(c => (
-                <span key={c} className="tutor-tag">{c} <button type="button" onClick={() => handleCourseToggle(c)}>×</button></span>
-              ))}
-            </div>
-          )}
-
-          <div className="tutor-form-group">
-            <label>Upload COR (Image only)</label>
-            <input type="file" id="corFile" className="tutor-file-input" accept=".jpg,.jpeg,.png" required />
-          </div>
-
-          <button type="submit" className="tutor-submit-btn" disabled={loading || studentNotFound || !firstName}>
-            {loading ? 'Submitting...' : 'Submit Application'}
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

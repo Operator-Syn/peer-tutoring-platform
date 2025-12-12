@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useAdminDashboardData = () => {
-    const [activeTab, setActiveTab] = useState('applications');
+    const [activeTab, setActiveTabState] = useState('applications');
     const [data, setData] = useState([]);
     const [stats, setStats] = useState({});
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); 
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(5);
@@ -12,9 +12,24 @@ export const useAdminDashboardData = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date_desc');
     const [pagination, setPagination] = useState({ total_pages: 1, current_page: 1 });
+    
     const [collegeFilter, setCollegeFilter] = useState('all');
     const [yearFilter, setYearFilter] = useState('all');
     const [roleFilter, setRoleFilter] = useState('all');
+
+    const setActiveTab = (newTab) => {
+        if (newTab === activeTab) return;
+        setActiveTabState(newTab);
+        
+        setStatusFilter('all');
+        setSearch('');
+        setSortBy('date_desc');
+        setCollegeFilter('all');
+        setYearFilter('all');
+        setRoleFilter('all');
+        setPage(1);
+        setLoading(true);
+    };
 
     const fetchStatistics = useCallback(async () => {
         try {
@@ -55,7 +70,7 @@ export const useAdminDashboardData = () => {
             const result = await response.json();
 
             if (result.success !== false) {
-                const fetchedData = result.data || result.users || result.appeals || [];
+                const fetchedData = result.data || result.users || result.appeals || result.applications || [];
                 setData(fetchedData);
                 setPagination(result.pagination || { total_pages: 1, current_page: 1 });
             } else {
@@ -72,10 +87,6 @@ export const useAdminDashboardData = () => {
         fetchData();
         fetchStatistics();
     }, [fetchData, fetchStatistics]);
-
-    useEffect(() => {
-        setPage(1);
-    }, [activeTab, search, statusFilter, sortBy, collegeFilter, yearFilter, roleFilter]);
 
     const handleAction = async (actionType, id, payload = {}) => {
         try {
@@ -112,7 +123,8 @@ export const useAdminDashboardData = () => {
     };
 
     return {
-        activeTab, setActiveTab,
+        activeTab, 
+        setActiveTab,
         data, stats, loading, error,
         filters: {
             page, setPage,
