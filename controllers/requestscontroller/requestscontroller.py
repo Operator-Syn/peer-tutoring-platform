@@ -370,21 +370,25 @@ def update_appointment_status_and_log(appointment_id):
     finally:
         cur.close()
         conn.close()
-
 @requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
 def finish_appointment(appointment_id):
     """
-    Mark an appointment as COMPLETED and create an entry in session_rating
-    with initial rating = 0.
+    Save snapshot into session_rating first, then delete appointment.
     """
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        # 1) Get tutee_id and tutor_id from appointment + availability
+        # 1) Get all needed info while appointment still exists
         cur.execute(
             """
-            SELECT a.tutee_id, av.tutor_id
+            SELECT
+                a.tutee_id,
+                av.tutor_id,
+                a.course_code,
+                a.appointment_date,
+                av.start_time,
+                av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -392,44 +396,31 @@ def finish_appointment(appointment_id):
             (appointment_id,),
         )
         row = cur.fetchone()
-
         if not row:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, tutor_id = row
+        tutee_id, tutor_id, course_code, appointment_date, start_time, end_time = row
 
-        # 2) Mark appointment as COMPLETED
+        # 2) Insert snapshot into session_rating (rating=0)
         cur.execute(
             """
-            UPDATE appointment
-            SET status = 'COMPLETED'
-            WHERE appointment_id = %s
+            INSERT INTO session_rating
+                (appointment_id, tutee_id, tutor_id, rating, course_code, appointment_date, start_time, end_time)
+            VALUES
+                (%s, %s, %s, 0, %s, %s, %s, %s)
+            ON CONFLICT (appointment_id, tutee_id) DO NOTHING
             """,
+            (appointment_id, tutee_id, tutor_id, course_code, appointment_date, start_time, end_time),
+        )
+
+        # 3) Delete appointment after saving snapshot
+        cur.execute(
+            "DELETE FROM appointment WHERE appointment_id = %s",
             (appointment_id,),
         )
 
-        # 3) Insert into session_rating with rating = 0
-        cur.execute(
-            """
-            INSERT INTO session_rating (appointment_id, tutee_id, tutor_id, rating)
-            VALUES (%s, %s, %s, 0)
-            ON CONFLICT (appointment_id, tutee_id) DO NOTHING
-            """,
-            (appointment_id, tutee_id, tutor_id),
-        )
-
         conn.commit()
-        return (
-            jsonify(
-                {
-                    "message": "Appointment finished and session_rating created with rating = 0",
-                    "appointment_id": appointment_id,
-                    "tutee_id": tutee_id,
-                    "tutor_id": tutor_id,
-                }
-            ),
-            200,
-        )
+        return jsonify({"message": "Finished: saved to session_rating then deleted appointment."}), 200
 
     except Exception as e:
         conn.rollback()

@@ -332,7 +332,7 @@ def create_report():
                 report_id = cursor.fetchone()["report_id"]
 
         return jsonify({
-            "message": "Report submitted successfully",
+          
             "report_id": report_id
         }), 201
 
