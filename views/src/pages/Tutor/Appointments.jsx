@@ -143,10 +143,11 @@ function Appointments() {
     setRows(filtered);
   };
 
-  const handleAction = async (appointment_id, action) => {
+const handleAction = async (appointment_id, action) => {
     if (!tutorId) return;
 
     try {
+      // 1. Send the update to the server
       const res = await fetch(`/api/requests/update-status-and-log/${appointment_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -159,11 +160,16 @@ function Appointments() {
         return;
       }
 
+      // 2. CRITICAL FIX: Re-fetch the pending list from the server
+      // This ensures we get the updated list where the "competitors" have been removed/cancelled.
+      const resPending = await fetch(`/api/requests/pending/${tutorId}`);
+      const pendingData = await resPending.json();
+      
+      // Update the UI with the fresh data (Competitors will disappear automatically)
+      setRows(pendingData);
+      setAllRows(pendingData);
 
-      setRows(prev => prev.filter(r => r.appointment_id !== appointment_id));
-      setAllRows(prev => prev.filter(r => r.appointment_id !== appointment_id));
-
-
+      // 3. Refresh the "Confirmed Appointments" section
       const resAppointments = await fetch(`/api/requests/appointments/${tutorId}`);
       const appointmentsData = await resAppointments.json();
       setAppointments(appointmentsData);
@@ -173,7 +179,7 @@ function Appointments() {
       alert("Network error. Check console.");
     }
   };
-
+  
 
 
 
