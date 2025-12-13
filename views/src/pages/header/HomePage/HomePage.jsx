@@ -18,11 +18,51 @@ export default function HomePage() {
     const loginCheck = useLoginCheck({ route: "/Appointments" });
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
 
-    const handleAppointmentsClick = async () => {
-        const storedUser = JSON.parse(localStorage.getItem("userInfo"));
-        if (storedUser?.isTutor) {
-            navigate("/TutorAppointments");
-        } else {
+const handleAppointmentsClick = async () => {
+        try {
+            // 1. Get the current logged-in user to find their ID
+            const userRes = await fetch("/api/auth/get_user");
+            
+            if (!userRes.ok) {
+                // Not logged in -> Redirect to standard appointments page (which handles login)
+                navigate("/Appointments");
+                return;
+            }
+            
+            const userData = await userRes.json();
+            // We need the 'id_number' to compare with 'tutor_id'
+            // Usually in your app, userData from /get_user includes the linked tutee info
+            // If /get_user only returns google info, we might need to fetch /api/tutee/by_google first
+            // But assuming userData has the ID or we can derive it:
+            
+            // NOTE: If /get_user returns Google info only, we need to get the Tutee ID first.
+            // Let's assume we need to fetch the tutee profile to get the ID number.
+            const tuteeRes = await fetch(`/api/tutee/by_google/${userData.sub}`);
+            if (!tuteeRes.ok) {
+                navigate("/Appointments"); // Not a registered tutee yet
+                return;
+            }
+            const tuteeData = await tuteeRes.json();
+            const myId = tuteeData.id_number;
+
+            // 2. Fetch the Tutor List
+            const tutorsRes = await fetch("/api/tutor/all");
+            const tutorsList = await tutorsRes.json();
+
+            // 3. Find if "I" am in the tutor list and active
+            const myTutorProfile = tutorsList.find(t => t.tutor_id === myId);
+
+            if (myTutorProfile && myTutorProfile.status === "ACTIVE") {
+                // I am an Active Tutor!
+                navigate("/TutorAppointments");
+            } else {
+                // I am just a student (or inactive tutor)
+                navigate("/Appointments");
+            }
+
+        } catch (error) {
+            console.error("Error checking tutor status:", error);
+            // Default to student view on error to be safe
             navigate("/Appointments");
         }
     };
