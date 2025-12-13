@@ -6,12 +6,16 @@ export default function BasicButton({
   onClick = () => {},
   light = false,
   variant,    // optional override
+  danger,
   size = undefined,
   style,
   ...props
 }) {
 
-  const mappedVariant = variant ?? (light ? 'outline-primary' : 'primary');
+  let mappedVariant = variant ?? (light ? 'outline-primary' : 'primary');
+  if (danger) {
+    mappedVariant = light ? 'outline-danger' : 'danger';
+  }
 
   return (
     <Button

@@ -1,4 +1,4 @@
-.file-upload {
+.file-upload-fu {
     /* height: 620px; */
     min-height: 480px;
     /* min-width: 800px; */
@@ -86,10 +86,14 @@
     overflow-y: scroll;
     scrollbar-width: none;
     height: 200px;
+    /* max-width: 265.76px; */
 }
 
 .file-item {
-    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 30px;
     border-bottom: 1px solid #ccc;
     transition: background-color 0.3s;
 }

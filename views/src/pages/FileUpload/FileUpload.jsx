@@ -9,7 +9,7 @@ export default function FileUpload() {
 
     return (
         <>
-            <div className="file-upload">
+            <div className="file-upload-fu">
                 <h1 style={{color: "#616DBE"}}>Share your notes to everyone!</h1>
                 <hr></hr>
 
@@ -77,15 +77,15 @@ function FileList({ files }) {
                     {file.name}
                 </div>
             ))} */}
-            <FileItem file={{ name: "example_note.pdf" }} />
-            {/* <FileItem file={{ name: "example_note.pdf" }} />
-            <FileItem file={{ name: "example_note.pdf" }} />
+            <FileItem file={{ name: "example_note.pdfsadhasghgashdgasdhasgdhasgd" }} />
             <FileItem file={{ name: "example_note.pdf" }} />
             <FileItem file={{ name: "example_note.pdf" }} />
             <FileItem file={{ name: "example_note.pdf" }} />
             <FileItem file={{ name: "example_note.pdf" }} />
             <FileItem file={{ name: "example_note.pdf" }} />
-            <FileItem file={{ name: "example_note.pdf" }} /> */}
+            <FileItem file={{ name: "example_note.pdf" }} />
+            <FileItem file={{ name: "example_note.pdf" }} />
+            <FileItem file={{ name: "example_note.pdf" }} />
         </div>
     );
 }
@@ -93,7 +93,12 @@ function FileList({ files }) {
 function FileItem({ file }) {
     return (
         <div className='file-item' style={{flex: "1"}}>
+            <div style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "170px"}}>
             {file.name}
+            </div>
+            <BasicButton className="flex" style={{padding: "0", width: "25px", height: "25px", boxShadow: "none", alignItems: "center", justifyContent: "center"}} danger={true} light={true}>
+                <img src="https://www.svgrepo.com/show/310733/delete.svg" alt="delete icon" style={{width: "15px", filter: "invert(23%) sepia(99%) saturate(7492%) hue-rotate(357deg) brightness(97%) contrast(119%)"}} />
+            </BasicButton>
         </div>
     );
 }
