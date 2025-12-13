@@ -9,35 +9,21 @@ class UserModel:
         
         query = """
             SELECT 
-                -- 0. Partner First Name
-                CASE 
-                    WHEN a.tutee_id = %s THEN tutor_info.first_name 
-                    ELSE student_info.first_name 
-                END as first_name,
-                
-                -- 1. Partner Last Name
-                CASE 
-                    WHEN a.tutee_id = %s THEN tutor_info.last_name 
-                    ELSE student_info.last_name 
-                END as last_name,
-                
-                -- 2. Partner ID (User ID)
-                CASE 
-                    WHEN a.tutee_id = %s THEN tutor_info.id_number 
-                    ELSE student_info.id_number 
-                END as partner_id,
-
-                -- 3. Appointment ID
+                CASE WHEN a.tutee_id = %s THEN tutor_info.first_name ELSE student_info.first_name END as first_name,
+                CASE WHEN a.tutee_id = %s THEN tutor_info.last_name ELSE student_info.last_name END as last_name,
+                CASE WHEN a.tutee_id = %s THEN tutor_info.id_number ELSE student_info.id_number END as partner_id,
                 a.appointment_id,
-                
-                -- 4. Course Info
                 c.course_code,
                 c.course_name,
-
-                -- 5. Date & Time (New Fields)
                 a.appointment_date,
                 av.start_time,
-                av.end_time
+                av.end_time,
+
+                -- 🔴 NEW: Count unread messages
+                (SELECT COUNT(*) FROM message m 
+                 WHERE m.appointment_id = a.appointment_id 
+                 AND m.is_read = FALSE 
+                 AND m.sender_id != %s) as unread_count
 
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
@@ -45,16 +31,15 @@ class UserModel:
             JOIN tutee student_info ON a.tutee_id = student_info.id_number
             JOIN course c ON a.course_code = c.course_code
 
-            WHERE 
-                a.status = 'BOOKED' 
-                AND 
-                (a.tutee_id = %s OR av.tutor_id = %s)
+            WHERE a.status = 'BOOKED' AND (a.tutee_id = %s OR av.tutor_id = %s)
             
-            ORDER BY a.appointment_date DESC, av.start_time DESC;
+            ORDER BY 
+                (SELECT MAX(timestamp) FROM message WHERE message.appointment_id = a.appointment_id) DESC NULLS LAST, 
+                a.appointment_date DESC;
         """
 
-        # We pass user_id 5 times to fill the 5 %s placeholders
-        params = (user_id, user_id, user_id, user_id, user_id)
+        # 🔴 Pass user_id 6 times
+        params = (user_id, user_id, user_id, user_id, user_id, user_id)
 
         try:
             cur.execute(query, params)
@@ -69,10 +54,10 @@ class UserModel:
                     "appointment_id": row[3],
                     "course_code": row[4],
                     "course_name": row[5],
-                    # Convert date/time objects to strings for JSON
                     "appointment_date": str(row[6]), 
                     "start_time": str(row[7]), 
-                    "end_time": str(row[8])
+                    "end_time": str(row[8]),
+                    "unread_count": row[9] # 🔴 Capture count
                 })
             
             return users
