@@ -2,10 +2,24 @@
 import './FileUpload.css';
 import { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
+import Select from 'react-select';
 import BasicButton from '../../components/BasicButton/BasicButton';
 
 export default function FileUpload() {
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
+
     const [files, setFiles] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState(null);
+
+    const retrieveCourses = async (search='') => {
+        // Fetch courses from API or database
+        const result = await fetch(`${API_URL}/api/tutor-list/courses?search=${encodeURIComponent(search)}`);
+        const data = await result.json();
+        setCourses((data.courses || []).map(c => ({ value: c, label: c })));
+    }
+
+    
 
     return (
         <>
@@ -18,15 +32,8 @@ export default function FileUpload() {
                         <InputFormFU label="Topic Title">
                             <Form.Control type="text" placeholder="Topic Title" className='input-field-tt' />
                         </InputFormFU> 
-                        <InputFormFU label="Related Subject">
-                            <Form.Select aria-label="Related Subject" className='input-field-rs'>
-                                <option>Subject</option>
-                                <option value="1">Mathematics</option>
-                                <option value="2">Science</option>
-                                <option value="3">History</option>
-                                <option value="4">Literature</option>
-                                <option value="5">Art</option>
-                            </Form.Select>
+                        <InputFormFU label="Related Course">
+                            <Select isClearable placeholder="Course" options={courses} onInputChange={e => {retrieveCourses(e);}} onChange={e => setSelectedCourse(e)} />
                         </InputFormFU>
                         <InputFormFU label="Upload File" customClass='upload-file-form'>
                             <div className='upload-file-container'>

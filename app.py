@@ -18,6 +18,7 @@ from api.getuser import tutor_bp
 from controllers.adminDashboardController import admin_dashboard_bp
 from api.tutor_list import tutor_list
 from api.tutee_list import tutee_list
+from api.notes_sharing import notes_sharing
 
 # Existing controllers
 
@@ -52,6 +53,7 @@ app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 app.register_blueprint(tutee_list, url_prefix="/api/tutee-list")
+app.register_blueprint(notes_sharing, url_prefix="/api/notes-sharing")
 app.register_blueprint(admin_dashboard_bp)
 app.register_blueprint(load_config_bp)
 @app.route('/uploads/cor/<filename>')
