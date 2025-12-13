@@ -58,7 +58,7 @@ export default function Banned() {
     };
 
     return (
-        <div className="container d-flex flex-column align-items-center justify-content-center vh-100">
+        <div className="container d-flex flex-column align-items-center justify-content-center vh-100 pt-5">
             <div className="card p-5 shadow text-center border-0" style={{maxWidth: "600px", width: "100%", borderRadius: "15px"}}>
                 <h1 className="text-danger mb-3 display-1"><i className="bi bi-shield-lock-fill"></i></h1>
                 <h2 className="text-danger mb-4">Account Suspended</h2>

@@ -17,6 +17,31 @@ export const useAdminDashboardData = () => {
     const [yearFilter, setYearFilter] = useState('all');
     const [roleFilter, setRoleFilter] = useState('all');
 
+    const setStatusFilterWithReset = (value) => {
+        setStatusFilter(value);
+        setPage(1);
+    };
+
+    const setSearchWithReset = (value) => {
+        setSearch(value);
+        setPage(1);
+    };
+
+    const setSortByWithReset = (value) => {
+        setSortBy(value);
+        setPage(1);
+    };
+
+    const setYearFilterWithReset = (value) => {
+        setYearFilter(value);
+        setPage(1);
+    };
+
+    const setRoleFilterWithReset = (value) => {
+        setRoleFilter(value);
+        setPage(1);
+    };
+
     const setActiveTab = (newTab) => {
         if (newTab === activeTab) return;
         setActiveTabState(newTab);
@@ -135,12 +160,12 @@ export const useAdminDashboardData = () => {
         filters: {
             page, setPage,
             limit, setLimit,
-            search, setSearch,
-            status: statusFilter, setStatus: setStatusFilter,
-            sort: sortBy, setSort: setSortBy,
+            search, setSearch: setSearchWithReset,
+            status: statusFilter, setStatus: setStatusFilterWithReset,
+            sort: sortBy, setSort: setSortByWithReset,
             college: collegeFilter, setCollege: setCollegeFilter,
-            year: yearFilter, setYear: setYearFilter,
-            role: roleFilter, setRole: setRoleFilter
+            year: yearFilter, setYear: setYearFilterWithReset,
+            role: roleFilter, setRole: setRoleFilterWithReset
         },
         pagination,
         actions: { handleAction, refresh: fetchData }
