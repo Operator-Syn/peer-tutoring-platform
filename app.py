@@ -11,6 +11,7 @@ from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardCo
 from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
 from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
 from controllers.createNewPendingAppointmentController.createNewPendingAppointmentController import bp_create_pending
+from controllers.subjectRequestController.subjectRequestController import subject_request_bp
 from controllers.requestscontroller.requestscontroller import requests_bp  
 from controllers.loadConfig.loadConfig import load_config_bp
 from api.getuser import tutee_bp
@@ -55,6 +56,7 @@ app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 app.register_blueprint(tutee_list, url_prefix="/api/tutee-list")
 app.register_blueprint(admin_dashboard_bp)
 app.register_blueprint(bp_appeals)
+app.register_blueprint(subject_request_bp)
 app.register_blueprint(load_config_bp)
 @app.route('/uploads/cor/<filename>')
 def serve_cor_file(filename):
