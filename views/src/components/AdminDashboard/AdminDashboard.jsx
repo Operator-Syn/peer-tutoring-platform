@@ -192,8 +192,14 @@ const AdminDashboard = () => {
                                     <span className="admin-text-sub">{app.school_year || 'N/A'}</span>
                                     <div>{app.cor_filename ? <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button> : <div className="admin-btn-icon disabled"><i className="bi bi-file-x"></i></div>}</div>
                                     <div className="admin-flex-align">
-                                        <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
-                                        <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')} disabled={app.status !== 'PENDING'}>Decline</button>
+                                        {app.status === 'PENDING' ? (
+                                            <>
+                                                <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')}>Accept</button>
+                                                <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')}>Decline</button>
+                                            </>
+                                        ) : (
+                                            <span className="admin-text-muted">Processed</span>
+                                        )}
                                     </div>
                                 </div>
                                 {app.status !== 'PENDING' && <div className="admin-badge-absolute"><span className={`admin-status-badge ${app.status.toLowerCase()}`}>{app.status}</span></div>}
