@@ -3,8 +3,9 @@ import loadingIcon from '../../assets/loading.svg';
 
 import { use, useEffect, useState } from "react";
 import BasicButton from '../../components/BasicButton/BasicButton.jsx';
+import ModalComponent from '../../components/modalComponent/ModalComponent.jsx'; 
 import Select from 'react-select';
-import { Form, Card, Button } from 'react-bootstrap';
+import { Form, Card, Button, Toast, ToastContainer } from 'react-bootstrap'; // Added Toast components
 import { useNavigate } from "react-router-dom";
 
 
@@ -28,6 +29,14 @@ export default function TutorList() {
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
 	const [nameSearch, setNameSearch] = useState('');
 	const [loading, setLoading] = useState(true);
+
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [requestSubject, setRequestSubject] = useState('');
+    const [requestReason, setRequestReason] = useState('');
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastVariant, setToastVariant] = useState('success');
 
 	useEffect(() => {
 		if (!page) return;
@@ -58,11 +67,63 @@ export default function TutorList() {
 		});
 	};
 
+    const triggerToast = (message, variant = 'success') => {
+        setToastMessage(message);
+        setToastVariant(variant);
+        setShowToast(true);
+    };
+
+    const handleInitialSubmit = () => {
+        if (!requestSubject.trim()) {
+            triggerToast("Subject name is required", "danger");
+            return;
+        }
+        setShowRequestModal(false);
+        setShowConfirmModal(true);
+    };
+
+    const confirmSubmitRequest = async () => {
+        try {
+            const res = await fetch('/api/request/subject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject_code: requestSubject,
+                    description: requestReason
+                })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                triggerToast("Request submitted successfully!", "success");
+                setShowConfirmModal(false);
+                setRequestSubject('');
+                setRequestReason('');
+            } else {
+                triggerToast(data.error || "Failed to submit request", "danger");
+            }
+        } catch (error) {
+            console.error(error);
+            triggerToast("An error occurred. Please try again.", "danger");
+        }
+    };
+
+    const cancelConfirmation = () => {
+        setShowConfirmModal(false);
+        setShowRequestModal(true);
+    };
+
 	return (
 		<div className="tutor-list align-items-center">
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 3000, position: 'fixed' }}>
+                <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={toastVariant}>
+                    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+                </Toast>
+            </ToastContainer>
+
 			<h1 style={{marginTop: "5rem", fontSize: "3rem", color: "#616DBE", fontWeight: "bold"}}>Tutors</h1>
 
-			<div className='tutor-list-search d-flex gap-3 mb-3'>
+			<div className='tutor-list-search d-flex gap-3 mb-3 flex-wrap justify-content-center'>
 
 				<div className='d-flex gap-3 justify-content-center'>
 					<div className='p-0' style={{width: "11rem", minWidth: "140px"}}>
@@ -73,12 +134,18 @@ export default function TutorList() {
 					</div>
 				</div>
 
-				<div className='tutor-list-search-bar p-0' style={{width: "100%", minWidth: "17rem", maxWidth: "30rem", marginLeft: "auto"}}>
+				<div className='tutor-list-search-bar p-0' style={{width: "100%", minWidth: "17rem", maxWidth: "20rem"}}>
 					<Form>
-						<Form.Control type="search" placeholder="Search" className="me-2" aria-label="Search" onChange={e => {setNameSearch(e.target.value); setPage(1);}} />
+						<Form.Control type="search" placeholder="Search Tutors" className="me-2" aria-label="Search" onChange={e => {setNameSearch(e.target.value); setPage(1);}} />
 					</Form>
 				</div>
 				
+                <BasicButton 
+                    style={{height: '38px', minWidth: 'fit-content', padding: '0 1rem', fontSize: '0.9rem'}}
+                    onClick={() => setShowRequestModal(true)}
+                >
+                    Request Subject
+                </BasicButton>
 			</div>
 
 			<div className='tutor-card-grid' style={{minHeight: "33.8rem"}}>
@@ -90,9 +157,7 @@ export default function TutorList() {
 				)}
 
 				{tutors.map((tutor, idx) => (
-					// <div key={idx}>
-						<TutorCard {...tutor} />
-					// </div>
+					<TutorCard key={idx} {...tutor} />
 				))}
 			</div>
 
@@ -103,7 +168,6 @@ export default function TutorList() {
 				<span>
 					<Form.Control value={page}   onChange={e => {
 							const val = e.target.value;
-							// Allow empty string for controlled input, or check if value is a positive integer
 							if (val === "" || (/^\d+$/.test(val) && Number(val) >= 1 && Number(val) <= maxPages)) {
 								setPage(val === "" ? "" : Number(val));
 							}
@@ -115,6 +179,66 @@ export default function TutorList() {
 					&gt;
 				</Button>
 			</div>
+
+            <ModalComponent 
+                show={showRequestModal}
+                onHide={() => setShowRequestModal(false)}
+                title="Request a New Subject"
+                body={
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Subject Code / Name</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                placeholder="e.g. CSC 101" 
+                                value={requestSubject} 
+                                onChange={(e) => setRequestSubject(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Reason (Optional)</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={3} 
+                                placeholder="Why do you need this subject?" 
+                                value={requestReason} 
+                                onChange={(e) => setRequestReason(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                    </Form>
+                }
+                rightButtons={[
+                    { text: "Next", onClick: handleInitialSubmit, className: "custom-btn-primary" }
+                ]}
+                leftButtons={[
+                    { text: "Cancel", variant: "secondary", onClick: () => setShowRequestModal(false), className: "custom-btn-secondary" }
+                ]}
+                spaceBetweenGroups={true}
+            />
+
+            <ModalComponent 
+                show={showConfirmModal}
+                onHide={cancelConfirmation}
+                title="Confirm Request"
+                body={
+                    <div className="custom-confirm-body">
+                        <p>Are you sure you want to submit this request?</p>
+                        <div className="custom-summary-box p-3 bg-light rounded">
+                            <p><strong>Subject:</strong> {requestSubject}</p>
+                            {requestReason && <p><strong>Reason:</strong> {requestReason}</p>}
+                        </div>
+                    </div>
+                }
+                rightButtons={[
+                    { text: "Confirm Submit", onClick: confirmSubmitRequest, className: "custom-btn-success" }
+                ]}
+                leftButtons={[
+                    { text: "Back", variant: "secondary", onClick: cancelConfirmation, className: "custom-btn-secondary" }
+                ]}
+                spaceBetweenGroups={true}
+            />
 
 		</div>
 	);
