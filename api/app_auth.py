@@ -17,7 +17,7 @@ def login():
     """
   
     redirect_uri = url_for('auth.auth', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri, hd='g.msuiit.edu.ph', prompt='login')
+    return oauth.google.authorize_redirect(redirect_uri, prompt='login')
 
 @auth_bp.route('/callback')
 def auth():
@@ -30,9 +30,9 @@ def auth():
   
     user_info = token.get('userinfo')
  
-    if not user_info['email'].endswith('@g.msuiit.edu.ph'):
-        return "Unauthorized: Please use your university email.", 403
-    print("DEBUG USER_INFO:", user_info) 
+    # if not user_info['email'].endswith('@g.msuiit.edu.ph'):
+    #     return "Unauthorized: Please use your university email.", 403
+    # print("DEBUG USER_INFO:", user_info) 
    
     session.permanent = True
     session['user'] = user_info
