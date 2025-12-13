@@ -64,6 +64,8 @@ export const useAdminDashboardData = () => {
                 params.append('role', roleFilter);
             } else if (activeTab === 'appeals') {
                 endpoint = '/api/appeals/all';
+            } else if (activeTab === 'requests') {
+                endpoint = '/api/admin/subject-requests';
             }
 
             const response = await fetch(`${endpoint}?${params.toString()}`);
@@ -101,6 +103,10 @@ export const useAdminDashboardData = () => {
             }
             if (actionType === 'RESOLVE_APPEAL') {
                 url = `/api/appeals/resolve/${id}`;
+                method = 'PUT';
+            }
+            if (actionType === 'RESOLVE_REQUEST') {
+                url = `/api/admin/subject-requests/${id}/resolve`;
                 method = 'PUT';
             }
 
