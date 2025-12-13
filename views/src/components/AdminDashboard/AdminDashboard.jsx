@@ -20,27 +20,11 @@ const AdminDashboard = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  if (loading) {
-    return (
-      <div className="admin-container">
-        <header className="admin-header">
-            <div className="admin-header-content">
-                <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
-                <div className="user-section"><div className="user-avatar"><i className="bi bi-person-circle"></i></div></div>
-            </div>
-        </header>
-        <div className="admin-loading-container">
-            <div className="admin-spinner"></div>
-            <p>Loading Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
-  const handleShowCor = (url) => {
-    const path = url.startsWith('http') ? url : (activeTab === 'appeals' ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
+  const handleShowCor = (url, isAppeal = false) => {
+    const path = url.startsWith('http') ? url : (isAppeal || activeTab === 'appeals' ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
     setSelectedCorFile(path);
     setShowCorModal(true);
   };
@@ -82,6 +66,7 @@ const AdminDashboard = () => {
     } else if (actionData.type === 'APP') {
         apiAction = actionData.targetStatus === 'APPROVED' ? 'APPROVE_APP' : 'REJECT_APP';
     }
+    
     const res = await actions.handleAction(apiAction, actionData.id, payload);
     if (res.success) setShowActionModal(false);
     else { setToastMessage(res.message || "Action failed"); setShowToast(true); }
@@ -139,7 +124,10 @@ const AdminDashboard = () => {
 
         <div className="admin-filters-row">
              <button className={`admin-pill ${filters.status === 'all' ? 'active' : ''}`} onClick={() => filters.setStatus('all')}>All</button>
-             {(activeTab === 'applications' ? ['PENDING','APPROVED','REJECTED'] : activeTab === 'users' ? ['ACTIVE','BANNED','PROBATION'] : ['PENDING','APPROVED','REJECTED']).map(s => (
+             {['PENDING','APPROVED','REJECTED','ACTIVE','BANNED','PROBATION'].filter(s => {
+                 if (activeTab === 'users') return ['ACTIVE','BANNED','PROBATION'].includes(s);
+                 return ['PENDING','APPROVED','REJECTED'].includes(s);
+             }).map(s => (
                  <button key={s} className={`admin-pill ${filters.status === s ? 'active' : ''}`} onClick={() => filters.setStatus(s)}>{formatStatusLabel(s)}</button>
              ))}
         </div>
@@ -166,7 +154,7 @@ const AdminDashboard = () => {
 
                 {activeTab === 'users' && (
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
-                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option><option value="ADMIN">Admin</option>
+                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
                     </select>
                 )}
             </div>
@@ -177,82 +165,91 @@ const AdminDashboard = () => {
             </div>
         </div>
 
-        {activeTab === 'applications' && (
-            <div className="admin-card-list">
-                {data.length === 0 ? <div className="admin-empty">No applications found</div> : data.map(app => (
-                    <div key={app.application_id} className="admin-app-card">
-                        <div className="admin-card-row header">
-                            <span>College</span><span>Name</span><span>Gender</span><span>School Year</span><span>Documents</span><span>Actions</span>
-                        </div>
-                        <div className="admin-card-row body">
-                            <div className="admin-flex-align"><div className="admin-avatar"><i className="bi bi-person-fill"></i></div><span className="admin-bold">{app.program || 'CCS'}</span></div>
-                            <span className="admin-text-main">{app.student_name}</span>
-                            <span className="admin-text-sub">N/A</span>
-                            <span className="admin-text-sub">{app.school_year || 'N/A'}</span>
-                            <div>{app.cor_filename ? <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button> : <div className="admin-btn-icon disabled"><i className="bi bi-file-x"></i></div>}</div>
-                            <div className="admin-flex-align">
-                                <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
-                                <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')} disabled={app.status !== 'PENDING'}>Decline</button>
-                            </div>
-                        </div>
-                        {app.status !== 'PENDING' && <div className="admin-badge-absolute"><span className={`admin-status-badge ${app.status.toLowerCase()}`}>{app.status}</span></div>}
-                    </div>
-                ))}
+        {loading ? (
+            <div className="admin-loading-container">
+                <div className="admin-spinner"></div>
+                <p>Loading Data...</p>
             </div>
-        )}
-
-        {activeTab === 'users' && (
-            <div className="admin-table-box">
-                <table className="admin-table">
-                    <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-actions">Actions</th></tr></thead>
-                    <tbody>
-                        {data.map(user => (
-                            <tr key={user.google_id}>
-                                <td><div className="admin-bold">{user.first_name} {user.last_name}</div><div className="admin-sub">{user.email}</div></td>
-                                <td><span className="admin-role-badge">{user.role}</span></td>
-                                <td><span className={`admin-status-badge ${user.status?.toLowerCase()}`}>{user.status}</span>{user.status_note && <div className="admin-note">"{user.status_note}"</div>}</td>
-                                <td>{user.pending_reports > 0 ? <span className="admin-danger">{user.pending_reports}</span> : "0"}</td>
-                                <td><div className="admin-flex-end">
-                                    {user.status !== 'ACTIVE' && <button className="admin-btn-green" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>}
-                                    {user.status !== 'PROBATION' && <button className="admin-btn-orange" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>}
-                                    {user.status !== 'BANNED' && <button className="admin-btn-red" onClick={() => openActionModal('USER', user, 'BANNED')}>Ban</button>}
-                                </div></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        )}
-
-        {activeTab === 'appeals' && (
-            <div className="admin-table-box">
-                <table className="admin-table">
-                    <thead><tr><th className="col-user">User</th><th className="col-msg">Message</th><th className="col-file">Evidence</th><th className="col-status">Status</th><th className="col-actions">Actions</th></tr></thead>
-                    <tbody>
-                        {data.map(appeal => (
-                            <tr key={appeal.appeal_id}>
-                                <td><div className="admin-bold">{appeal.first_name} {appeal.last_name}</div><div className="admin-sub">{appeal.id_number}</div></td>
-                                <td><div className="admin-msg-box">{appeal.appeal_text}</div><div className="admin-date">{appeal.date_submitted}</div></td>
-                                <td>
-                                    <div className="admin-flex-wrap">
-                                        {appeal.files && appeal.files.length > 0 ? appeal.files.map((f, i) => (
-                                            <button key={i} className="admin-btn-icon" onClick={() => handleShowCor(f, true)}><i className="bi bi-file-text"></i></button>
-                                        )) : <span className="admin-sub">None</span>}
+        ) : (
+            <>
+                {activeTab === 'applications' && (
+                    <div className="admin-card-list">
+                        {data.length === 0 ? <div className="admin-empty">No applications found</div> : data.map(app => (
+                            <div key={app.application_id} className="admin-app-card">
+                                <div className="admin-card-row header">
+                                    <span>College</span><span>Name</span><span>Gender</span><span>School Year</span><span>Documents</span><span>Actions</span>
+                                </div>
+                                <div className="admin-card-row body">
+                                    <div className="admin-flex-align"><div className="admin-avatar"><i className="bi bi-person-fill"></i></div><span className="admin-bold">{app.program || 'CCS'}</span></div>
+                                    <span className="admin-text-main">{app.student_name}</span>
+                                    <span className="admin-text-sub">N/A</span>
+                                    <span className="admin-text-sub">{app.school_year || 'N/A'}</span>
+                                    <div>{app.cor_filename ? <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button> : <div className="admin-btn-icon disabled"><i className="bi bi-file-x"></i></div>}</div>
+                                    <div className="admin-flex-align">
+                                        <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
+                                        <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')} disabled={app.status !== 'PENDING'}>Decline</button>
                                     </div>
-                                </td>
-                                <td><span className={`admin-status-badge ${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
-                                <td>{appeal.status === 'PENDING' && <div className="admin-flex-end">
-                                    <button className="admin-btn-green" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
-                                    <button className="admin-btn-red" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
-                                </div>}</td>
-                            </tr>
+                                </div>
+                                {app.status !== 'PENDING' && <div className="admin-badge-absolute"><span className={`admin-status-badge ${app.status.toLowerCase()}`}>{app.status}</span></div>}
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                )}
+
+                {activeTab === 'users' && (
+                    <div className="admin-table-box">
+                        <table className="admin-table">
+                            <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-actions">Actions</th></tr></thead>
+                            <tbody>
+                                {data.map(user => (
+                                    <tr key={user.google_id}>
+                                        <td><div className="admin-bold">{user.first_name} {user.last_name}</div><div className="admin-sub">{user.email}</div></td>
+                                        <td><span className="admin-role-badge">{user.role}</span></td>
+                                        <td><span className={`admin-status-badge ${user.status?.toLowerCase()}`}>{user.status}</span>{user.status_note && <div className="admin-note">"{user.status_note}"</div>}</td>
+                                        <td>{user.pending_reports > 0 ? <span className="admin-danger">{user.pending_reports}</span> : "0"}</td>
+                                        <td><div className="admin-flex-end">
+                                            {user.status !== 'ACTIVE' && <button className="admin-btn-green" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>}
+                                            {user.status !== 'PROBATION' && <button className="admin-btn-orange" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>}
+                                            {user.status !== 'BANNED' && <button className="admin-btn-red" onClick={() => openActionModal('USER', user, 'BANNED')}>Ban</button>}
+                                        </div></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {activeTab === 'appeals' && (
+                    <div className="admin-table-box">
+                        <table className="admin-table">
+                            <thead><tr><th className="col-user">User</th><th className="col-msg">Message</th><th className="col-file">Evidence</th><th className="col-status">Status</th><th className="col-actions">Actions</th></tr></thead>
+                            <tbody>
+                                {data.map(appeal => (
+                                    <tr key={appeal.appeal_id}>
+                                        <td><div className="admin-bold">{appeal.first_name} {appeal.last_name}</div><div className="admin-sub">{appeal.id_number}</div></td>
+                                        <td><div className="admin-msg-box">{appeal.appeal_text}</div><div className="admin-date">{appeal.date_submitted}</div></td>
+                                        <td>
+                                            <div className="admin-flex-wrap">
+                                                {appeal.files && appeal.files.length > 0 ? appeal.files.map((f, i) => (
+                                                    <button key={i} className="admin-btn-icon" onClick={() => handleShowCor(f, true)}><i className="bi bi-file-text"></i></button>
+                                                )) : <span className="admin-sub">None</span>}
+                                            </div>
+                                        </td>
+                                        <td><span className={`admin-status-badge ${appeal.status.toLowerCase()}`}>{appeal.status}</span></td>
+                                        <td>{appeal.status === 'PENDING' && <div className="admin-flex-end">
+                                            <button className="admin-btn-green" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
+                                            <button className="admin-btn-red" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
+                                        </div>}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+                
+                {renderPagination()}
+            </>
         )}
-        
-        {renderPagination()}
       </div>
 
       <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
