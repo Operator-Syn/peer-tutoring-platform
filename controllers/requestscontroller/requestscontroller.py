@@ -65,9 +65,10 @@ def update_appointment_status(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info
+        # 1. Fetch appointment info INCLUDING appointment_date
+        # We need the date to ensure we only cancel requests for this specific day
         cur.execute("""
-            SELECT a.vacant_id, a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT a.vacant_id, a.tutee_id, a.course_code, a.appointment_date, av.tutor_id, av.start_time, av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -77,22 +78,35 @@ def update_appointment_status(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        vacant_id, tutee_id, course_code, tutor_id, start_time, end_time = appt
+        vacant_id, tutee_id, course_code, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update the appointment status
+        # 2. Update the status of the target appointment
         cur.execute("""
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
         """, (new_status, appointment_id))
 
-        # If the status is BOOKED, log in history and send notification
+        # 3. If BOOKED, handle logic
         if new_status == "BOOKED":
+            # A. Auto-Decline Competitors
+            # Cancel everyone else who is PENDING on this exact slot
+            cur.execute("""
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s 
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+            """, (vacant_id, appointment_date, appointment_id))
+
+            # B. Log in history
             cur.execute("""
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
             """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
+            # C. Send notification
             cur.execute("""
                 INSERT INTO notifications (tutor_id, tutee_id)
                 VALUES (%s, %s)
@@ -256,9 +270,17 @@ def update_appointment_status_and_log(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info first (including tutor_id from availability)
+        # 1. UPDATED SELECT: We added 'vacant_id' and 'appointment_date' 
+        # so we can find the other students competing for this slot.
         cur.execute("""
-            SELECT a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT 
+                a.tutee_id, 
+                a.course_code, 
+                a.vacant_id,         -- NEW
+                a.appointment_date,  -- NEW
+                av.tutor_id, 
+                av.start_time, 
+                av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -268,27 +290,46 @@ def update_appointment_status_and_log(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, course_code, tutor_id, start_time, end_time = appt
+        tutee_id, course_code, vacant_id, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update appointment status
+        # 2. Update the target appointment status
         cur.execute("""
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
         """, (new_status, appointment_id))
 
-        # Log to history table if accepted
+        # 3. IF ACCEPTED (BOOKED): Handle logs and Auto-Decline
         if new_status == "BOOKED":
+            # A. Log to history
             cur.execute("""
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
             """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
-        # Insert notification with action column
-        cur.execute("""
-            INSERT INTO notifications (tutor_id, tutee_id, action)
-            VALUES (%s, %s, %s)
-        """, (tutor_id, tutee_id, new_status))
+            # B. Notify the winner
+            cur.execute("""
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+            """, (tutor_id, tutee_id, new_status))
+
+            # C. AUTO-DECLINE COMPETITORS (This was missing!)
+            # Cancel everyone else pending for this exact slot
+            cur.execute("""
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s 
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+            """, (vacant_id, appointment_date, appointment_id))
+
+        # 4. IF DECLINED (CANCELLED): Just notify
+        elif new_status == "CANCELLED":
+             cur.execute("""
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+            """, (tutor_id, tutee_id, new_status))
 
         conn.commit()
         return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
