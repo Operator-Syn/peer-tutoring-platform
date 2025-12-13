@@ -303,3 +303,62 @@ def update_user_status():
         return jsonify({"success": True}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/subject-requests", methods=["GET"])
+def get_subject_requests():
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 5))
+        status = request.args.get("status", "all")
+        
+        offset = (page - 1) * limit
+        params = []
+        where_clause = ""
+
+        if status != "all":
+            where_clause = "WHERE sr.status = %s"
+            params.append(status)
+
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute(f"SELECT COUNT(*) FROM subject_request sr {where_clause}", params)
+        total_items = cur.fetchone()['count']
+
+        query = f"""
+            SELECT 
+                sr.request_id, 
+                sr.requester_id, 
+                sr.subject_code, 
+                sr.description, 
+                sr.status, 
+                sr.created_at,
+                t.first_name, 
+                t.last_name,
+                ua.role
+            FROM subject_request sr
+            JOIN tutee t ON sr.requester_id = t.id_number
+            JOIN user_account ua ON t.google_id = ua.google_id
+            {where_clause}
+            ORDER BY sr.created_at DESC
+            LIMIT %s OFFSET %s
+        """
+        cur.execute(query, params + [limit, offset])
+        requests = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        for r in requests:
+            if r['created_at']:
+                r['created_at'] = r['created_at'].strftime("%Y-%m-%d")
+
+        return jsonify({
+            "success": True,
+            "data": requests,
+            "pagination": build_pagination_metadata(total_items, page, limit)
+        }), 200
+
+    except Exception as e:
+        print("Error fetching subject requests:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
