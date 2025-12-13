@@ -1,5 +1,6 @@
 from authlib.integrations.flask_client import OAuth
-from flask import url_for, session, redirect, request, Blueprint, jsonify, current_app
+# Added make_response to handle headers manually
+from flask import url_for, session, redirect, request, Blueprint, jsonify, current_app, make_response
 from config import Config
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
@@ -16,6 +17,8 @@ def login():
     Redirects the user to Google's authentication page.
     """
   
+    # Ideally, ensure ProxyFix is enabled in your main app.py so _external=True 
+    # generates https:// links correctly behind Cloudflare.
     redirect_uri = url_for('auth.auth', _external=True)
     return oauth.google.authorize_redirect(redirect_uri, prompt='login')
 
@@ -40,35 +43,37 @@ def auth():
  
     try:
         conn = get_connection()
-        with conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+        # Use try-finally to ensure connection closes even if errors occur
+        try:
+            with conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
 
-                cursor.execute("SELECT user_id FROM user_account WHERE google_id = %s", (user_info['sub'],))
-                existing_user = cursor.fetchone()
-                if existing_user:
-              
-
-                    
-                    cursor.execute("""
-                        UPDATE user_account 
-                        SET last_login = %s 
-                        WHERE google_id = %s
-                    """, (datetime.now(), user_info['sub']))
-                    pass
-                else:
+                    # CONCURRENCY FIX: Use ON CONFLICT (Upsert) instead of Check-then-Insert
+                    # This prevents race conditions if the user double-clicks login
                     cursor.execute("""
                         INSERT INTO user_account (google_id, email, role, last_login)
                         VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (google_id) 
+                        DO UPDATE SET 
+                            last_login = EXCLUDED.last_login
                     """, (user_info['sub'], user_info['email'], 'TUTEE', datetime.now()))
+        finally:
+            if conn:
+                conn.close()
 
     except Exception as e:
-        if conn:
-            conn.close()
+        # Connection is already closed in finally block if it existed
         return jsonify({'error': str(e)}), 500
 
 
+    # CLOUDFLARE FIX: Prevent caching of the redirect response
+    # This ensures User A's session cookie isn't cached and served to User B.
+    response = make_response(redirect(Config.FRONTEND_URL))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
  
-    return redirect(Config.FRONTEND_URL) 
+    return response 
 
 @auth_bp.route('/get_user')
 def get_user():
@@ -82,21 +87,26 @@ def get_user():
     registered = False
     try:
         conn = get_connection()
-        with conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
-                if cursor.fetchone():
-                    registered = True
+        try:
+            with conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
+                    if cursor.fetchone():
+                        registered = True
+        finally:
+            if conn:
+                conn.close()
     except Exception as e:
-        if conn:
-            conn.close()
         return jsonify({'error': str(e)}), 500
 
   
     user_with_status = dict(user)
     user_with_status['registered_tutee'] = registered
 
-    return jsonify(user_with_status)
+    # Return response with cache control to be safe
+    response = make_response(jsonify(user_with_status))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
 
 @auth_bp.route('/register_tutee', methods=['POST'])
 def register_tutee():
@@ -118,15 +128,17 @@ def register_tutee():
 
     try:
         conn = get_connection()
-        with conn:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO tutee (id_number, first_name, middle_name, last_name, year_level, program_code, google_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (id_number, first_name, middle_name, last_name, year_level, program_code, user['sub'],))
+        try:
+            with conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO tutee (id_number, first_name, middle_name, last_name, year_level, program_code, google_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """, (id_number, first_name, middle_name, last_name, year_level, program_code, user['sub'],))
+        finally:
+            if conn:
+                conn.close()
     except Exception as e:
-        if conn:
-            conn.close()
         return jsonify({'error': str(e)}), 500
 
     return jsonify({'message': 'Tutee registered successfully'})
@@ -138,7 +150,15 @@ def logout():
     """
     session.pop('user', None)
   
-    response = redirect(Config.FRONTEND_URL)
-    response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"), path='/', domain='localhost')
+    response = make_response(redirect(Config.FRONTEND_URL))
+    
+    # FIX: Use dynamic domain or None. 'localhost' is invalid for production domains.
+    # If SESSION_COOKIE_DOMAIN is not set in Config, it defaults to None (standard behavior)
+    cookie_domain = current_app.config.get("SESSION_COOKIE_DOMAIN", None)
+    
+    response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"), path='/', domain=cookie_domain)
+    
+    # Prevent caching of logout so back button doesn't show logged in state
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
 
     return response

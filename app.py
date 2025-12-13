@@ -4,6 +4,7 @@ from flask import Flask, send_from_directory, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from werkzeug.utils import safe_join
+from werkzeug.middleware.proxy_fix import ProxyFix # Moved here
 from config import Config
 
 # Expose socketio so run.py can import it
@@ -15,9 +16,20 @@ def create_app():
         static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "views", "dist")
     )
 
+    # --- CLOUDFLARE & SECURITY CONFIGURATION (Moved from run.py) ---
+    # 1. Trust Cloudflare Headers (X-Forwarded-Proto)
+    # This ensures url_for() generates 'https://' links
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+    # 2. Session Security (Critical for HTTPS/Cloudflare)
+    app.config['SESSION_COOKIE_SECURE'] = True  # Cookies only sent over HTTPS
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax' # Prevents CSRF while allowing OAuth redirects
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+    
+    # 3. App Secrets
     CORS(app, supports_credentials=True)
     app.secret_key = Config.SECRET_KEY
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 
     # Initialize SocketIO with this app instance
     socketio.init_app(app)
@@ -50,7 +62,11 @@ def create_app():
     app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
     app.register_blueprint(bp_appointments)
     app.register_blueprint(requests_bp)
+    
+    # IMPORTANT: Your Google Console Redirect URI must match this prefix!
+    # URI: https://<your-domain>/api/auth/callback
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    
     app.register_blueprint(bp_fillout)
     app.register_blueprint(bp_availability)
     app.register_blueprint(bp_create_pending)
