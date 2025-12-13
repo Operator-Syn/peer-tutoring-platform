@@ -15,7 +15,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AccountCreation from "./pages/AccountCreation";
 import TutorList from "./pages/TutorList/TutorList";
 import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
-import TuteeList from "./pages/Tutee List/TuteeList";
+import TuteeList from "./pages/TuteeList/TuteeList";
+import FileUpload from "./pages/FileUpload/FileUpload";
 
 import Feedback from "./pages/profile/feedback"
 import TutorProfile from "./pages/Tutor/Tutorprofile";
@@ -45,6 +46,7 @@ function App() {
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
             <Route path="TuteeList" element={<TuteeList />} />
+            <Route path="FileUpload" element={<FileUpload />} />
             <Route path= "Feedback" element = {<Feedback/>}/>
 
           </Route>
