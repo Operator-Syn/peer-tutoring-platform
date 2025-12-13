@@ -248,7 +248,7 @@ def approve_tutor_application(application_id):
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-
+    
         cursor.execute("SELECT student_id FROM tutor_application WHERE application_id = %s", (application_id,))
         row = cursor.fetchone()
         if not row:
@@ -257,7 +257,16 @@ def approve_tutor_application(application_id):
         student_id = row['student_id']
 
         cursor.execute("UPDATE tutor_application SET status = 'APPROVED' WHERE application_id = %s", (application_id,))
+        
         cursor.execute("INSERT INTO tutor (tutor_id, status) VALUES (%s, 'ACTIVE') ON CONFLICT (tutor_id) DO UPDATE SET status = 'ACTIVE'", (student_id,))
+
+        cursor.execute("""
+            UPDATE user_account 
+            SET role = 'TUTOR' 
+            FROM tutee 
+            WHERE user_account.google_id = tutee.google_id 
+            AND tutee.id_number = %s
+        """, (student_id,))
 
         cursor.execute("SELECT course_code FROM application_courses WHERE application_id = %s", (application_id,))
         for course in cursor.fetchall():
