@@ -24,7 +24,7 @@ class AppointmentCard:
 
     def __post_init__(self):
         # 1. Handle non-BOOKED statuses
-        if self.status in ("PENDING", "CANCELLED", "COMPLETED", "REJECTED"):
+        if self.status in ("PENDING", "CANCELLED", "COMPLETED"):
             self.footer = f"APPOINTMENT {self.status}"
             return
 
@@ -89,7 +89,7 @@ class AppointmentCard:
                 JOIN tutee tu ON a.tutee_id = tu.id_number
                 JOIN course c ON a.course_code = c.course_code
                 WHERE a.tutee_id = %s
-                ORDER BY a.appointment_date DESC, av.start_time DESC;
+                ORDER BY a.appointment_date ASC, av.start_time ASC;
             """
             cur.execute(query, (tutee_id,))
             results = cur.fetchall()

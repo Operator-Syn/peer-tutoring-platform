@@ -18,8 +18,17 @@ export default function ChatInterface({ googleId: propGoogleId }) {
 
     const socketUrl = import.meta.env.VITE_WEBSOCKET_URL || "http://localhost:5000";
 
+    // =========================================================
+    // 🟢 1. REFS
+    // =========================================================
     const selectedUserRef = useRef(null);
+    const usersRef = useRef([]);      
+    const dbUserRef = useRef(null);   
+
+    // Keep Refs synced with State
     useEffect(() => { selectedUserRef.current = selectedUser; }, [selectedUser]);
+    useEffect(() => { usersRef.current = users; }, [users]);
+    useEffect(() => { dbUserRef.current = dbUser; }, [dbUser]);
 
     // Handle Window Resize
     useEffect(() => {
@@ -31,13 +40,15 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     // --- Helper: Reorder Sidebar ---
     const handleIncomingMessage = (msg, isOwnMessage = false) => {
         setUsers((prevUsers) => {
-            const index = prevUsers.findIndex(u => u.appointment_id === msg.appointment_id);
+            // FIX: Convert IDs to String for safe comparison
+            const index = prevUsers.findIndex(u => String(u.appointment_id) === String(msg.appointment_id));
             if (index === -1) return prevUsers;
 
             const newUsers = [...prevUsers];
             const [movedUser] = newUsers.splice(index, 1);
 
-            const isChatOpen = selectedUserRef.current?.appointment_id === msg.appointment_id;
+            // FIX: Convert IDs to String here too
+            const isChatOpen = String(selectedUserRef.current?.appointment_id) === String(msg.appointment_id);
             
             // Only badge if not looking at it AND not my own message
             if (!isChatOpen && !isOwnMessage) {
@@ -49,7 +60,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         });
     };
 
-    // 1. Fetch Google ID
+    // 2. Fetch Google ID
     useEffect(() => {
         if (googleId) return;
         fetch("/api/auth/get_user")
@@ -58,7 +69,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             .catch(console.error);
     }, [googleId]);
 
-    // 2. Get DB User
+    // 3. Get DB User
     useEffect(() => {
         if (!googleId) return;
         fetch(`/api/tutee/by_google/${googleId}`)
@@ -67,7 +78,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             .catch(console.error);
     }, [googleId]);
 
-    // 3. Fetch Partners
+    // 4. Fetch Partners
     useEffect(() => {
         if (!dbUser) return;
         setLoading(true);
@@ -83,7 +94,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             });
     }, [dbUser]);
 
-    // 4. Socket Connection (STABLE)
+    // 5. Socket Connection
     useEffect(() => {
         if (!dbUser) return;
 
@@ -97,17 +108,47 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         return () => s.disconnect();
     }, [dbUser, socketUrl]);
 
-    // 5. Socket LISTENERS (STABLE)
+    // =========================================================
+    // 🟢 6. Socket LISTENERS (THE CORRECT FIX)
+    // =========================================================
     useEffect(() => {
         if (!socket) return;
 
+        // A. Handle Receiving Messages
         const onReceiveMessage = (msg) => {
-            if (selectedUserRef.current?.appointment_id === msg.appointment_id) {
+            const currentApptId = selectedUserRef.current?.appointment_id;
+            
+            // FIX: Strict Type Safety (String vs String)
+            if (currentApptId && String(currentApptId) === String(msg.appointment_id)) {
+                
                 setMessages((prev) => {
-                    const exists = prev.some(m => m.id === msg.id || (m.tempId && m.tempId === msg.tempId));
-                    return exists ? prev : [...prev, msg];
+                    // 1. DEDUPLICATION LOGIC
+                    // Only check for ID match if BOTH messages actually have an ID.
+                    // This prevents "undefined === undefined" from blocking valid messages.
+                    const isDuplicate = prev.some(m => {
+                        if (m.id && msg.id) return m.id === msg.id;
+                        if (m.tempId && msg.tempId) return m.tempId === msg.tempId;
+                        return false; 
+                    });
+
+                    if (isDuplicate) return prev;
+
+                    // 2. HANDLE "ECHO" (Sender updates)
+                    const myId = dbUserRef.current?.id_number;
+                    if (String(msg.sender_id) === String(myId)) {
+                        const pendingIndex = prev.findIndex(m => m.tempId && m.message_text === msg.message_text);
+                        if (pendingIndex !== -1) {
+                            const newMsgs = [...prev];
+                            newMsgs[pendingIndex] = msg; // Swap optimistic for confirmed
+                            return newMsgs;
+                        }
+                    }
+
+                    // 3. Add New Message (Receiver)
+                    return [...prev, msg];
                 });
             }
+            
             handleIncomingMessage(msg, false);
         };
 
@@ -115,16 +156,38 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             setMessages(msgs);
         };
 
+        // B. Handle Reconnection
+        const onConnect = () => {
+            console.log("🔌 Socket connected. Re-joining rooms...");
+            
+            const currentUsers = usersRef.current;
+            if (currentUsers && currentUsers.length > 0) {
+                const appointmentIds = currentUsers.map(u => u.appointment_id);
+                socket.emit("monitor_appointments", { appointment_ids: appointmentIds });
+            }
+
+            const activeChat = selectedUserRef.current;
+            const user = dbUserRef.current;
+            if (activeChat && user) {
+                socket.emit("join_appointment", {
+                    appointment_id: activeChat.appointment_id,
+                    user_id: user.id_number
+                });
+            }
+        };
+
         socket.on("receive_message", onReceiveMessage);
         socket.on("load_messages", onLoadMessages);
+        socket.on("connect", onConnect);
 
         return () => {
             socket.off("receive_message", onReceiveMessage);
             socket.off("load_messages", onLoadMessages);
+            socket.off("connect", onConnect);
         };
     }, [socket]); 
 
-    // 6. Socket MONITORING
+    // 7. Initial Monitoring
     useEffect(() => {
         if (!socket || users.length === 0) return;
         const appointmentIds = users.map(u => u.appointment_id);
@@ -135,8 +198,9 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     const handleSelectUser = (user) => {
         setSelectedUser(user);
         
+        // Reset unread locally
         setUsers(prev => prev.map(u => 
-            u.appointment_id === user.appointment_id ? { ...u, unread_count: 0 } : u
+            String(u.appointment_id) === String(user.appointment_id) ? { ...u, unread_count: 0 } : u
         ));
 
         if (socket && dbUser) {
@@ -167,7 +231,6 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     // --- Render ---
     if (isMobile) {
         return (
-            // 🟢 UPDATE: Replaced 'p-0' with 'large-padding' for sticky navbar support
             <div className="container-fluid large-padding" style={{ height: "100vh" }}>
                 <MobileChatLayout 
                     users={users}

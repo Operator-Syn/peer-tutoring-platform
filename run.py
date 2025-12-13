@@ -1,6 +1,7 @@
 from app import create_app, socketio
 
 # Create the app (Configurations are now applied inside create_app)
+import sockets.sockets  # Ensure sockets are registered
 app = create_app()
 
 if __name__ == "__main__":

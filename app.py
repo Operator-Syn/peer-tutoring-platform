@@ -91,7 +91,5 @@ def create_app():
         if path and os.path.isfile(file_path):
             return send_from_directory(app.static_folder, path)
         return send_file(INDEX_HTML)
-
-    import sockets.sockets
     
     return app
