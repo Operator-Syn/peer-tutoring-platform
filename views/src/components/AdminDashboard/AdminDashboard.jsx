@@ -13,7 +13,7 @@ const AdminDashboard = () => {
   } = useAdminDashboardData();
 
   const [showActionModal, setShowActionModal] = useState(false);
-  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [] });
+  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [], finalCode: '' });
   const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
@@ -29,7 +29,8 @@ const AdminDashboard = () => {
   };
 
   const openActionModal = (actionType, item, targetStatus) => {
-    let title = "", noteRequired = false, id = null, files = [];
+    let title = "", noteRequired = false, id = null, files = [], finalCode = "";
+    
     if (actionType === 'USER') {
         id = item.google_id;
         const name = item.first_name ? `${item.first_name} ${item.last_name}` : item.email;
@@ -44,9 +45,12 @@ const AdminDashboard = () => {
         title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application`;
     } else if (actionType === 'REQUEST') {
         id = item.request_id;
-        title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request: ${item.subject_code}`;
+        title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request`;
+        // Pre-fill the input with the user's request so Admin can edit it
+        finalCode = item.subject_code; 
     }
-    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files });
+    
+    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode });
     setActionNote('');
     setShowActionModal(true);
   };
@@ -69,7 +73,11 @@ const AdminDashboard = () => {
         apiAction = actionData.targetStatus === 'APPROVED' ? 'APPROVE_APP' : 'REJECT_APP';
     } else if (actionData.type === 'REQUEST') {
         apiAction = 'RESOLVE_REQUEST';
-        payload = { action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT' };
+        // Pass the edited code to the backend
+        payload = { 
+            action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT',
+            final_code: actionData.finalCode 
+        };
     }
     
     const res = await actions.handleAction(apiAction, actionData.id, payload);
@@ -160,7 +168,7 @@ const AdminDashboard = () => {
 
                 {activeTab === 'users' && (
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
-                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option><option value="ADMIN">Admin</option>
+                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
                     </select>
                 )}
             </div>
@@ -286,12 +294,12 @@ const AdminDashboard = () => {
                                         <td>{req.created_at}</td>
                                         <td><span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span></td>
                                         <td>
-                                            {req.status === 'PENDING' && (
+                                            {req.status === 'PENDING' ? (
                                                 <div className="admin-flex-end">
                                                     <button className="admin-btn-green" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Approve</button>
                                                     <button className="admin-btn-red" onClick={() => openActionModal('REQUEST', req, 'REJECT')}>Reject</button>
                                                 </div>
-                                            )}
+                                            ) : <span className="admin-text-muted">Processed</span>}
                                         </td>
                                     </tr>
                                 ))}
@@ -309,6 +317,7 @@ const AdminDashboard = () => {
         <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
             <p>Are you sure you want to proceed?</p>
+            
             {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && (
                 <div className="admin-modal-files">
                     <strong>Attached Evidence:</strong>
@@ -319,6 +328,22 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+            
+            {actionData.type === 'REQUEST' && actionData.targetStatus === 'APPROVE' && (
+                <Form.Group className="mb-3">
+                    <Form.Label className="admin-fw-bold">Confirm Course Code:</Form.Label>
+                    <Form.Control 
+                        type="text" 
+                        value={actionData.finalCode} 
+                        onChange={(e) => setActionData({...actionData, finalCode: e.target.value})}
+                        placeholder="e.g. MATH 101"
+                    />
+                    <Form.Text className="text-muted">
+                        Edit this to correct the format before adding to the database. Separate multiple subjects with a comma.
+                    </Form.Text>
+                </Form.Group>
+            )}
+
             {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} /></Form.Group>}
         </Modal.Body>
         <Modal.Footer>
