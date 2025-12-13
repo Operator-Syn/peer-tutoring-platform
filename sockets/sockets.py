@@ -46,3 +46,10 @@ def handle_message(data):
         "message_text": message_text,
         "timestamp": timestamp.isoformat()
     }, room=room)
+    
+@socketio.on("mark_read")
+def handle_mark_read(data):
+    appointment_id = data.get("appointment_id")
+    user_id = data.get("user_id")
+    if appointment_id and user_id:
+        MessageModel.mark_messages_as_read(appointment_id, user_id)

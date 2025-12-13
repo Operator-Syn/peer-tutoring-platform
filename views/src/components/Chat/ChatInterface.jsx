@@ -37,21 +37,22 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // --- Helper: Reorder Sidebar ---
+    // --- Helper: Reorder Sidebar & Sync Read Badge ---
     const handleIncomingMessage = (msg, isOwnMessage = false) => {
         setUsers((prevUsers) => {
-            // FIX: Convert IDs to String for safe comparison
             const index = prevUsers.findIndex(u => String(u.appointment_id) === String(msg.appointment_id));
             if (index === -1) return prevUsers;
 
             const newUsers = [...prevUsers];
             const [movedUser] = newUsers.splice(index, 1);
 
-            // FIX: Convert IDs to String here too
+            // Check if we are currently viewing this chat
             const isChatOpen = String(selectedUserRef.current?.appointment_id) === String(msg.appointment_id);
             
-            // Only badge if not looking at it AND not my own message
-            if (!isChatOpen && !isOwnMessage) {
+            // LOGIC: If chat is open, force unread to 0. Otherwise, increment.
+            if (isChatOpen) {
+                movedUser.unread_count = 0;
+            } else if (!isOwnMessage) {
                 movedUser.unread_count = (movedUser.unread_count || 0) + 1;
             }
 
@@ -109,7 +110,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     }, [dbUser, socketUrl]);
 
     // =========================================================
-    // 🟢 6. Socket LISTENERS (THE CORRECT FIX)
+    // 🟢 6. Socket LISTENERS
     // =========================================================
     useEffect(() => {
         if (!socket) return;
@@ -118,37 +119,43 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         const onReceiveMessage = (msg) => {
             const currentApptId = selectedUserRef.current?.appointment_id;
             
-            // FIX: Strict Type Safety (String vs String)
+            // Check if the incoming message belongs to the currently open chat
             if (currentApptId && String(currentApptId) === String(msg.appointment_id)) {
                 
+                // 1. Update Messages List
                 setMessages((prev) => {
-                    // 1. DEDUPLICATION LOGIC
-                    // Only check for ID match if BOTH messages actually have an ID.
-                    // This prevents "undefined === undefined" from blocking valid messages.
+                    // Deduplication
                     const isDuplicate = prev.some(m => {
                         if (m.id && msg.id) return m.id === msg.id;
                         if (m.tempId && msg.tempId) return m.tempId === msg.tempId;
                         return false; 
                     });
-
                     if (isDuplicate) return prev;
 
-                    // 2. HANDLE "ECHO" (Sender updates)
+                    // Handle "Echo" (Optimistic Updates)
                     const myId = dbUserRef.current?.id_number;
                     if (String(msg.sender_id) === String(myId)) {
                         const pendingIndex = prev.findIndex(m => m.tempId && m.message_text === msg.message_text);
                         if (pendingIndex !== -1) {
                             const newMsgs = [...prev];
-                            newMsgs[pendingIndex] = msg; // Swap optimistic for confirmed
+                            newMsgs[pendingIndex] = msg; 
                             return newMsgs;
                         }
                     }
-
-                    // 3. Add New Message (Receiver)
                     return [...prev, msg];
                 });
+
+                // 2. SERVER SYNC: Tell server we read this message immediately
+                // (This prevents it from showing as "unread" if you refresh the page later)
+                if (dbUserRef.current) {
+                    socket.emit("mark_read", {
+                        appointment_id: msg.appointment_id,
+                        user_id: dbUserRef.current.id_number
+                    });
+                }
             }
             
+            // 3. SIDEBAR SYNC: Update the sidebar order and badges
             handleIncomingMessage(msg, false);
         };
 
@@ -198,7 +205,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     const handleSelectUser = (user) => {
         setSelectedUser(user);
         
-        // Reset unread locally
+        // Reset unread locally immediately
         setUsers(prev => prev.map(u => 
             String(u.appointment_id) === String(user.appointment_id) ? { ...u, unread_count: 0 } : u
         ));
