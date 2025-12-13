@@ -362,3 +362,35 @@ def get_subject_requests():
     except Exception as e:
         print("Error fetching subject requests:", e)
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/subject-requests/<int:request_id>/resolve", methods=["PUT"])
+def resolve_subject_request(request_id):
+    data = request.get_json()
+    action = data.get("action") # approve or reject
+    
+    if action not in ['APPROVE', 'REJECT']:
+        return jsonify({"success": False, "error": "Invalid action"}), 400
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
+        cur.execute("UPDATE subject_request SET status = %s WHERE request_id = %s", (status, request_id))
+        
+        if status == 'APPROVED':
+            cur.execute("SELECT subject_code FROM subject_request WHERE request_id = %s", (request_id,))
+            subject_code = cur.fetchone()[0]
+            
+            cur.execute("""
+                INSERT INTO course (course_code, course_name) 
+                VALUES (%s, %s) 
+                ON CONFLICT (course_code) DO NOTHING
+            """, (subject_code, subject_code))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
