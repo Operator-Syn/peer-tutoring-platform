@@ -20,7 +20,6 @@ const AdminDashboard = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
   const handleShowCor = (url, isAppeal = false) => {
@@ -43,6 +42,9 @@ const AdminDashboard = () => {
     } else if (actionType === 'APP') {
         id = item.application_id;
         title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application`;
+    } else if (actionType === 'REQUEST') {
+        id = item.request_id;
+        title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request: ${item.subject_code}`;
     }
     setActionData({ type: actionType, id, title, noteRequired, targetStatus, files });
     setActionNote('');
@@ -65,6 +67,9 @@ const AdminDashboard = () => {
         payload = { action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT' };
     } else if (actionData.type === 'APP') {
         apiAction = actionData.targetStatus === 'APPROVED' ? 'APPROVE_APP' : 'REJECT_APP';
+    } else if (actionData.type === 'REQUEST') {
+        apiAction = 'RESOLVE_REQUEST';
+        payload = { action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT' };
     }
     
     const res = await actions.handleAction(apiAction, actionData.id, payload);
@@ -120,6 +125,7 @@ const AdminDashboard = () => {
             <button className={`admin-tab-btn ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>Tutor Applications</button>
             <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>User Management</button>
             <button className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} onClick={() => setActiveTab('appeals')}>Appeals</button>
+            <button className={`admin-tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>Subject Requests</button>
         </div>
 
         <div className="admin-filters-row">
@@ -138,7 +144,7 @@ const AdminDashboard = () => {
                     <select className="admin-form-select admin-sort" value={filters.sort} onChange={(e) => filters.setSort(e.target.value)}>
                         <option value="date_desc">Newest First</option>
                         <option value="date_asc">Oldest First</option>
-                        {activeTab !== 'appeals' && <><option value="name_asc">Name (A-Z)</option><option value="name_desc">Name (Z-A)</option></>}
+                        {activeTab !== 'appeals' && activeTab !== 'requests' && <><option value="name_asc">Name (A-Z)</option><option value="name_desc">Name (Z-A)</option></>}
                         {activeTab === 'applications' && <><option value="college_asc">College (A-Z)</option><option value="college_desc">College (Z-A)</option><option value="year_asc">Year (Low-High)</option><option value="year_desc">Year (High-Low)</option></>}
                         {activeTab === 'users' && <><option value="role_asc">Role (A-Z)</option><option value="role_desc">Role (Z-A)</option></>}
                     </select>
@@ -154,7 +160,7 @@ const AdminDashboard = () => {
 
                 {activeTab === 'users' && (
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
-                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
+                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option><option value="ADMIN">Admin</option>
                     </select>
                 )}
             </div>
@@ -240,6 +246,47 @@ const AdminDashboard = () => {
                                             <button className="admin-btn-green" onClick={() => openActionModal('APPEAL', appeal, 'APPROVE')}>Approve</button>
                                             <button className="admin-btn-red" onClick={() => openActionModal('APPEAL', appeal, 'REJECT')}>Reject</button>
                                         </div>}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {activeTab === 'requests' && (
+                    <div className="admin-table-box">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Requester</th>
+                                    <th>Role</th>
+                                    <th>Subject</th>
+                                    <th>Reason</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.map(req => (
+                                    <tr key={req.request_id}>
+                                        <td>
+                                            <div className="admin-bold">{req.first_name} {req.last_name}</div>
+                                            <div className="admin-sub">{req.requester_id}</div>
+                                        </td>
+                                        <td><span className="admin-role-badge">{req.role}</span></td>
+                                        <td><div className="admin-bold">{req.subject_code}</div></td>
+                                        <td><div className="admin-msg-box">{req.description || "N/A"}</div></td>
+                                        <td>{req.created_at}</td>
+                                        <td><span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span></td>
+                                        <td>
+                                            {req.status === 'PENDING' && (
+                                                <div className="admin-flex-end">
+                                                    <button className="admin-btn-green" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Approve</button>
+                                                    <button className="admin-btn-red" onClick={() => openActionModal('REQUEST', req, 'REJECT')}>Reject</button>
+                                                </div>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
