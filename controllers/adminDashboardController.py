@@ -375,7 +375,8 @@ def get_subject_requests():
 @admin_dashboard_bp.route("/api/admin/subject-requests/<int:request_id>/resolve", methods=["PUT"])
 def resolve_subject_request(request_id):
     data = request.get_json()
-    action = data.get("action") # approve or reject
+    action = data.get("action")
+    final_code_input = data.get("final_code", "").strip() 
     
     if action not in ['APPROVE', 'REJECT']:
         return jsonify({"success": False, "error": "Invalid action"}), 400
@@ -385,17 +386,33 @@ def resolve_subject_request(request_id):
         cur = conn.cursor()
         
         status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
-        cur.execute("UPDATE subject_request SET status = %s WHERE request_id = %s", (status, request_id))
+        
+        if status == 'APPROVED' and final_code_input:
+             cur.execute("""
+                UPDATE subject_request 
+                SET status = %s, subject_code = %s 
+                WHERE request_id = %s
+            """, (status, final_code_input, request_id))
+        else:
+            cur.execute("UPDATE subject_request SET status = %s WHERE request_id = %s", (status, request_id))
         
         if status == 'APPROVED':
-            cur.execute("SELECT subject_code FROM subject_request WHERE request_id = %s", (request_id,))
-            subject_code = cur.fetchone()[0]
+            subject_to_add = final_code_input
+            if not subject_to_add:
+                cur.execute("SELECT subject_code FROM subject_request WHERE request_id = %s", (request_id,))
+                row = cur.fetchone()
+                if row:
+                    subject_to_add = row[0]
             
-            cur.execute("""
-                INSERT INTO course (course_code, course_name) 
-                VALUES (%s, %s) 
-                ON CONFLICT (course_code) DO NOTHING
-            """, (subject_code, subject_code))
+            if subject_to_add:
+                subjects = [s.strip().upper() for s in subject_to_add.replace(';', ',').split(',') if s.strip()]
+                
+                for sub in subjects:
+                    cur.execute("""
+                        INSERT INTO course (course_code, course_name) 
+                        VALUES (%s, %s) 
+                        ON CONFLICT (course_code) DO NOTHING
+                    """, (sub, sub))
 
         conn.commit()
         cur.close()
