@@ -1,31 +1,31 @@
-.my-no-btn{
-   background-color: #ffffff;   
+.my-no-btn {
+  background-color: #ffffff;
   border-color: #4956AD;
   color: #4956AD;
 }
 .my-yes-btn {
-  background-color: #4956AD;   
+  background-color: #4956AD;
   border-color: #4956AD;
   color: #fff;
 }
 
-.my-no-btn:hover{
-  background-color: #ffffff;   
+.my-no-btn:hover {
+  background-color: #ffffff;
   border-color: #4956AD;
   color: #4956AD;
 }
 .my-yes-btn:hover {
-  background-color: #4956AD;  
-  border-color: #4956AD;      
-  color: #fff;                 
-  box-shadow: none;           
-  transform: none;            
+  background-color: #4956AD;
+  border-color: #4956AD;
+  color: #fff;
+  box-shadow: none;
+  transform: none;
 }
 
 .confirm-overlay {
   position: fixed;
-  inset: 0;                
-  background: rgba(0, 0, 0, 0.5);  
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -41,18 +41,19 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-.no-appointments{
-  color: #4956AD; 
+.no-appointments {
+  color: #4956AD;
+  text-align: center;
 }
 
-.request-title{
-   color: #4956AD; 
+.request-title {
+  color: #4956AD;
 }
 
 .appointments-wrapper {
   position: relative;
-  max-height: 80vh; 
-  overflow-y: auto; 
+  max-height: 80vh;
+  overflow-y: auto;
   background-color: #f8f9ff;
   padding: 2rem;
 }
@@ -68,11 +69,6 @@
 
 .appointments-wrapper::-webkit-scrollbar-thumb:hover {
   background-color: #555;
-}
-
-.no-appointments {
-  color: white;
-  text-align: center;
 }
 
 .appointments-scroll {
@@ -96,14 +92,14 @@
 }
 
 .schedules {
-  min-height: 100px; 
-  background-color: #ffffff; 
+  min-height: 100px;
+  background-color: #ffffff;
 }
 
 .appointments_page {
-  min-height: 100vh;        /* just fill the viewport */
-  padding-top: 120px;       /* distance from navbar/header */
-  padding-bottom: 60px;     /* little space at bottom */
+  min-height: 100vh;
+  padding-top: 120px;
+  padding-bottom: 60px;
 }
 
 .requests {
@@ -120,7 +116,7 @@
   align-items: center;
   width: 100%;
   padding-bottom: 5vh;
-  padding-top: 9rem; 
+  padding-top: 9rem;
 }
 
 .custom-alert {
@@ -129,7 +125,7 @@
   border-radius: 12px;
   width: 100%;
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -143,7 +139,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-right: 1rem; 
+  margin-right: 1rem;
 }
 
 .profile-info {
@@ -194,7 +190,7 @@
 .form-control:focus {
   box-shadow: none !important;
   outline: none !important;
-  border-color: #ced4da !important; 
+  border-color: #ced4da !important;
 }
 
 @media (max-width: 768px) {
@@ -242,16 +238,16 @@
 @media (max-width: 767px) {
   .alert.custom-alert {
     flex-direction: column;
-    align-items: center; 
-    text-align: center;  
-    padding: 1rem;       
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
   }
 
   .info-section,
   .datetime-section {
     width: 100%;
     margin: 0.5rem 0;
-    text-align: center; 
+    text-align: center;
   }
 
   .datetime-section {
@@ -265,7 +261,7 @@
   }
 
   .action-buttons {
-    position: static !important; 
+    position: static !important;
     flex-direction: column;
     gap: 0.5rem;
     width: 100%;
@@ -273,7 +269,7 @@
   }
 
   .action-buttons .btn {
-    width: 90%; 
+    width: 90%;
     padding: 12px 0 !important;
   }
 }
@@ -291,9 +287,9 @@
 
   .alert.custom-alert {
     flex-direction: column !important;
-    align-items: center !important; 
+    align-items: center !important;
     justify-content: center !important;
-    text-align: center !important; 
+    text-align: center !important;
     width: 100%;
     padding: 1rem !important;
   }
@@ -322,7 +318,7 @@
 
   .action-buttons {
     flex-direction: column !important;
-    align-items: center !important; 
+    align-items: center !important;
     justify-content: center !important;
     width: 100% !important;
     gap: 0.5rem;
@@ -330,7 +326,7 @@
   }
 
   .action-buttons .btn {
-    width: 80% !important; 
+    width: 80% !important;
     font-size: 0.9rem !important;
     padding: 12px 0 !important;
   }
@@ -340,82 +336,136 @@
    Slider + Arrow Styles
    ============================ */
 
-/* Slider viewport */
 .appointments-page-wrapper {
   position: relative;
   width: 100%;
-
   margin: 0 auto;
-
-  /* 👇 make the "page" tall */
-  min-height: 100vh;       /* at least full screen */
-  padding-top: 10px;      /* space from navbar/top */
-  padding-bottom: 80px;    /* space at the bottom */
+  min-height: 100vh;
+  padding-top: 10px;
+  padding-bottom: 80px;
   box-sizing: border-box;
-
-  overflow-x: hidden;      /* keep slider clean */
-  overflow-y: visible;     /* allow full vertical height */
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
-/* The sliding strip that contains both pages */
 .appointments-slider {
   display: flex;
-  width: 200%;              /* two panels (appointments + requests) */
+  width: 200%;
   transition: transform 0.4s ease-in-out;
 }
 
-/* Each page panel */
 .appointments-panel {
   width: 50%;
   flex-shrink: 0;
 }
 
-/* When showing Appointments page */
 .appointments-slider.show-appointments {
   transform: translateX(0%);
 }
 
-/* When showing Requests page */
 .appointments-slider.show-requests {
   transform: translateX(-50%);
 }
 
-/* Arrow buttons */
+/* ============================
+   Modern Slider Arrow Styles
+   ============================ */
+
 .page-arrow {
-  position: absolute;
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #4956ad;
-  color: #ffffff;
-  font-size: 1.6rem;
+
+  border: 1px solid rgba(73, 86, 173, 0.25);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  color: #4956ad;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+
+  display: grid;
+  place-items: center;
+
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-}
+  z-index: 1200;
 
-.page-arrow-right {
-  right: 15px;
-}
-
-.page-arrow-left {
-  left: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .page-arrow:hover {
-  filter: brightness(1.08);
+  transform: translateY(-50%) scale(1.06);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+.page-arrow:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.page-arrow-right {
+  right: 22px;
+}
+
+.page-arrow-left {
+  left: 22px;
+}
+
+.page-arrow::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid rgba(73, 86, 173, 0.08);
+  pointer-events: none;
 }
 
 .page-arrow:focus {
   outline: none;
+  box-shadow: 0 0 0 4px rgba(73, 86, 173, 0.2),
+    0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
+@media (max-width: 768px) {
+  .page-arrow {
+    width: 46px;
+    height: 46px;
+    font-size: 26px;
+    top: auto;
+    bottom: 18px;
+    transform: none;
+  }
+
+  .page-arrow:hover {
+    transform: scale(1.06);
+  }
+
+  .page-arrow:active {
+    transform: scale(0.98);
+  }
+
+  .page-arrow-right {
+    right: 16px;
+  }
+
+  .page-arrow-left {
+    left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-arrow {
+    transition: none;
+  }
+}
+
+/* Loading UI */
 .appointments-loading {
   min-height: 100vh;
   display: flex;
@@ -434,3 +484,16 @@
   align-items: center;
 }
 
+/* Toast theme */
+:root {
+  --toastify-color-success: #4956AD;
+  --toastify-color-info: #4956AD;
+  --toastify-color-warning: #ffc107;
+  --toastify-color-error: #dc3545;
+}
+
+.Toastify__toast {
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  font-size: 0.95rem;
+}

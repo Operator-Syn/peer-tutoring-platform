@@ -200,3 +200,42 @@
   color: #4956ad;
   font-weight: 500;
 }
+
+/* ✅ Toastify theme (blue / site theme) */
+:root {
+  --toastify-color-success: #0d6efd; /* bootstrap primary blue */
+  --toastify-color-info: #0d6efd;
+  --toastify-color-warning: #ffc107; /* optional */
+  --toastify-color-error: #dc3545;   /* optional */
+
+  --toastify-toast-width: 340px;
+  --toastify-toast-min-height: 56px;
+
+  --toastify-font-family: inherit;
+}
+
+/* make all toasts look uniform */
+.Toastify__toast {
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  padding: 12px 14px;
+  font-size: 0.95rem;
+}
+
+.Toastify__toast-body {
+  margin: 0;
+  padding: 0;
+}
+
+.Toastify__close-button {
+  opacity: 0.65;
+}
+.Toastify__close-button:hover {
+  opacity: 1;
+}
+
+/* optional: progress bar rounded */
+.Toastify__progress-bar {
+  border-radius: 0 0 14px 14px;
+}
+

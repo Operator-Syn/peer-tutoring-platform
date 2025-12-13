@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import "./feedback.css";
+
 import TuteeRate from "../../components/Ratesession/tuteerate";
 import TutorRate from "../../components/Ratesession/tutorrate";
+
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Feedback() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -15,6 +19,14 @@ function Feedback() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const toastOpts = {
+    position: "top-right",
+    autoClose: 2500,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
+
   const reloadSessions = async (idNumberOverride) => {
     const id = idNumberOverride || tuteeId;
     if (!id) return;
@@ -23,9 +35,11 @@ function Feedback() {
       const resPending = await fetch(`/api/rate-session/pending/${id}`, {
         credentials: "include",
       });
+
       const pendingData = await resPending.json().catch(() => []);
       if (!resPending.ok) {
         console.error("Failed to reload pending sessions:", pendingData);
+        toast.error("Failed to reload sessions.", toastOpts);
       }
 
       setSessions(pendingData);
@@ -33,6 +47,7 @@ function Feedback() {
       setSelectedSession(null);
     } catch (err) {
       console.error("Error reloading sessions:", err);
+      toast.error("Network error while reloading sessions.", toastOpts);
     }
   };
 
@@ -42,29 +57,40 @@ function Feedback() {
         const resUser = await fetch("/api/auth/get_user", {
           credentials: "include",
         });
+
         if (resUser.status === 401) {
+          toast.error("Session expired. Redirecting to login...", toastOpts);
           window.location.href = "/api/auth/login";
           return;
         }
+
         const loggedInUser = await resUser.json();
 
-        const resTutees = await fetch("/api/tutee/all", {
-          credentials: "include",
-        });
+        const resTutees = await fetch("/api/tutee/all", { credentials: "include" });
+        if (!resTutees.ok) {
+          toast.error("Failed to load tutee list.", toastOpts);
+          return;
+        }
         const tutees = await resTutees.json();
 
-        const resTutors = await fetch("/api/tutor/all", {
-          credentials: "include",
-        });
+        const resTutors = await fetch("/api/tutor/all", { credentials: "include" });
+        if (!resTutors.ok) {
+          toast.error("Failed to load tutor list.", toastOpts);
+          return;
+        }
         const tutors = await resTutors.json();
 
         const userData = tutees.find((u) => u.google_id === loggedInUser.sub);
 
-        const tutorExists = tutors.some(
-          (t) => t.tutor_id === userData?.id_number
-        );
+        if (!userData) {
+          setCurrentUser(null);
+          toast.error("No matching user found.", toastOpts);
+          return;
+        }
 
-        setCurrentUser(userData || null);
+        const tutorExists = tutors.some((t) => t.tutor_id === userData?.id_number);
+
+        setCurrentUser(userData);
         const idNumber = userData?.id_number || null;
         setTuteeId(idNumber);
         setIsTutor(tutorExists);
@@ -72,6 +98,7 @@ function Feedback() {
         if (idNumber) await reloadSessions(idNumber);
       } catch (err) {
         console.error("Error fetching Feedback data:", err);
+        toast.error("Network error while loading feedback.", toastOpts);
       } finally {
         setLoading(false);
       }
@@ -96,16 +123,17 @@ function Feedback() {
         s.tutor_last_name,
       ]
         .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(query))
+        .some((field) => String(field).toLowerCase().includes(query))
     );
 
     setSessions(filtered);
   };
 
-  // ✅ Nice loading UI
+  // Loading UI
   if (loading) {
     return (
       <div className="feedback-loading">
+        <ToastContainer newestOnTop limit={2} theme="light" />
         <div className="feedback-loading-box">
           <div className="spinner-border" role="status" />
           <span className="ms-2">Loading your sessions...</span>
@@ -117,6 +145,7 @@ function Feedback() {
   if (!currentUser) {
     return (
       <div className="feedback-loading">
+        <ToastContainer newestOnTop limit={2} theme="light" />
         <div className="feedback-loading-box">
           <span>No matching user found.</span>
         </div>
@@ -124,14 +153,13 @@ function Feedback() {
     );
   }
 
-  // If tutor, show tutor rating page
+  // Tutor view
   if (isTutor) {
     return (
       <div className="feedback-page">
+        <ToastContainer newestOnTop limit={2} theme="light" />
         <div className="feedback-container">
-          <h1 className="fw-bold mb-1 feedback-title-center">
-            My Session Ratings
-          </h1>
+          <h1 className="fw-bold mb-1 feedback-title-center">My Session Ratings</h1>
           <p className="text-muted mb-4 feedback-subtitle-center"></p>
           <TutorRate />
         </div>
@@ -139,9 +167,10 @@ function Feedback() {
     );
   }
 
-  // Tutee rating page
+  // Tutee view
   return (
     <div className="feedback-page">
+      <ToastContainer newestOnTop limit={2} theme="light" />
       <div className="feedback-container">
         <h1 className="fw-bold mb-1 feedback-title-center">Rate Sessions</h1>
         <p className="text-muted mb-4 feedback-subtitle-center"></p>
@@ -159,10 +188,7 @@ function Feedback() {
                 if (e.key === "Enter") handleSearch();
               }}
             />
-            <button
-              className="btn btn-success feedback-search-btn"
-              onClick={handleSearch}
-            >
+            <button className="btn btn-success feedback-search-btn" onClick={handleSearch}>
               Enter
             </button>
           </div>
@@ -171,16 +197,10 @@ function Feedback() {
         {/* Session list */}
         <div className="feedback-list">
           {sessions.length === 0 ? (
-            <div className="feedback-empty">
-              Sorry, you have no sessions to rate.
-            </div>
+            <div className="feedback-empty">Sorry, you have no sessions to rate.</div>
           ) : (
             sessions.map((s) => {
-              const tutorName = [
-                s.tutor_first_name,
-                s.tutor_middle_name,
-                s.tutor_last_name,
-              ]
+              const tutorName = [s.tutor_first_name, s.tutor_middle_name, s.tutor_last_name]
                 .filter(Boolean)
                 .join(" ");
 
@@ -193,14 +213,10 @@ function Feedback() {
                 : (s.tutor_id || "?").slice(0, 2).toUpperCase();
 
               const isThisSelected =
-                selectedSession &&
-                selectedSession.appointment_id === s.appointment_id;
+                selectedSession && selectedSession.appointment_id === s.appointment_id;
 
               return (
-                <div
-                  key={s.appointment_id}
-                  className="alert custom-alert feedback-session-card"
-                >
+                <div key={s.appointment_id} className="alert custom-alert feedback-session-card">
                   <div className="feedback-card-content">
                     {/* Left */}
                     <div className="feedback-left">
@@ -208,9 +224,7 @@ function Feedback() {
 
                       <div className="feedback-subject">
                         <span className="feedback-label">Subject Code</span>
-                        <span className="feedback-subject-code">
-                          {s.course_code}
-                        </span>
+                        <span className="feedback-subject-code">{s.course_code}</span>
                       </div>
                     </div>
 
@@ -224,12 +238,8 @@ function Feedback() {
                       </div>
 
                       <div className="feedback-info-block">
-                        <span className="feedback-label">
-                          Appointment Date
-                        </span>
-                        <span className="feedback-value">
-                          {s.appointment_date}
-                        </span>
+                        <span className="feedback-label">Appointment Date</span>
+                        <span className="feedback-value">{s.appointment_date}</span>
                       </div>
 
                       <div className="feedback-info-block">
@@ -240,20 +250,18 @@ function Feedback() {
                       </div>
                     </div>
 
-                    {/* Right */}
+                  
                     <div className="feedback-actions">
                       <button
                         className="btn fw-semibold feedback-rate-btn"
-                        onClick={() =>
-                          setSelectedSession(isThisSelected ? null : s)
-                        }
+                        onClick={() => setSelectedSession(isThisSelected ? null : s)}
                       >
                         {isThisSelected ? "Hide" : "Rate"}
                       </button>
                     </div>
                   </div>
 
-                  {/* Rating form */}
+         
                   {isThisSelected && (
                     <div className="feedback-form-wrap">
                       <TuteeRate

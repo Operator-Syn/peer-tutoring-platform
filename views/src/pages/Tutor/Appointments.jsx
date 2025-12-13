@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import "./appointments.css";
 import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 function Appointments() {
   const [rows, setRows] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -12,11 +15,20 @@ function Appointments() {
   const [allRows, setAllRows] = useState([]);
 
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null); // "accept" | "decline" | "finish"
   const [pendingAppId, setPendingAppId] = useState(null);
 
   const [activePage, setActivePage] = useState("appointments");
-  const [loading, setLoading] = useState(true); // loading flag
+  const [loading, setLoading] = useState(true);
+
+  // ✅ consistent toast config
+  const toastOpts = {
+    position: "top-right",
+    autoClose: 2500,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
 
   // helper: check if appointment date is in the past
   const isPastAppointment = (appointmentDate) => {
@@ -27,7 +39,6 @@ function Appointments() {
 
     // treat whole day as valid; mark past only when day is strictly before today
     appt.setHours(23, 59, 59, 999);
-
     return appt < today;
   };
 
@@ -39,9 +50,12 @@ function Appointments() {
           credentials: "include",
         });
         if (!resUser.ok) {
+          // no alert/confirm -> just redirect or toast
+          toast.error("Session expired. Redirecting to login...", toastOpts);
           window.location.href = "/api/auth/login";
           return;
         }
+
         const loggedInUser = await resUser.json();
         const googleId = loggedInUser.sub;
 
@@ -49,24 +63,36 @@ function Appointments() {
         const resTutees = await fetch("/api/tutee/all", {
           credentials: "include",
         });
-        const tutees = await resTutees.json();
-        const currentTutee = tutees.find((t) => t.google_id === googleId);
-        if (!currentTutee) {
-          setLoading(false);
+        if (!resTutees.ok) {
+          toast.error("Failed to load tutee list.", toastOpts);
           return;
         }
+        const tutees = await resTutees.json();
+        const currentTutee = tutees.find((t) => t.google_id === googleId);
+
+        if (!currentTutee) {
+          toast.error("Tutee account not found.", toastOpts);
+          return;
+        }
+
         const tuteeId = currentTutee.id_number;
 
         // 3) find tutor row
         const resTutors = await fetch("/api/tutor/all", {
           credentials: "include",
         });
-        const tutors = await resTutors.json();
-        const currentTutor = tutors.find((t) => t.tutor_id === tuteeId);
-        if (!currentTutor) {
-          setLoading(false);
+        if (!resTutors.ok) {
+          toast.error("Failed to load tutor list.", toastOpts);
           return;
         }
+        const tutors = await resTutors.json();
+        const currentTutor = tutors.find((t) => t.tutor_id === tuteeId);
+
+        if (!currentTutor) {
+          toast.info("You are not registered as a tutor.", toastOpts);
+          return;
+        }
+
         setTutorId(currentTutor.tutor_id);
 
         // 4) pending requests
@@ -74,6 +100,10 @@ function Appointments() {
           `/api/requests/pending/${currentTutor.tutor_id}`,
           { credentials: "include" }
         );
+        if (!resPending.ok) {
+          toast.error("Failed to load pending requests.", toastOpts);
+          return;
+        }
         const pendingData = await resPending.json();
         setRows(pendingData);
         setAllRows(pendingData);
@@ -83,10 +113,15 @@ function Appointments() {
           `/api/requests/appointments/${currentTutor.tutor_id}`,
           { credentials: "include" }
         );
+        if (!resAppointments.ok) {
+          toast.error("Failed to load appointments.", toastOpts);
+          return;
+        }
         const appointmentsData = await resAppointments.json();
         setAppointments(appointmentsData);
       } catch (err) {
         console.error("Error fetching appointments:", err);
+        toast.error("Network error while loading data.", toastOpts);
       } finally {
         setLoading(false);
       }
@@ -110,7 +145,7 @@ function Appointments() {
         row.day_of_week,
       ]
         .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(query))
+        .some((field) => String(field).toLowerCase().includes(query))
     );
 
     setRows(filtered);
@@ -123,7 +158,17 @@ function Appointments() {
   };
 
   const handleConfirmYes = async () => {
-    await handleAction(pendingAppId, pendingAction);
+    if (!pendingAppId || !pendingAction) {
+      setShowConfirm(false);
+      return;
+    }
+
+    if (pendingAction === "finish") {
+      await finishAppointmentConfirmed(pendingAppId);
+    } else {
+      await handleAction(pendingAppId, pendingAction);
+    }
+
     setShowConfirm(false);
     setPendingAppId(null);
     setPendingAction(null);
@@ -139,19 +184,27 @@ function Appointments() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action }),
+          credentials: "include",
         }
       );
 
-      const body = await res.json().catch(() => null);
+      const body = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        alert(body?.error || `Failed to ${action} appointment (${res.status})`);
+        toast.error(
+          body?.error || `Failed to ${action} appointment (${res.status})`,
+          toastOpts
+        );
         return;
       }
 
-      // remove from pending list
-      setRows((prev) =>
-        prev.filter((r) => r.appointment_id !== appointment_id)
+      toast.success(
+        action === "accept" ? "Request accepted!" : "Request declined.",
+        toastOpts
       );
+
+      // remove from pending list
+      setRows((prev) => prev.filter((r) => r.appointment_id !== appointment_id));
       setAllRows((prev) =>
         prev.filter((r) => r.appointment_id !== appointment_id)
       );
@@ -165,21 +218,16 @@ function Appointments() {
       setAppointments(appointmentsData);
     } catch (err) {
       console.error(err);
-      alert("Network error. Check console.");
+      toast.error("Network error. Please try again.", toastOpts);
     }
   };
 
-  // call /api/requests/appointments/finish/<appointment_id>
-  const handleFinishAppointment = async (appointmentId) => {
+  // ✅ finish appointment without window.confirm/alert
+  const finishAppointmentConfirmed = async (appointmentId) => {
     if (!appointmentId) {
-      alert("Missing appointment ID.");
+      toast.error("Missing appointment ID.", toastOpts);
       return;
     }
-
-    const ok = window.confirm(
-      "Mark this session as finished? The tutee will then be able to rate it."
-    );
-    if (!ok) return;
 
     try {
       const res = await fetch(
@@ -193,7 +241,7 @@ function Appointments() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data.error || "Failed to finish appointment.");
+        toast.error(data.error || "Failed to finish appointment.", toastOpts);
         return;
       }
 
@@ -202,17 +250,20 @@ function Appointments() {
         prev.filter((a) => a.appointment_id !== appointmentId)
       );
 
-      alert("Appointment marked as COMPLETED and added to session_rating.");
+      toast.success(
+        "Appointment marked as COMPLETED. Rating is now available.",
+        toastOpts
+      );
     } catch (err) {
       console.error("Error finishing appointment:", err);
-      alert("Network error while finishing appointment.");
+      toast.error("Network error while finishing appointment.", toastOpts);
     }
   };
 
-  // While loading, show loading UI instead of rendering the whole layout empty
   if (loading) {
     return (
       <div className="appointments-page-wrapper">
+        <ToastContainer newestOnTop limit={2} theme="light" />
         <div className="appointments-loading">
           <div className="appointments-loading-box">
             <div className="spinner-border" role="status" />
@@ -225,6 +276,8 @@ function Appointments() {
 
   return (
     <div className="appointments-page-wrapper">
+      <ToastContainer newestOnTop limit={2} theme="light" />
+
       {/* arrows */}
       {activePage === "appointments" && (
         <button
@@ -254,17 +307,21 @@ function Appointments() {
         {/* ===== PAGE 1: APPOINTMENTS ===== */}
         <div className="appointments-panel">
           <div
-            className="container d-flex flex-column align-items-start justify-content-center py-4"
+            className="container d-flex flex-column align-items-start justify-content-start py-4"
+
             style={{
-              minHeight: "600px",
+              minHeight: "700px",
               marginTop: "140px",
               backgroundColor: "#F8F9FF",
               borderRadius: "5px",
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
             }}
           >
-            <div className="w-80 px-3 px-md-5">
-              <div className="text-start fw-bold display-5 mb-4 request-title">
+            <div className="w-80 px-3 px-md-5"
+           >
+              <div className="text-start fw-bold display-5 mb-4 request-title"
+               
+            >
                 Appointments
               </div>
             </div>
@@ -274,7 +331,14 @@ function Appointments() {
               style={{ backgroundColor: "transparent" }}
             >
               {appointments.length === 0 ? (
-                <p className="no-appointments">No appointments available.</p>
+                <p className="no-appointments"
+                style={{
+        
+              marginTop: "140px",
+        
+            
+            }}
+            >No appointments available.</p>
               ) : (
                 <div className="appointments-scroll d-flex flex-wrap justify-content-center">
                   {appointments.map((app) => {
@@ -297,9 +361,9 @@ function Appointments() {
                           </h5>
                           <p className="card-text">
                             Tutee:{" "}
-                            {`${app.first_name || ""} ${
-                              app.middle_name || ""
-                            } ${app.last_name || ""}`
+                            {`${app.first_name || ""} ${app.middle_name || ""} ${
+                              app.last_name || ""
+                            }`
                               .trim()
                               .trim() || "N/A"}
                           </p>
@@ -325,8 +389,8 @@ function Appointments() {
                             <button
                               className="btn btn-sm btn-outline-success"
                               onClick={(e) => {
-                                e.stopPropagation(); // don’t open the modal
-                                handleFinishAppointment(app.appointment_id);
+                                e.stopPropagation();
+                                openConfirm(app.appointment_id, "finish");
                               }}
                             >
                               Mark as done
@@ -346,11 +410,11 @@ function Appointments() {
         <div className="appointments-panel">
           <div
             className="container d-flex flex-column align-items-start requests py-4"
-            style={{ minHeight: "600px", marginTop: "140px" }}
+            style={{ minHeight: "700px", marginTop: "140px" }}
           >
             <div className="w-80 px-3 px-md-5">
               <div className="text-start fw-bold display-5 mb-4 request-title">
-                Requests
+                Appointment Request
               </div>
             </div>
 
@@ -551,9 +615,7 @@ function Appointments() {
                           padding: "14px 40px",
                           borderRadius: "6px",
                         }}
-                        onClick={() =>
-                          openConfirm(row.appointment_id, "decline")
-                        }
+                        onClick={() => openConfirm(row.appointment_id, "decline")}
                       >
                         Decline
                       </button>
@@ -568,9 +630,7 @@ function Appointments() {
                           padding: "14px 40px",
                           borderRadius: "6px",
                         }}
-                        onClick={() =>
-                          openConfirm(row.appointment_id, "accept")
-                        }
+                        onClick={() => openConfirm(row.appointment_id, "accept")}
                       >
                         Accept
                       </button>
@@ -658,22 +718,20 @@ function Appointments() {
 
       {/* Confirm action modal */}
       {showConfirm && (
-        <div
-          className="confirm-overlay"
-          onClick={() => setShowConfirm(false)}
-        >
+        <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
           <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
             <h5>Confirm Action</h5>
+
             <p>
               {pendingAction === "accept"
                 ? "Are you sure you want to accept this request?"
-                : "Are you sure you want to decline this request?"}
+                : pendingAction === "decline"
+                ? "Are you sure you want to decline this request?"
+                : "Mark this session as finished? The tutee will then be able to rate it."}
             </p>
+
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <button
-                className="btn my-no-btn"
-                onClick={() => setShowConfirm(false)}
-              >
+              <button className="btn my-no-btn" onClick={() => setShowConfirm(false)}>
                 No
               </button>
               <button className="btn my-yes-btn" onClick={handleConfirmYes}>

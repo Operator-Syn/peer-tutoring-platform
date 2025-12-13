@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import "./Report.css";
 
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Report() {
@@ -20,7 +23,7 @@ function Report() {
   const [reportedId, setReportedId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [loading, setLoading] = useState(true); // 👈 NEW
+  const [loading, setLoading] = useState(true);
 
   const reasons = [
     "Harassment",
@@ -32,14 +35,21 @@ function Report() {
     "Other",
   ];
 
-  // ✅ derived filtered list (safe + fast)
+  // ✅ one consistent toast config for this page
+  const toastOpts = {
+    position: "top-right",
+    autoClose: 2500,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
+
   const filteredOptions = useMemo(() => {
     return nameOptions.filter((opt) =>
       opt.toLowerCase().includes(name.toLowerCase())
     );
   }, [nameOptions, name]);
 
-  // 1) Get all tutees → build name list & map fullName -> id_number (exclude self)
   useEffect(() => {
     const fetchTutees = async () => {
       try {
@@ -51,6 +61,7 @@ function Report() {
 
         if (!res.ok) {
           console.error("tutee/all failed:", res.status, await res.text());
+          toast.error("Failed to load names list.", toastOpts);
           return;
         }
 
@@ -60,20 +71,14 @@ function Report() {
         const names = data
           .filter((t) => {
             if (!tuteeId) return true;
-            return t.id_number !== tuteeId; // ✅ remove self
+            return t.id_number !== tuteeId;
           })
           .map((tutee) => {
-            const fullName = [
-              tutee.first_name,
-              tutee.middle_name,
-              tutee.last_name,
-            ]
+            const fullName = [tutee.first_name, tutee.middle_name, tutee.last_name]
               .filter(Boolean)
               .join(" ");
 
-            if (fullName) {
-              nameMap[fullName] = tutee.id_number;
-            }
+            if (fullName) nameMap[fullName] = tutee.id_number;
             return fullName;
           });
 
@@ -82,13 +87,13 @@ function Report() {
         setNameToIdMap(nameMap);
       } catch (err) {
         console.error("Error fetching tutees:", err);
+        toast.error("Something went wrong while loading names.", toastOpts);
       }
     };
 
     fetchTutees();
   }, [tuteeId]);
 
-  // 2) Get logged-in user (google id)
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -100,7 +105,8 @@ function Report() {
 
         if (!res.ok) {
           console.error("get_user failed:", res.status, await res.text());
-          setLoading(false); // stop loading if we can't get user
+          toast.error("Please log in again.", toastOpts);
+          setLoading(false);
           return;
         }
 
@@ -108,6 +114,7 @@ function Report() {
         setUserGoogleId(data.sub || data.google_id);
       } catch (err) {
         console.error("Failed to fetch logged-in user:", err);
+        toast.error("Could not identify your session. Please re-login.", toastOpts);
         setLoading(false);
       }
     };
@@ -115,30 +122,32 @@ function Report() {
     fetchUser();
   }, []);
 
-  // 3) Get tutee id_number (reporter_id) from google id
   useEffect(() => {
     const fetchTuteeId = async () => {
       if (!userGoogleId || !API_BASE_URL) return;
 
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`,
-          { credentials: "include" }
-        );
+        const res = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`, {
+          credentials: "include",
+        });
 
         if (!res.ok) {
           console.error("by_google failed:", res.status, await res.text());
+          toast.error("Could not load your account info.", toastOpts);
           return;
         }
 
         const data = await res.json();
         if (data.id_number) {
           setTuteeId(data.id_number);
+        } else {
+          toast.error("Account not found. Please re-login.", toastOpts);
         }
       } catch (err) {
         console.error("Error fetching tutee ID:", err);
+        toast.error("Something went wrong while loading your account.", toastOpts);
       } finally {
-        setLoading(false); // ✅ done trying to identify user
+        setLoading(false);
       }
     };
 
@@ -147,14 +156,13 @@ function Report() {
 
   const toggleReason = (reason) => {
     setSelectedReasons((prev) =>
-      prev.includes(reason)
-        ? prev.filter((r) => r !== reason)
-        : [...prev, reason]
+      prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason]
     );
   };
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
+    if (e.target.files?.length) toast.info("Files attached.", toastOpts);
   };
 
   const handleConfirmClick = () => {
@@ -165,15 +173,15 @@ function Report() {
     setShowConfirmModal(false);
 
     if (!tuteeId) {
-      alert("Could not identify your account. Please re-login.");
+      toast.error("Could not identify your account. Please re-login.", toastOpts);
       return;
     }
     if (!reportedId) {
-      alert("Please choose a person from the suggestions list.");
+      toast.warning("Please choose a person from the suggestions list.", toastOpts);
       return;
     }
     if (selectedReasons.length === 0 && description.trim() === "") {
-      alert("Please select at least one reason or add a description.");
+      toast.warning("Select at least one reason or add a description.", toastOpts);
       return;
     }
 
@@ -199,7 +207,7 @@ function Report() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
-      alert("Report submitted successfully!");
+       toast.success("Report submitted successfully!", toastOpts);
 
       setSelectedReasons([]);
       setDescription("");
@@ -208,7 +216,7 @@ function Report() {
       setFiles([]);
     } catch (err) {
       console.error("Report submission error:", err);
-      alert("Error submitting report. Please try again.");
+      toast.error(err.message || "Error submitting report. Please try again.", toastOpts);
     } finally {
       setIsSubmitting(false);
     }
@@ -216,7 +224,6 @@ function Report() {
 
   const handleConfirmNo = () => setShowConfirmModal(false);
 
-  // ✅ Full-page loading UI (no random "Loading..." text)
   if (loading) {
     return (
       <div className="report-loading">
@@ -224,12 +231,18 @@ function Report() {
           <div className="spinner-border" role="status" />
           <span className="ms-2">Loading report form...</span>
         </div>
+
+        {/* Toasts still mount even on loading screen */}
+        <ToastContainer newestOnTop limit={2} theme="light" />
       </div>
     );
   }
 
   return (
     <div className="spacing">
+      {/* ✅ Global toast container for this page */}
+      <ToastContainer newestOnTop limit={2} theme="light" />
+
       <div className="container my-5 mt-0 p-5">
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-9">
@@ -241,13 +254,12 @@ function Report() {
                   </div>
 
                   <p className="Report-message">
-                    LAV has a zero-tolerance policy for bullying. Please
-                    describe the incident truthfully and with as much detail
-                    as possible. We will review the report and, if warranted,
-                    impose appropriate consequences.
+                    LAV has a zero-tolerance policy for bullying. Please describe the
+                    incident truthfully and with as much detail as possible. We will
+                    review the report and, if warranted, impose appropriate
+                    consequences.
                   </p>
 
-                  {/* Reason chips */}
                   <div className="report-options">
                     {reasons.map((reason) => (
                       <div
@@ -263,12 +275,8 @@ function Report() {
                     ))}
                   </div>
 
-                  {/* Description */}
                   <div className="mt-4 w-100">
-                    <label
-                      htmlFor="description"
-                      className="form-label fw-semibold report-label"
-                    >
+                    <label htmlFor="description" className="form-label fw-semibold report-label">
                       Description
                     </label>
                     <textarea
@@ -281,12 +289,8 @@ function Report() {
                     />
                   </div>
 
-                  {/* Attach files */}
                   <div className="mt-3 w-100">
-                    <label
-                      htmlFor="reportFiles"
-                      className="form-label fw-semibold report-label"
-                    >
+                    <label htmlFor="reportFiles" className="form-label fw-semibold report-label">
                       Attach files (optional)
                     </label>
                     <input
@@ -306,12 +310,8 @@ function Report() {
                     )}
                   </div>
 
-                  {/* Name with suggestions */}
                   <div className="mt-3 w-100 position-relative">
-                    <label
-                      htmlFor="fullName"
-                      className="form-label fw-semibold report-label"
-                    >
+                    <label htmlFor="fullName" className="form-label fw-semibold report-label">
                       Name of the reported person
                     </label>
 
@@ -330,15 +330,13 @@ function Report() {
                         if (chosenId && chosenId === tuteeId) {
                           setReportedId("");
                           setShowOptions(false);
+                          toast.warning("You can’t report yourself.", toastOpts);
                           return;
                         }
 
                         setReportedId(chosenId);
 
-                        if (
-                          value.trim().length > 0 &&
-                          filteredOptions.length > 0
-                        ) {
+                        if (value.trim().length > 0 && filteredOptions.length > 0) {
                           setShowOptions(true);
                         } else {
                           setShowOptions(false);
@@ -346,10 +344,7 @@ function Report() {
                       }}
                       onBlur={() => setTimeout(() => setShowOptions(false), 150)}
                       onFocus={() => {
-                        if (
-                          name.trim().length > 0 &&
-                          filteredOptions.length > 0
-                        ) {
+                        if (name.trim().length > 0 && filteredOptions.length > 0) {
                           setShowOptions(true);
                         }
                       }}
@@ -360,6 +355,7 @@ function Report() {
                         {filteredOptions.map((opt) => {
                           const optId = nameToIdMap[opt];
                           if (optId === tuteeId) return null;
+
                           return (
                             <div
                               key={opt}
@@ -379,7 +375,6 @@ function Report() {
                     )}
                   </div>
 
-                  {/* Buttons */}
                   <div className="mt-4 d-flex justify-content-center gap-4">
                     <button
                       type="button"
@@ -392,37 +387,36 @@ function Report() {
                   </div>
                 </div>
               </div>
-              {/* End container */}
             </div>
+
+            {showConfirmModal && (
+              <div className="report-confirm-overlay">
+                <div className="report-confirm-modal">
+                  <h5>Submit Report</h5>
+                  <p>Are you sure you want to submit this report?</p>
+                  <div className="d-flex justify-content-end gap-2 mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary report-modal-cancel-btn"
+                      onClick={handleConfirmNo}
+                    >
+                      No
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary report-modal-confirm-btn"
+                      onClick={handleConfirmYes}
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
-
-      {/* Confirmation modal */}
-      {showConfirmModal && (
-        <div className="report-confirm-overlay">
-          <div className="report-confirm-modal">
-            <h5>Submit Report</h5>
-            <p>Are you sure you want to submit this report?</p>
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <button
-                type="button"
-                className="btn btn-outline-secondary report-modal-cancel-btn"
-                onClick={handleConfirmNo}
-              >
-                No
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary report-modal-confirm-btn"
-                onClick={handleConfirmYes}
-              >
-                Yes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

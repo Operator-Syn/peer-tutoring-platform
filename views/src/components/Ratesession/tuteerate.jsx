@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./tuteerate.css";
+import { toast } from "react-toastify";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,12 +18,16 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
   // modal confirm
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const toastOpts = {
+    position: "top-right",
+    autoClose: 2500,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
+
   const tutorFullName = session
-    ? [
-        session.tutor_first_name,
-        session.tutor_middle_name,
-        session.tutor_last_name,
-      ]
+    ? [session.tutor_first_name, session.tutor_middle_name, session.tutor_last_name]
         .filter(Boolean)
         .join(" ")
     : null;
@@ -33,12 +38,13 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
   // called when user clicks "Submit Rating" (opens modal only)
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!appointmentId) {
-      alert("No session selected.");
+      toast.error("No session selected.", toastOpts);
       return;
     }
     if (rating === 0) {
-      alert("Please select a rating.");
+      toast.warning("Please select a rating.", toastOpts);
       return;
     }
 
@@ -51,37 +57,28 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        rating,
-        comment,
-      };
+      const payload = { rating, comment };
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/rate-session/rate/${appointmentId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/rate-session/rate/${appointmentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Failed to submit");
+      if (!res.ok) throw new Error(data.error || "Failed to submit rating.");
 
-      alert("Thanks for rating your session!");
+      toast.success("Thanks for rating your session!", toastOpts);
 
-      // tell parent to reload list
-      if (typeof onRated === "function") {
-        onRated();
-      }
+      if (typeof onRated === "function") onRated();
 
       setRating(0);
       setComment("");
       setShowConfirm(false);
     } catch (err) {
       console.error(err);
-      alert("Error submitting rating.");
+      toast.error(err?.message || "Error submitting rating.", toastOpts);
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +92,7 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
 
     const tutorId = session?.tutor_id;
     if (!tutorId) {
-      alert("No tutor_id available for this session.");
+      toast.error("No tutor ID available for this session.", toastOpts);
       return;
     }
 
@@ -108,12 +105,12 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
       });
 
       const data = await res.json().catch(() => []);
-      if (!res.ok) throw new Error(data.error || "Failed to load ratings");
+      if (!res.ok) throw new Error(data.error || "Failed to load ratings.");
 
       setTutorRatings(data);
     } catch (err) {
       console.error("Error loading tutor ratings:", err);
-      alert("Error loading ratings.");
+      toast.error(err?.message || "Error loading ratings.", toastOpts);
     } finally {
       setRatingsLoading(false);
     }
@@ -125,19 +122,23 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
         <div className="tutee-rate-header">
           <h2 className="tutee-rate-title">Rate Your Session</h2>
 
-          {/* ✅ show for both tutor and tutee */}
-         
+          {/* Optional: enable if you want a button */}
+          {/* <button type="button" className="btn btn-outline-primary" onClick={handleViewRatingsClick}>
+            View Ratings
+          </button> */}
         </div>
 
         <div className="tutee-rate-session-info mb-3">
           <p className="mb-0">
             You are rating:&nbsp;<strong>{tutorLabel}</strong>
           </p>
+
           {session?.tutor_id && (
             <p className="small text-muted mb-0">
               Tutor ID: <span>{session.tutor_id}</span>
             </p>
           )}
+
           {appointmentId && (
             <p className="small text-muted mb-0">
               Session ID: <span>{appointmentId}</span>
@@ -187,12 +188,9 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
           </button>
         </form>
 
-        {/* ✅ show for both tutor and tutee */}
         {showRatings && (
           <div className="tutor-ratings mt-4">
-            <h3 className="h5">
-              {isTutor ? "My Ratings" : "Tutor Ratings"}
-            </h3>
+            <h3 className="h5">{isTutor ? "My Ratings" : "Tutor Ratings"}</h3>
 
             {ratingsLoading && <p>Loading ratings...</p>}
 
@@ -204,11 +202,7 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
               <ul className="list-group">
                 {tutorRatings.map((r) => {
                   const raterName =
-                    [
-                      r.tutee_first_name,
-                      r.tutee_middle_name,
-                      r.tutee_last_name,
-                    ]
+                    [r.tutee_first_name, r.tutee_middle_name, r.tutee_last_name]
                       .filter(Boolean)
                       .join(" ") || r.tutee_id || "Unknown tutee";
 
@@ -220,26 +214,28 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
                           <span className="badge bg-primary ms-2">
                             {r.rating}/5
                           </span>
-                          <div className="small text-muted">
-  {[
-    r.course_code,
-    r.appointment_date,
-    r.start_time && r.end_time ? `${r.start_time}–${r.end_time}` : null,
-  ]
-    .filter(Boolean)
-    .join(" • ") || "Session details not available."}
-</div>
 
+                          <div className="small text-muted">
+                            {[
+                              r.course_code,
+                              r.appointment_date,
+                              r.start_time && r.end_time
+                                ? `${r.start_time}–${r.end_time}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" • ") || "Session details not available."}
+                          </div>
                         </div>
+
                         {r.created_at && (
                           <div className="small text-muted">
                             {new Date(r.created_at).toLocaleString()}
                           </div>
                         )}
                       </div>
-                      {r.comment && (
-                        <p className="mt-2 mb-0 small">“{r.comment}”</p>
-                      )}
+
+                      {r.comment && <p className="mt-2 mb-0 small">“{r.comment}”</p>}
                     </li>
                   );
                 })}
@@ -254,28 +250,8 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
         <div
           className="confirm-overlay"
           onClick={() => !isSubmitting && setShowConfirm(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1100,
-          }}
         >
-          <div
-            className="confirm-box"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: "white",
-              borderRadius: "10px",
-              padding: "20px 24px",
-              maxWidth: "400px",
-              width: "100%",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-            }}
-          >
+          <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
             <h5>Confirm Rating</h5>
             <p className="mt-3 mb-4">
               Submit a rating of <strong>{rating}/5</strong> for{" "}
@@ -293,7 +269,7 @@ function TuteeRate({ session, isTutor = false, onViewRatings, onRated }) {
               </button>
               <button
                 type="button"
-                className="btn my-yes-btn btn-primary"
+                className="btn my-yes-btn"
                 onClick={performSubmit}
                 disabled={isSubmitting}
               >
