@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./appointments.css";
 import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
 import { ToastContainer, toast } from "react-toastify";
@@ -24,6 +24,9 @@ function Appointments() {
   const [activePage, setActivePage] = useState("appointments");
   const [loading, setLoading] = useState(true);
 
+  // ✅ filter for APPOINTMENTS cards only (NO PENDING)
+  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | BOOKED | COMPLETED | CANCELLED
+
   const toastOpts = {
     position: "top-right",
     autoClose: 2500,
@@ -40,10 +43,28 @@ function Appointments() {
     return appt < today;
   };
 
+  const refreshPending = async (id) => {
+    const resPending = await fetch(`/api/requests/pending/${id}`, {
+      credentials: "include",
+    });
+    const pendingData = await resPending.json().catch(() => []);
+    setRows(pendingData);
+    setAllRows(pendingData);
+  };
+
+  // ✅ APPOINTMENTS page fetch: NO PENDING
+  const refreshAppointments = async (id) => {
+    const resAppointments = await fetch(
+      `/api/requests/appointments/${id}?status=BOOKED,COMPLETED,CANCELLED`,
+      { credentials: "include" }
+    );
+    const appointmentsData = await resAppointments.json().catch(() => []);
+    setAppointments(appointmentsData);
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1) get logged in user
         const resUser = await fetch("/api/auth/get_user", {
           credentials: "include",
         });
@@ -56,7 +77,6 @@ function Appointments() {
         const loggedInUser = await resUser.json();
         const googleId = loggedInUser.sub;
 
-        // 2) find tutee row
         const resTutees = await fetch("/api/tutee/all", {
           credentials: "include",
         });
@@ -74,7 +94,6 @@ function Appointments() {
 
         const tuteeId = currentTutee.id_number;
 
-        // 3) find tutor row
         const resTutors = await fetch("/api/tutor/all", {
           credentials: "include",
         });
@@ -92,30 +111,11 @@ function Appointments() {
 
         setTutorId(currentTutor.tutor_id);
 
-        // 4) pending requests
-        const resPending = await fetch(
-          `/api/requests/pending/${currentTutor.tutor_id}`,
-          { credentials: "include" }
-        );
-        if (!resPending.ok) {
-          toast.error("Failed to load pending requests.", toastOpts);
-          return;
-        }
-        const pendingData = await resPending.json();
-        setRows(pendingData);
-        setAllRows(pendingData);
+        // ✅ PENDING goes to Requests page
+        await refreshPending(currentTutor.tutor_id);
 
-        // 5) booked appointments
-        const resAppointments = await fetch(
-          `/api/requests/appointments/${currentTutor.tutor_id}`,
-          { credentials: "include" }
-        );
-        if (!resAppointments.ok) {
-          toast.error("Failed to load appointments.", toastOpts);
-          return;
-        }
-        const appointmentsData = await resAppointments.json();
-        setAppointments(appointmentsData);
+        // ✅ BOOKED/COMPLETED/CANCELLED goes to Appointments page
+        await refreshAppointments(currentTutor.tutor_id);
       } catch (err) {
         console.error("Error fetching appointments:", err);
         toast.error("Network error while loading data.", toastOpts);
@@ -125,6 +125,7 @@ function Appointments() {
     }
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = () => {
@@ -171,66 +172,47 @@ function Appointments() {
     setPendingAction(null);
   };
 
-  
-const handleAction = async (appointment_id, action) => {
-  if (!tutorId) return;
+  const handleAction = async (appointment_id, action) => {
+    if (!tutorId) return;
 
-  try {
-    const res = await fetch(
-      `/api/requests/update-status-and-log/${appointment_id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-        credentials: "include",
-      }
-    );
-
-    const body = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      toast.error(
-        body?.error || `Failed to ${action} appointment`,
-        toastOpts
+    try {
+      const res = await fetch(
+        `/api/requests/update-status-and-log/${appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+          credentials: "include",
+        }
       );
-      return;
-    }
 
-    if (action === "accept") {
-      toast.success("Request accepted!", toastOpts);
+      const body = await res.json().catch(() => ({}));
 
-      // 🔥 NEW: duplicate availability notice
-      if (body.auto_cancelled > 0) {
-        toast.info(
-          `⚠️ ${body.auto_cancelled} other request(s) with the same schedule were automatically cancelled.`,
-          toastOpts
-        );
+      if (!res.ok) {
+        toast.error(body?.error || `Failed to ${action} appointment`, toastOpts);
+        return;
       }
-    } else {
-      toast.success("Request declined.", toastOpts);
+
+      if (action === "accept") {
+        toast.success("Request accepted!", toastOpts);
+
+        if (body.auto_cancelled > 0) {
+          toast.info(
+            `⚠️ ${body.auto_cancelled} other request(s) with the same schedule were automatically cancelled.`,
+            toastOpts
+          );
+        }
+      } else {
+        toast.success("Request declined.", toastOpts);
+      }
+
+      await refreshPending(tutorId);
+      await refreshAppointments(tutorId);
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error. Please try again.", toastOpts);
     }
-
-    // refresh pending
-    const resPending = await fetch(`/api/requests/pending/${tutorId}`, {
-      credentials: "include",
-    });
-    const pendingData = await resPending.json().catch(() => []);
-    setRows(pendingData);
-    setAllRows(pendingData);
-
-    // refresh appointments
-    const resAppointments = await fetch(
-      `/api/requests/appointments/${tutorId}`,
-      { credentials: "include" }
-    );
-    const appointmentsData = await resAppointments.json().catch(() => []);
-    setAppointments(appointmentsData);
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Network error. Please try again.", toastOpts);
-  }
-};
+  };
 
   const finishAppointmentConfirmed = async (appointmentId) => {
     if (!appointmentId) {
@@ -254,19 +236,106 @@ const handleAction = async (appointment_id, action) => {
         return;
       }
 
-      setAppointments((prev) =>
-        prev.filter((a) => a.appointment_id !== appointmentId)
-      );
-
       toast.success(
         "Appointment marked as COMPLETED. Rating is now available.",
         toastOpts
       );
+
+      if (tutorId) {
+        await refreshAppointments(tutorId);
+      }
     } catch (err) {
       console.error("Error finishing appointment:", err);
       toast.error("Network error while finishing appointment.", toastOpts);
     }
   };
+
+  // ✅ sort so BOOKED first, then COMPLETED, then CANCELLED
+  const statusRank = (s) => {
+    const st = (s || "").toUpperCase();
+    if (st === "BOOKED") return 0;
+    if (st === "COMPLETED") return 1;
+    if (st === "CANCELLED") return 2;
+    return 99;
+  };
+
+  const filteredAppointments = useMemo(() => {
+    const list = Array.isArray(appointments) ? [...appointments] : [];
+
+    const byFilter =
+      statusFilter === "ALL"
+        ? list
+        : list.filter((a) => (a.status || "").toUpperCase() === statusFilter);
+
+    byFilter.sort((a, b) => {
+      const r = statusRank(a.status) - statusRank(b.status);
+      if (r !== 0) return r;
+
+      const da = new Date(a.appointment_date || "1970-01-01").getTime();
+      const db = new Date(b.appointment_date || "1970-01-01").getTime();
+      if (da !== db) return da - db;
+
+      return String(a.start_time || "").localeCompare(String(b.start_time || ""));
+    });
+
+    return byFilter;
+  }, [appointments, statusFilter]);
+
+  const renderCards = (list) => (
+    <div className="appointments-scroll d-flex flex-wrap justify-content-center">
+      {list.map((app) => {
+        const past = isPastAppointment(app.appointment_date);
+        const status = (app.status || "").toUpperCase();
+
+        return (
+          <div
+            className="card appointment-card"
+            key={`${status}-${app.appointment_id}`}
+            onClick={() => setSelectedApp(app)}
+          >
+            <img className="card-img-top" src={placeholderImage} alt="Card cap" />
+            <div className="card-body">
+              <h5 className="card-title">Subject Code: {app.course_code}</h5>
+
+              <p className="card-text">
+                Tutee:{" "}
+                {`${app.first_name || ""} ${app.middle_name || ""} ${app.last_name || ""}`
+                  .trim()
+                  .trim() || "N/A"}
+              </p>
+
+              <div className="card px-2 px-sm-3 px-md-1 border-0 shadow-none">
+                <div className="card-body text-end">
+                  <p className="card-text mb-1">{app.appointment_date}</p>
+                  <p className="card-text">
+                    {app.start_time} - {app.end_time}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="card-footer d-flex justify-content-between align-items-center">
+              <small className="text-muted">
+                Status: <strong>{status}</strong>
+              </small>
+
+              {status === "BOOKED" && past && (
+                <button
+                  className="btn btn-sm btn-outline-success"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openConfirm(app.appointment_id, "finish");
+                  }}
+                >
+                  Mark as done
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -324,88 +393,74 @@ const handleAction = async (appointment_id, action) => {
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
             }}
           >
-            <div className="w-80 px-3 px-md-5">
-              <div className="text-start fw-bold display-5 mb-4 request-title">
+            {/* ✅ Responsive header + filter */}
+            <div className="w-100 px-0 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+              <div className="text-start fw-bold display-5 mb-0 request-title">
                 Appointments
+              </div>
+
+              <div
+                className="d-flex align-items-center w-100"
+                style={{
+                  maxWidth: "360px",
+                  padding: "8px 12px",
+                  borderRadius: "14px",
+                  border: "1px solid rgba(73, 86, 173, 0.25)",
+                  background: "rgba(248, 249, 255, 0.9)",
+                  boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+                  gap: "10px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "#4956AD",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Filter:
+                </span>
+
+                <select
+                  className="form-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderRadius: "12px",
+                    border: "1px solid rgba(73, 86, 173, 0.25)",
+                    backgroundColor: "#fff",
+                    fontWeight: 600,
+                    color: "#4956AD",
+                    padding: "10px 14px",
+                  }}
+                >
+                  <option value="ALL">All</option>
+                  <option value="BOOKED">Booked</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
               </div>
             </div>
 
             <div
-              className="appointments-wrapper container my-5"
+              className="appointments-wrapper container my-2"
               style={{ backgroundColor: "transparent" }}
             >
-              {appointments.length === 0 ? (
+              {filteredAppointments.length === 0 ? (
                 <p className="no-appointments" style={{ marginTop: "140px" }}>
                   No appointments available.
                 </p>
               ) : (
-                <div className="appointments-scroll d-flex flex-wrap justify-content-center">
-                  {appointments.map((app) => {
-                    const past = isPastAppointment(app.appointment_date);
-
-                    return (
-                      <div
-                        className="card appointment-card"
-                        key={app.appointment_id}
-                        onClick={() => setSelectedApp(app)}
-                      >
-                        <img
-                          className="card-img-top"
-                          src={placeholderImage}
-                          alt="Card cap"
-                        />
-                        <div className="card-body">
-                          <h5 className="card-title">
-                            Subject Code: {app.course_code}
-                          </h5>
-                          <p className="card-text">
-                            Tutee:{" "}
-                            {`${app.first_name || ""} ${app.middle_name || ""} ${
-                              app.last_name || ""
-                            }`
-                              .trim()
-                              .trim() || "N/A"}
-                          </p>
-
-                          <div className="card px-2 px-sm-3 px-md-1 border-0 shadow-none">
-                            <div className="card-body text-end">
-                              <p className="card-text mb-1">
-                                {app.appointment_date}
-                              </p>
-                              <p className="card-text">
-                                {app.start_time} - {app.end_time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="card-footer d-flex justify-content-between align-items-center">
-                          <small className="text-muted">
-                            {past ? "Session finished" : "Session upcoming"}
-                          </small>
-
-                          {past && (
-                            <button
-                              className="btn btn-sm btn-outline-success"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openConfirm(app.appointment_id, "finish");
-                              }}
-                            >
-                              Mark as done
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                renderCards(filteredAppointments)
               )}
             </div>
           </div>
         </div>
 
-        {/* ===== PAGE 2: REQUESTS ===== */}
+        {/* ===== PAGE 2: REQUESTS (PENDING REQUESTS) ===== */}
         <div className="appointments-panel">
           <div
             className="container d-flex flex-column align-items-start requests py-4"
@@ -428,10 +483,7 @@ const handleAction = async (appointment_id, action) => {
               >
                 <div
                   className="d-flex w-100"
-                  style={{
-                    maxWidth: "700px",
-                    marginLeft: "auto",
-                  }}
+                  style={{ maxWidth: "700px", marginLeft: "auto" }}
                 >
                   <input
                     type="text"
@@ -601,10 +653,7 @@ const handleAction = async (appointment_id, action) => {
 
                     <div
                       className="d-flex gap-4 action-buttons"
-                      style={{
-                        marginTop: "1.5rem",
-                        marginLeft: "auto",
-                      }}
+                      style={{ marginTop: "1.5rem", marginLeft: "auto" }}
                     >
                       <button
                         className="btn fw-semibold"
@@ -685,22 +734,21 @@ const handleAction = async (appointment_id, action) => {
             >
               &times;
             </button>
+
             <img
               className="card-img-top"
               src={placeholderImage}
               alt="Card image cap"
               style={{ objectFit: "cover", height: "300px" }}
             />
+
             <div className="card-body">
               <p>
-                <strong>Subject Code:</strong>{" "}
-                {selectedApp?.course_code || "N/A"}
+                <strong>Subject Code:</strong> {selectedApp?.course_code || "N/A"}
               </p>
               <p className="card-text">
                 <strong>Tutee:</strong>{" "}
-                {`${selectedApp?.first_name || ""} ${
-                  selectedApp?.middle_name || ""
-                } ${selectedApp?.last_name || ""}`
+                {`${selectedApp?.first_name || ""} ${selectedApp?.middle_name || ""} ${selectedApp?.last_name || ""}`
                   .trim()
                   .trim() || "N/A"}
               </p>
@@ -709,8 +757,11 @@ const handleAction = async (appointment_id, action) => {
                 {selectedApp?.end_time || "N/A"}
               </p>
               <p className="card-text">
-                <strong>Date:</strong>{" "}
-                {selectedApp?.appointment_date || "N/A"}
+                <strong>Date:</strong> {selectedApp?.appointment_date || "N/A"}
+              </p>
+              <p className="card-text">
+                <strong>Status:</strong>{" "}
+                {(selectedApp?.status || "").toUpperCase() || "N/A"}
               </p>
             </div>
           </div>
