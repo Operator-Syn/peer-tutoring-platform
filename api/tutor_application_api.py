@@ -1,18 +1,17 @@
 from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
 from datetime import datetime
+import uuid
 import os
-import psycopg2
 from psycopg2.extras import RealDictCursor
 from utils.db import get_connection
+from utils.supabase_client import upload_file
 
-upload_folder = "uploads/cor"
-allowed_extensions = {'pdf', 'jpg', 'jpeg', 'png'}
-os.makedirs(upload_folder, exist_ok=True)
 tutor_application_bp = Blueprint("tutor_applications", __name__)
 
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
+
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @tutor_application_bp.route('/student/<student_id>', methods=['GET'])
 def get_student_info(student_id):
@@ -58,21 +57,30 @@ def submit_tutor_application():
             return jsonify({'error': 'Student ID is required'}), 400
         if not courses:
             return jsonify({'error': 'At least one course must be selected'}), 400
+        
         if not file or not allowed_file(file.filename):
-            return jsonify({'error': 'Valid COR file (PDF, JPG, PNG) is required'}), 400
+            return jsonify({'error': 'Invalid file. Only JPG, JPEG, and PNG images are allowed.'}), 400
 
-        filename = secure_filename(f"{student_id}_{file.filename}")
-        filepath = os.path.join(upload_folder, filename)
-        file.save(filepath)
+        file_ext = file.filename.rsplit('.', 1)[1].lower()
+        random_filename = f"{uuid.uuid4()}.{file_ext}"
+        
+        file.filename = random_filename
+
+        try:
+            cor_url = upload_file("cor-uploads", file, folder_name=student_id)
+        except Exception as e:
+            print(f"Supabase Upload Error: {e}")
+            return jsonify({'error': 'Failed to upload document to cloud storage'}), 500
 
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
-                    INSERT INTO tutor_application (student_id, status, date_submitted, cor_filename, cor_filepath)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO tutor_application (student_id, status, date_submitted, cor_filename)
+                    VALUES (%s, %s, %s, %s)
                     RETURNING application_id
-                """, (student_id, 'PENDING', datetime.now(), filename, filepath))
+                """, (student_id, 'PENDING', datetime.now(), cor_url))
+                
                 app_id = cursor.fetchone()['application_id']
 
                 course_list = []
@@ -98,7 +106,7 @@ def submit_tutor_application():
             'student_id': student_id,
             'status': 'PENDING',
             'courses': course_list,
-            'cor_filename': filename
+            'cor_url': cor_url
         }), 201
 
     except Exception as e:
@@ -106,7 +114,6 @@ def submit_tutor_application():
             conn.close()
         return jsonify({'error': str(e)}), 500
     
-#get courses to display in form
 @tutor_application_bp.route('/courses', methods=['GET'])
 def get_courses():
     try:

@@ -29,6 +29,19 @@ def auth():
 
   
     user_info = token.get('userinfo')
+
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user_info['sub'],))
+                user_record = cursor.fetchone()
+
+                if user_record and user_record.get('status') == 'BANNED':
+                    pass
+    except Exception as e:
+        print("Auth Error:", e)
+        return "Internal Server Error", 500
  
     if not user_info['email'].endswith('@g.msuiit.edu.ph'):
         return "Unauthorized: Please use your university email.", 403
@@ -80,6 +93,8 @@ def get_user():
         return jsonify({'error': 'User not logged in'}), 401
 
     registered = False
+    status = "ACTIVE"
+
     try:
         conn = get_connection()
         with conn:
@@ -87,14 +102,21 @@ def get_user():
                 cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
                 if cursor.fetchone():
                     registered = True
+                
+                cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user['sub'],))
+                account_data = cursor.fetchone()
+                if account_data and account_data.get('status'):
+                    status = account_data['status']
+
     except Exception as e:
         if conn:
             conn.close()
         return jsonify({'error': str(e)}), 500
 
-  
+    
     user_with_status = dict(user)
     user_with_status['registered_tutee'] = registered
+    user_with_status['status'] = status
 
     return jsonify(user_with_status)
 

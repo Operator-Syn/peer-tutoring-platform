@@ -16,8 +16,10 @@ from controllers.loadConfig.loadConfig import load_config_bp
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
 from controllers.adminDashboardController import admin_dashboard_bp
+from controllers.appealsController import bp_appeals
 from api.tutor_list import tutor_list
-from controllers.ratesession.ratesessioncontroller import rate_session_bp  # 🔹 added
+from controllers.ratesession.ratesessioncontroller import rate_session_bp  
+from api.tutee_list import tutee_list
 
 
 # ---------- Flask app setup ----------
@@ -53,7 +55,9 @@ app.register_blueprint(bp_create_pending)
 app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
 app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
 app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
+app.register_blueprint(tutee_list, url_prefix="/api/tutee-list")
 app.register_blueprint(admin_dashboard_bp)
+app.register_blueprint(bp_appeals)
 app.register_blueprint(load_config_bp)
 app.register_blueprint(rate_session_bp)  # 🔹 added
 
