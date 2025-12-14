@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from utils.db import get_connection
+from utils.supabase_client import upload_file
 from psycopg2.extras import RealDictCursor
 
 notes_sharing = Blueprint('notes_sharing', __name__)
@@ -45,3 +46,21 @@ def post_notes():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@notes_sharing.route("/upload-notes", methods=['POST'])
+def upload_notes():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+    tutor_id = request.form.get('tutor_id', '').strip()
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    if not tutor_id:
+        return jsonify({"error": "Tutor ID is required"}), 400
+
+    try:
+        public_url = upload_file("posted-notes", file, folder_name=tutor_id)
+        return jsonify({"file_url": public_url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

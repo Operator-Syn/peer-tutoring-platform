@@ -26,14 +26,28 @@ export default function FileUpload() {
             return;
         }
 
+        // Upload files first
+        const fileUrls = [];
+        for (const file of files) {
+            const uploadedUrl = await uploadFileToServer(file);
+            console.log("Uploaded file URL:", fileUrls);
+            if (!uploadedUrl) {
+                alert("File upload failed. Please try again.");
+                return;
+            }
+            fileUrls.push(uploadedUrl);
+        }
+
         // Prepare the payload
         const payload = {
             title,
             description,
-            course_code: selectedCourse.value, // assuming react-select option
-            files: files.map(f => f.name),     // or adjust as needed for your backend
-            tutor_id: tutorId    // replace with actual tutor id (from auth/session)
+            course_code: selectedCourse.value, 
+            files: fileUrls,     
+            tutor_id: tutorId    
         };
+
+        console.log("Submitting payload:", payload);
 
         try {
             const response = await fetch(`${API_URL}/api/notes-sharing/all`, {
@@ -82,6 +96,28 @@ export default function FileUpload() {
         checkIfTUtor();
     }, []);
 
+    const uploadFileToServer = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('tutor_id', tutorId);
+
+        try {
+            const response = await fetch(`${API_URL}/api/notes-sharing/upload-notes`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to upload file');
+            }
+
+            const data = await response.json();
+            return data.file_url;
+        } catch (error) {
+            alert("Error uploading file: " + error.message);
+            return null;
+        }
+    };
 
     const retrieveCourses = async (search='') => {
         // Fetch courses from API or database
@@ -103,6 +139,7 @@ export default function FileUpload() {
             );
             return [...filteredPrev, ...newFiles];
         });
+        console.log("Selected files:", newFiles);
     };
 
     const deleteFile = (fileName) => {
@@ -114,6 +151,10 @@ export default function FileUpload() {
         setDescription('');
         setSelectedCourse(null);
         setFiles([]);
+        setSelectedCourse(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = null;
+        }
     }
     
     if (!tutorId) {
@@ -131,7 +172,7 @@ export default function FileUpload() {
                             <Form.Control type="text" placeholder="Title" className='input-field-tt' value={title} onChange={e => setTitle(e.target.value)} />
                         </InputFormFU> 
                         <InputFormFU label="Related Course">
-                            <Select isClearable placeholder="Course Code" options={courses} onInputChange={e => {retrieveCourses(e);}} onChange={e => setSelectedCourse(e)} />
+                            <Select isClearable placeholder="Course Code" options={courses} value={selectedCourse} onInputChange={e => {retrieveCourses(e);}} onChange={e => setSelectedCourse(e)} />
                         </InputFormFU>
 
                         <InputFormFU label="Upload File" customClass='upload-file-form'>
