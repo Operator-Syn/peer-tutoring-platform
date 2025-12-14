@@ -43,7 +43,7 @@ export default function FileUpload() {
             title,
             description,
             course_code: selectedCourse.value, 
-            files: fileUrls,     
+            file_urls: fileUrls,     
             tutor_id: tutorId    
         };
 

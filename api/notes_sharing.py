@@ -25,21 +25,21 @@ def post_notes():
     title = data.get('title', '').strip()
     description = data.get('description', '').strip()
     course_code = data.get('course_code', '').strip()
-    files = data.get('files', [])  # Expecting a list of file metadata 
+    file_urls = data.get('file_urls', [])  # Expecting a list of file metadata 
     tutor_id = data.get('tutor_id', '').strip()
 
-    if not title or not course_code or not files or not tutor_id:
-        return jsonify({"error": "Title, course code, files, and tutor ID are required."}), 400
+    if not title or not course_code or not file_urls or not tutor_id:
+        return jsonify({"error": "Title, course code, file_urls, and tutor ID are required."}), 400
     
     try:
         conn = get_connection()
         with conn:
             with conn.cursor() as cursor:
                 insert_query = """
-                    INSERT INTO posted_notes (title, description, course_code, files, tutor_id)
+                    INSERT INTO posted_notes (title, description, course_code, file_urls, tutor_id)
                     VALUES (%s, %s, %s, %s, %s) RETURNING posted_note_id
                 """
-                cursor.execute(insert_query, (title, description, course_code, files, tutor_id))
+                cursor.execute(insert_query, (title, description, course_code, file_urls, tutor_id))
                 note_id = cursor.fetchone()[0]
 
         return jsonify({"message": "Note shared successfully.", "note_id": note_id}), 201
