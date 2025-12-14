@@ -116,7 +116,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className={`admin-container ${showCorModal ? 'modal-open-custom' : ''}`}>
+    <div className="admin-container">
       <header className="admin-header">
         <div className="admin-header-content">
           <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000, position: 'fixed'}}>
+      <ToastContainer position="top-end" className="p-3 admin-toast-container">
         <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger">
             <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
@@ -213,7 +213,7 @@ const AdminDashboard = () => {
                                     <span>College</span><span>Name</span><span>Gender</span><span>School Year</span><span>Documents</span><span>Actions</span>
                                 </div>
                                 <div className="admin-card-row body">
-                                    <div className="admin-flex-align"><div className="admin-avatar"><i className="bi bi-person-fill"></i></div><span className="admin-bold">{app.program || 'CCS'}</span></div>
+                                    <span className="admin-bold">{app.program || 'CCS'}</span>
                                     <span className="admin-text-main">{app.student_name}</span>
                                     <span className="admin-text-sub">N/A</span>
                                     <span className="admin-text-sub">{app.school_year || 'N/A'}</span>
@@ -318,11 +318,11 @@ const AdminDashboard = () => {
                                         <td><div className="admin-bold">{req.subject_code}</div></td>
                                         <td>
                                             <span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span>
-                                            <div className="admin-text-muted mt-1" style={{fontSize: '0.8rem'}}>{req.created_at}</div>
+                                            <div className="admin-text-muted admin-req-date-text mt-1">{req.created_at}</div>
                                         </td>
                                         <td>
                                             <div className="admin-flex-end">
-                                                <button className="admin-btn-icon" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')} style={{marginRight: '10px'}}><i className="bi bi-eye"></i></button>
+                                                <button className="admin-btn-icon admin-btn-view-details" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')}><i className="bi bi-eye"></i></button>
                                                 {req.status === 'PENDING' && (
                                                     <>
                                                         <button className="admin-btn-accept" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Accept</button>
@@ -417,18 +417,25 @@ const AdminDashboard = () => {
             </Modal.Body>
         </Modal>
 
-      {showCorModal && (
-        <div className="modal fade show custom-dark-modal">
-            <div className="modal-dialog modal-dialog-centered custom-large-modal">
-                <div className="modal-content custom-dark-content">
-                    <div className="modal-body p-0 custom-dark-body">
-                        {selectedCorFile ? (selectedCorFile.toLowerCase().endsWith('.pdf') ? <iframe src={selectedCorFile} className="cor-frame" title="Doc"></iframe> : <img src={selectedCorFile} className="cor-image" alt="Doc" />) : <div className="text-white p-5">No File</div>}
-                    </div>
-                    <div className="custom-dark-footer"><button className="btn btn-light" onClick={() => setShowCorModal(false)}>Close</button></div>
-                </div>
-            </div>
-        </div>
-      )}
+      <Modal show={showCorModal} onHide={() => setShowCorModal(false)} size="xl" centered>
+        <Modal.Header closeButton className="admin-doc-modal-header">
+          <Modal.Title>Document Viewer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="admin-doc-modal-body">
+          {selectedCorFile ? (
+            selectedCorFile.toLowerCase().endsWith('.pdf') ? (
+              <iframe src={selectedCorFile} className="admin-doc-iframe" title="Document"></iframe>
+            ) : (
+              <img src={selectedCorFile} className="admin-doc-image" alt="Document" />
+            )
+          ) : (
+            <div className="text-white p-5 text-center">No File Available</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="admin-doc-modal-footer">
+          <Button variant="light" onClick={() => setShowCorModal(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
