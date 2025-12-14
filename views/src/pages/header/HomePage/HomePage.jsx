@@ -15,7 +15,7 @@ import { useLoginCheck } from '../../../hooks/useLoginCheck';
 
 export default function HomePage() {
     const navigate = useNavigate();
-    const loginCheck = useLoginCheck({ route: "/Appointments" });
+const loginCheck = useLoginCheck();
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
 
 const handleAppointmentsClick = async () => {

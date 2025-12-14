@@ -6,6 +6,9 @@ import os
 import base64
 from psycopg2 import sql
 from werkzeug.utils import secure_filename
+from utils.supabase_client import upload_file
+from werkzeug.utils import secure_filename
+
 
 tutee_bp = Blueprint('tutee', __name__)
 tutor_bp = Blueprint('tutor', __name__)
@@ -287,32 +290,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
-
 @tutee_bp.route("/report", methods=["POST"])
 def create_report():
     try:
         reporter_id = request.form.get("reporter_id")
         reported_id = request.form.get("reported_id")
-        description = request.form.get("description", "")  
+        description = request.form.get("description", "")
         report_type = request.form.get("type", "TUTOR_REPORT")
         reasons = request.form.getlist("reasons")
 
         if not reporter_id or not reported_id:
             return jsonify({"error": "Missing reporter_id or reported_id"}), 400
 
-      
         if reporter_id == reported_id:
             return jsonify({"error": "You cannot report yourself."}), 400
 
-        file_list = []
-        files = request.files.getlist("files")
-        for file in files:
-            if file and file.filename:
-                unique_filename = f"{reporter_id}_{reported_id}_{file.filename}"
-                save_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-                file.save(save_path)
-                file_list.append(unique_filename)
-
+      
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -326,19 +319,48 @@ def create_report():
                     description,
                     report_type,
                     reasons or [],
-                    file_list or []
+                    []
                 ))
-
                 report_id = cursor.fetchone()["report_id"]
+
+      
+        uploaded_urls = []
+        files = request.files.getlist("files")
+
+     
+        folder_name = secure_filename(str(reported_id))
+
+        for file in files:
+            if file and file.filename:
+                public_url = upload_file(
+                    bucket_name="reports",
+                    file_obj=file,
+                    folder_name=folder_name,
+                    filename_prefix=f"{report_id}_",   
+                )
+                if public_url:
+                    uploaded_urls.append(public_url)
+
+     
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    UPDATE report
+                    SET files = %s
+                    WHERE report_id = %s;
+                """, (uploaded_urls, report_id))
 
         return jsonify({
             "message": "Report submitted successfully",
-            "report_id": report_id
+            "report_id": report_id,
+            "file_urls": uploaded_urls
         }), 201
 
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 
 
