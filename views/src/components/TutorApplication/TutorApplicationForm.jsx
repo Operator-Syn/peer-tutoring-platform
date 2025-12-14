@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Modal, Button } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './TutorApplicationForm.css';
 
 const TutorApplicationForm = () => {
@@ -104,37 +106,35 @@ const TutorApplicationForm = () => {
   return (
     <div className="tutor-app-container">
       <div className="tutor-app-wrapper">
-        {success && (
-          <div className="tutor-app-alert tutor-app-alert-success">
-            <div className="tutor-app-alert-header">
-                <h5 className="tutor-app-alert-heading">Application Submitted Successfully! ✓</h5>
-                <button type="button" className="tutor-app-btn-close" onClick={() => setSuccess(null)}>×</button>
-            </div>
-            <hr className="tutor-app-alert-hr"/>
-            <div className="tutor-app-success-details">
-              <p><strong>Application ID:</strong> {success.application_id}</p>
-              <p><strong>Message:</strong> {success.message}</p>
-              {success.courses && success.courses.length > 0 && (
-                <>
-                  <p><strong>Courses:</strong></p>
-                  <ul>
-                    {success.courses.map((course, idx) => (
-                      <li key={idx}>{course.course_code ? `${course.course_code} - ${course.course_name}` : course}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              <p><strong>Status:</strong> <span className="tutor-app-badge-pending">PENDING</span></p>
-            </div>
-          </div>
-        )}
+        <Modal show={success !== null} onHide={() => setSuccess(null)} centered>
+          <Modal.Header closeButton><Modal.Title>Application Submitted Successfully!</Modal.Title></Modal.Header>
+          <Modal.Body>
+            <p><strong>Application ID:</strong> {success?.application_id}</p>
+            <p><strong>Message:</strong> {success?.message}</p>
+            {success?.courses && success.courses.length > 0 && (
+              <>
+                <p><strong>Courses:</strong></p>
+                <ul>
+                  {success.courses.map((course, idx) => (
+                    <li key={idx}>{course.course_code ? `${course.course_code} - ${course.course_name}` : course}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <p><strong>Status:</strong> <span className="tutor-app-badge-pending">PENDING</span></p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="success" onClick={() => setSuccess(null)}>Close</Button>
+          </Modal.Footer>
+        </Modal>
 
-        {error && (
-          <div className="tutor-app-alert tutor-app-alert-danger">
-            <strong>Error:</strong> {error}
-            <button type="button" className="tutor-app-btn-close" onClick={() => setError(null)}>×</button>
-          </div>
-        )}
+        <Modal show={error !== null} onHide={() => setError(null)} centered>
+          <Modal.Header closeButton><Modal.Title>Error</Modal.Title></Modal.Header>
+          <Modal.Body>{error}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="danger" onClick={() => setError(null)}>Close</Button>
+          </Modal.Footer>
+        </Modal>
 
         <div className="tutor-app-form-card">
           <h2 className="tutor-app-title">Application Form</h2>

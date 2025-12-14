@@ -235,7 +235,7 @@ const AdminDashboard = () => {
                         <table className="admin-table">
                             <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-actions">Actions</th></tr></thead>
                             <tbody>
-                                {data.map(user => (
+                                {[...data].sort((a, b) => (b.pending_reports || 0) - (a.pending_reports || 0)).map(user => (
                                     <tr key={user.google_id}>
                                         <td><div className="admin-bold">{user.first_name} {user.last_name}</div><div className="admin-sub">{user.email}</div></td>
                                         <td><span className="admin-role-badge">{user.role}</span></td>
