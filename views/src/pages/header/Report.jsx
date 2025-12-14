@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+
 import "./Report.css";
 
 import { ToastContainer, toast } from "react-toastify";
@@ -10,6 +11,7 @@ function Report() {
   const [selectedReasons, setSelectedReasons] = useState([]);
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
+const fileInputRef = useRef(null);
 
   const [showOptions, setShowOptions] = useState(false);
   const [nameOptions, setNameOptions] = useState([]);
@@ -207,13 +209,20 @@ function Report() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
-       toast.success("Report submitted successfully!", toastOpts);
+      toast.success(
+  `Report submitted successfully! Uploaded ${data?.file_urls?.length || 0} file(s).`,
+  toastOpts
+);
 
-      setSelectedReasons([]);
-      setDescription("");
-      setName("");
-      setReportedId("");
-      setFiles([]);
+setSelectedReasons([]);
+setDescription("");
+setName("");
+setReportedId("");
+setFiles([]);
+
+
+if (fileInputRef.current) fileInputRef.current.value = "";
+
     } catch (err) {
       console.error("Report submission error:", err);
       toast.error(err.message || "Error submitting report. Please try again.", toastOpts);
@@ -293,13 +302,15 @@ function Report() {
                     <label htmlFor="reportFiles" className="form-label fw-semibold report-label">
                       Attach files (optional)
                     </label>
-                    <input
-                      id="reportFiles"
-                      type="file"
-                      className="form-control"
-                      multiple
-                      onChange={handleFileChange}
-                    />
+                   <input
+  id="reportFiles"
+  type="file"
+  className="form-control"
+  multiple
+  ref={fileInputRef}
+  onChange={handleFileChange}
+/>
+
 
                     {files.length > 0 && (
                       <ul className="mt-2 small text-muted">

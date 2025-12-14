@@ -137,19 +137,23 @@ function TutorProfile() {
     if (tutor) setShortInfo(tutor.about || "");
   }, [tutor]);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`/api/auth/get_user`);
-        if (!res.ok) throw new Error("Not authenticated");
-        const data = await res.json();
-        setUserGoogleId(data.sub || data.google_id);
-      } catch (err) {
-        console.error("Failed to fetch logged-in user:", err);
-      }
-    };
-    fetchUser();
-  }, []);
+
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const res = await fetch(`/api/auth/get_user`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Not authenticated");
+      const data = await res.json();
+      setUserGoogleId(data.sub || data.google_id);
+    } catch (err) {
+      console.error("Failed to fetch logged-in user:", err);
+    }
+  };
+  fetchUser();
+}, []);
+
 
   const openBadgeModal = async () => {
     if (!tutor || !tutor.tutor_id) return;
@@ -1046,6 +1050,109 @@ function TutorProfile() {
           </div>
         </div>
       </div>
+      {/* EDIT ABOUT MODAL */}
+{isShortInfoModalOpen && isCurrentUserTutor && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1200,
+    }}
+    onClick={() => setIsShortInfoModalOpen(false)}
+  >
+    <div
+      style={{
+        backgroundColor: "#fff",
+        padding: "20px",
+        borderRadius: "10px",
+        maxWidth: "520px",
+        width: "92%",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h4 style={{ color: "#4956AD", marginBottom: "10px" }}>Edit About</h4>
+
+      <textarea
+        value={shortInfo}
+        onChange={(e) => setShortInfo(e.target.value)}
+        rows={6}
+        style={{
+          width: "100%",
+          border: "2px solid #4956AD",
+          borderRadius: "8px",
+          padding: "10px",
+          color: "#333C7B",
+          resize: "none",
+          outline: "none",
+        }}
+      />
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
+        <button
+          onClick={() => setIsShortInfoModalOpen(false)}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "6px",
+            backgroundColor: "#fff",
+            color: "#4956AD",
+            border: "2px solid #4956AD",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!tutor?.tutor_id) {
+              toast.error("Missing tutor ID.", toastOpts);
+              return;
+            }
+
+            try {
+              const res = await fetch(`/api/tutor/update_about`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  tutor_id: tutor.tutor_id,
+                  about: shortInfo,
+                }),
+              });
+
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data.error || "Failed to update About");
+
+              setTutor((prev) => ({ ...prev, about: shortInfo }));
+              toast.success("About updated!", toastOpts);
+              setIsShortInfoModalOpen(false);
+            } catch (err) {
+              toast.error(err.message || "Failed to update About.", toastOpts);
+            }
+          }}
+          style={{
+            padding: "8px 14px",
+            borderRadius: "6px",
+            backgroundColor: "#4F62DE",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </>
   );
 }
