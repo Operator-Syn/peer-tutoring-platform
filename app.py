@@ -16,6 +16,7 @@ from controllers.loadConfig.loadConfig import load_config_bp
 from api.getuser import tutee_bp
 from api.getuser import tutor_bp
 from controllers.adminDashboardController import admin_dashboard_bp
+from controllers.appealsController import bp_appeals
 from api.tutor_list import tutor_list
 from api.tutee_list import tutee_list
 from api.notes_sharing import notes_sharing
@@ -55,6 +56,7 @@ app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
 app.register_blueprint(tutee_list, url_prefix="/api/tutee-list")
 app.register_blueprint(notes_sharing, url_prefix="/api/notes-sharing")
 app.register_blueprint(admin_dashboard_bp)
+app.register_blueprint(bp_appeals)
 app.register_blueprint(load_config_bp)
 @app.route('/uploads/cor/<filename>')
 def serve_cor_file(filename):

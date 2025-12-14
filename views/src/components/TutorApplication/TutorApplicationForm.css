@@ -1,374 +1,147 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-.application-container {
-  padding: 0 20px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  margin-top: 45px;
-  margin-bottom: 20px;
-  min-height: auto;
-}
-
-.application-wrapper {
-  width: 100%;
-  max-width: 650px;
-  background: #F8F9FF;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(73, 86, 173, 0.1);
-  padding: 30px;
-}
-
-.form-card {
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-  margin-bottom: 0;
-}
-
-.form-title {
-  color: #4956AD;
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #edf2f7;
-}
-
-.form-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 30px;
-}
-
-.form-left,
-.form-right {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.form-label-custom {
-  color: #2d3748;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  background-color: #f8fafc;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #4956AD;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(73, 86, 173, 0.1);
-}
-
-.form-input:disabled {
-  background-color: #f7fafc;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.form-input::placeholder {
-  color: #a0aec0;
-}
-
-.dropdown-wrapper {
-  position: relative;
+/* Layout & Container */
+.tutor-app-container {
+  display: flex; 
+  justify-content: center; 
+  padding: 50px 20px; 
+  background-color: #f5f7fa;
+  min-height: 100vh;
   width: 100%;
 }
 
-.form-select-custom {
-  width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  background-color: #f8fafc;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  transition: all 0.2s ease;
-  color: #4a5568;
+.tutor-app-wrapper {
+  width: 100%; max-width: 650px; background: #F8F9FF; border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(73, 86, 173, 0.1); padding: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: fit-content;
 }
 
-.form-select-custom:focus {
-  border-color: #4956AD;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(73, 86, 173, 0.1);
+.tutor-app-wrapper:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(73, 86, 173, 0.15);
 }
 
-.form-select-custom:disabled {
-  background-color: #f7fafc;
-  cursor: not-allowed;
-  opacity: 0.6;
+.tutor-app-form-card { background: transparent; padding: 0; }
+
+.tutor-app-title {
+  color: #4956AD; font-size: 28px; font-weight: bold; margin-bottom: 30px;
+  padding-bottom: 15px; border-bottom: 2px solid #edf2f7;
 }
 
-.form-select-custom option {
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 1.4;
-  padding: 10px;
-}
-
-.form-select-custom option:disabled {
-  color: #a0aec0;
-}
-
-.dropdown-icon {
+/* Loading State */
+.tutor-loading-page {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  width: 100%; 
+  height: 100vh;
   position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #5a67d8;
-  pointer-events: none;
-  font-size: 12px;
+  top: 0; left: 0;
+  background-color: #f5f7fa;
+  color: #4956AD; font-weight: 600;
+  z-index: 10;
 }
 
-.selected-courses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+.tutor-app-spinner {
+  display: inline-block; width: 1.5rem; height: 1.5rem; vertical-align: text-bottom;
+  border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
 }
 
-.course-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #edf2f7;
-  color: #4956AD;
-  border: 1px solid #4956AD;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+.tutor-spinner-large {
+  width: 3rem; height: 3rem; border-width: 4px; margin-bottom: 1rem;
 }
 
-.course-tag:hover {
-  background: #e2e8f0;
-  border-color: #3a4589;
+@keyframes spinner-border { 100% { transform: rotate(360deg); } }
+
+/* Grid Layout */
+.tutor-app-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
+.tutor-app-col { display: flex; flex-direction: column; gap: 20px; }
+.tutor-app-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+/* Inputs & Labels */
+.tutor-app-label { color: #2d3748; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+
+.tutor-app-input, .tutor-app-select, .tutor-app-file-input {
+  width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; background-color: #f8fafc; color: #4a5568;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
 }
 
-.course-tag-close {
-  background: none;
-  border: none;
-  color: #718096;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+.tutor-app-input:focus, .tutor-app-select:focus {
+  outline: none; border-color: #4956AD; background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(73, 86, 173, 0.1); transform: scale(1.01);
 }
 
-.course-tag-close:hover {
-  background: #cbd5e0;
-  color: #2d3748;
+.tutor-app-readonly { background-color: #f7fafc; cursor: not-allowed; color: #6c757d; }
+
+/* Dropdown */
+.tutor-app-dropdown-wrapper { position: relative; width: 100%; }
+.tutor-app-dropdown-icon {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: #5a67d8; pointer-events: none; font-size: 12px;
 }
 
-.course-tag-close:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+/* Courses Tags */
+.tutor-app-selected-courses { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.tutor-app-tags-container { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tutor-app-tag {
+  display: inline-flex; align-items: center; gap: 8px; background: #edf2f7;
+  color: #4956AD; border: 1px solid #4956AD; padding: 6px 12px;
+  border-radius: 20px; font-size: 13px; font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.submit-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+.tutor-app-tag:hover { background: #e2e8f0; transform: scale(1.05); }
+
+.tutor-app-tag-close {
+  background: none; border: none; color: #718096; font-size: 20px; line-height: 1;
+  cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
 }
 
-.submit-button {
+.tutor-app-tag-close:hover { color: #e53e3e; }
+
+/* Submit Button */
+.tutor-app-submit-wrapper { display: flex; justify-content: flex-end; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+
+.tutor-app-submit-btn {
   background: linear-gradient(135deg, #4956AD 0%, #3a4589 100%);
-  color: white;
-  border: none;
-  padding: 14px 40px;
-  box-shadow: 0 4px 12px rgba(73, 86, 173, 0.2);
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: white; border: none; padding: 14px 40px; border-radius: 8px;
+  font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(73, 86, 173, 0.2);
 }
 
-.submit-button:hover:not(:disabled) {
+.tutor-app-submit-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #3a4589 0%, #2d3748 100%);
-  box-shadow: 0 6px 15px rgba(73, 86, 173, 0.3);
+  transform: translateY(-2px); box-shadow: 0 6px 12px rgba(73, 86, 173, 0.3);
 }
 
-.submit-button:active:not(:disabled) {
-  transform: translateY(0);
-}
+.tutor-app-submit-btn:active:not(:disabled) { transform: translateY(0); }
+.tutor-app-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tutor-app-submit-arrow { font-size: 20px; transition: transform 0.3s ease; }
+.tutor-app-submit-btn:hover .tutor-app-submit-arrow { transform: translateX(5px); }
 
-.submit-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
+/* Alerts */
+.tutor-app-alert { padding: 20px; border-radius: 12px; margin-bottom: 20px; position: relative; animation: fadeIn 0.4s ease-out; }
+.tutor-app-alert-success { background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%); color: #22543d; border-left: 4px solid #48bb78; }
+.tutor-app-alert-danger { background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%); color: #742a2a; border-left: 4px solid #f56565; }
+.tutor-app-alert-info { background: #ebf8ff; border: 1px solid #bee3f8; color: #2b6cb0; display: flex; align-items: center; gap: 10px; }
 
-.submit-arrow {
-  font-size: 20px;
-  transition: transform 0.3s ease;
-}
+.tutor-app-alert-header { display: flex; justify-content: space-between; align-items: center; }
+.tutor-app-alert-heading { font-size: 18px; font-weight: 600; margin: 0; }
+.tutor-app-btn-close { background: none; border: none; font-size: 1.5rem; line-height: 1; color: inherit; cursor: pointer; opacity: 0.5; transition: opacity 0.2s; }
+.tutor-app-btn-close:hover { opacity: 1; }
+.tutor-app-alert-hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 15px 0; }
 
-.submit-button:hover:not(:disabled) .submit-arrow {
-  transform: translateX(4px);
-}
+/* Helpers */
+.tutor-app-text-muted { color: #6c757d; font-size: 0.875em; }
+.tutor-app-text-danger { color: #dc3545; font-size: 0.875em; }
+.tutor-app-badge-pending { background-color: #ffc107; color: #000; padding: 0.35em 0.65em; font-size: .75em; font-weight: 700; border-radius: 0.25rem; }
 
-.alert {
-  border-radius: 12px;
-  border: none;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-.alert-success {
-  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
-  color: #22543d;
-  border-left: 4px solid #48bb78;
-}
-
-.alert-danger {
-  background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
-  color: #742a2a;
-  border-left: 4px solid #f56565;
-}
-
-.alert-heading {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.alert hr {
-  border: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  margin: 15px 0;
-}
-
-.success-details p {
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.success-details strong {
-  font-weight: 600;
-}
-
-.success-details ul {
-  margin: 10px 0 0 20px;
-  padding: 0;
-  list-style: disc;
-}
-
-.success-details ul li {
-  margin-bottom: 6px;
-  font-size: 14px;
-  line-height: 1.4;
-  color: #2d3748;
-  font-weight: 400;
-}
-
-.success-details p,
-.success-details strong {
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.placeholder-text {
-  color: #a0aec0;
-  font-size: 14px;
-  font-style: italic;
-  min-height: 100px;
-}
-
-@media (max-width:  768px) {
-  .form-content {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .form-card {
-    padding: 24px;
-  }
-
-  .form-title {
-    font-size: 24px;
-  }
-
-  .submit-wrapper {
-    justify-content: stretch;
-  }
-
-  .submit-button {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .application-container {
-    padding: 0 10px;
-    margin-top: 10px;
-  }
-  
-  .application-wrapper {
-    padding: 15px;
-  }
-
-  .form-card {
-    padding: 20px;
-  }
-
-  .form-title {
-    font-size: 20px;
-  }
-
-  .selected-courses {
-    gap: 6px;
-  }
-
-  .course-tag {
-    font-size: 12px;
-    padding: 4px 10px;
-  }
+@media (max-width: 768px) {
+  .tutor-app-grid { grid-template-columns: 1fr; gap: 20px; }
+  .tutor-app-wrapper { padding: 20px; }
+  .tutor-app-submit-btn { width: 100%; justify-content: center; }
 }

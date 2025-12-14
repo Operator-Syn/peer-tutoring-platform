@@ -13,6 +13,7 @@ flask-cors = "*"
 authlib = "*"
 requests = "*"
 git-filter-repo = "*"
+supabase = "*"
 
 [dev-packages]
 
