@@ -1,18 +1,87 @@
 
 import './FileUpload.css';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
 import BasicButton from '../../components/BasicButton/BasicButton';
+import { useNavigate } from 'react-router-dom';
 
 export default function FileUpload() {
     const API_URL = import.meta.env.VITE_API_BASE_URL;
+    const navigate = useNavigate();
 
     const [files, setFiles] = useState([]);
     const fileInputRef =  useRef(null);
     const [previewFile, setPreviewFile] = useState(null);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(null);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [tutorId, setTutorId] = useState(null);
+
+    const submitPost = async () => {
+        // Validation (optional)
+        if (!title || !selectedCourse || files.length === 0 || !description) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        // Prepare the payload
+        const payload = {
+            title,
+            description,
+            course_code: selectedCourse.value, // assuming react-select option
+            files: files.map(f => f.name),     // or adjust as needed for your backend
+            tutor_id: tutorId    // replace with actual tutor id (from auth/session)
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/api/notes-sharing/all`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert("Note shared successfully!");
+                clearInputFields();
+            } else {
+                alert(data.error || "Failed to share note.");
+            }
+        } catch (err) {
+            alert("An error occurred: " + err.message);
+        }
+    };
+
+    useEffect(() => {
+        const checkIfTUtor = async () => {
+            const res = await fetch(`${API_URL}/api/auth/get_user`, { credentials: 'include' });
+            const user = await res.json();
+            console.log("Current user:", user);
+            // Fetch tutor ID from tutee based on user info
+            const tutorId = await fetch(`${API_URL}/api/tutee/by_google/${user.sub}`, {
+                method: 'GET',
+            });
+            const tutorData = await tutorId.json();
+            console.log("Tutor data:", tutorData);
+            //Check if tutee ID is tutor
+            const tutorCheck = await fetch(`${API_URL}/api/notes-sharing/check-tutor/${tutorData.id_number}`, {
+                method: 'GET',
+            });
+            const tutorCheckData = await tutorCheck.json();
+            console.log("Tutor check response:", tutorCheckData.is_tutor);
+            if (!tutorCheckData.is_tutor) {
+                alert("You must be a tutor to share notes.");
+                navigate('/profile/apply');
+                return;
+            }
+            setTutorId(tutorData.id_number);
+        };
+
+        checkIfTUtor();
+    }, []);
+
 
     const retrieveCourses = async (search='') => {
         // Fetch courses from API or database
@@ -39,8 +108,17 @@ export default function FileUpload() {
     const deleteFile = (fileName) => {
         setFiles(prevFiles => prevFiles.filter(file => file.name !== fileName));
     }
-    
 
+    const clearInputFields = () => {
+        setTitle('');
+        setDescription('');
+        setSelectedCourse(null);
+        setFiles([]);
+    }
+    
+    if (!tutorId) {
+        return <div>Loading...</div>;
+    }
     return (
         <>
             <div className="file-upload-fu">
@@ -50,7 +128,7 @@ export default function FileUpload() {
                 <div className='input-forms-container-fu'>
                     <div className='input-forms-left-fu'>
                         <InputFormFU label="Title">
-                            <Form.Control type="text" placeholder="Title" className='input-field-tt' />
+                            <Form.Control type="text" placeholder="Title" className='input-field-tt' value={title} onChange={e => setTitle(e.target.value)} />
                         </InputFormFU> 
                         <InputFormFU label="Related Course">
                             <Select isClearable placeholder="Course Code" options={courses} onInputChange={e => {retrieveCourses(e);}} onChange={e => setSelectedCourse(e)} />
@@ -72,21 +150,14 @@ export default function FileUpload() {
                                 <FileList files={files} deleteFileFunc={deleteFile} onPreview={setPreviewFile} />
                                 {previewFile && (
                                     <div
-                                        style={{
-                                            position: "fixed",
-                                            top: 0, left: 0, right: 0, bottom: 0,
-                                            background: "rgba(0,0,0,0.7)",
-                                            display: "flex",
-                                            alignItems: "center",
+                                        style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center",
                                             justifyContent: "center",
                                             zIndex: 100000
                                         }}
                                         onClick={() => setPreviewFile(null)}
                                     >
                                     <img
-                                        src={URL.createObjectURL(previewFile)}
-                                        alt={previewFile.name}
-                                        style={{maxWidth: "90vw", maxHeight: "90vh", background: "#fff", borderRadius: "8px"}}
+                                        src={URL.createObjectURL(previewFile)} alt={previewFile.name} style={{maxWidth: "90vw", maxHeight: "90vh", background: "#fff", borderRadius: "8px"}}
                                         onClick={e => {e.stopPropagation(); setPreviewFile(null);}}
                                     />
                                     </div>
@@ -98,13 +169,13 @@ export default function FileUpload() {
                     </div>
                     <div className='input-forms-right-fu'>
                         <InputFormFU label="Note Description" customClass='note-description-form'>
-                            <Form.Control as="textarea" placeholder="Note Description" className='input-field-nd' style={{height: "100%"}} />
+                            <Form.Control as="textarea" placeholder="Note Description" className='input-field-nd' style={{height: "100%"}} value={description} onChange={e => setDescription(e.target.value)} />
                         </InputFormFU>
                     </div>
                 </div>
 
                 <div style={{display: "flex", justifyContent: "center", marginTop: "20px"}}>
-                    <BasicButton style={{height: "40px", fontSize: "16px", padding: "0 20px"}}>Submit Note</BasicButton>
+                    <BasicButton style={{height: "40px", fontSize: "16px", padding: "0 20px"}} onClick={submitPost}>Submit</BasicButton>
                 </div>
 
             </div>
