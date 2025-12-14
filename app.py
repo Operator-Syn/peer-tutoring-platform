@@ -75,6 +75,8 @@ def create_app():
     from controllers.adminDashboardController import admin_dashboard_bp
     from controllers.appealsController import bp_appeals
     from controllers.chatUserController.chatUserController import chat_bp
+    from controllers.subjectRequestController.subjectRequestController import subject_request_bp
+
 
     # ✅ rate session (from HEAD)
     from controllers.ratesession.ratesessioncontroller import rate_session_bp
@@ -102,6 +104,8 @@ def create_app():
 
     # -- Rating --
     app.register_blueprint(rate_session_bp)  # ✅ from HEAD
+    app.register_blueprint(subject_request_bp)
+
 
     # ---------------------------------------------------------
     # 4) ROUTES

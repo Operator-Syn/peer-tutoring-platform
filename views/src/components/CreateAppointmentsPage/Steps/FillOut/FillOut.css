@@ -1,41 +1,66 @@
+/* --- BASE STYLES (Desktop Defaults) --- */
+
+/* Main Container Wrapper */
 .create-appointment-form-bg {
     background-color: #F8F9FF;
     border-radius: 20px;
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+    /* Large spacing for desktop (replacing m-5 p-5) */
+    padding: 3rem; 
+    margin: 3rem;
 }
 
-.h3-absolute {
-    /* Default: in flow, with padding to align with content */
-    padding-left: 1rem;
+/* Vertical Spacing between form sections (replaces gap-4) */
+.fillout-content-gap {
+    gap: 1.5rem; 
 }
 
-/* Custom border label group */
+/* Spacing under the main title (replaces mb-2) */
+.fillout-title {
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+}
+
+/* Spacing under the "Fill Out" label (replaces mb-3) */
+.fillout-side-label {
+    margin-bottom: 1rem;
+}
+
+
+/* --- FLOATING LABELS STYLING --- */
 .custom-border-label-group {
     position: relative;
-    
+    /* No margin needed, the flex gap handles it */
 }
 
 .custom-border-label-group .custom-border-label {
     position: absolute;
     top: -0.6em;
     left: 0.75rem;
-    background-color: var(--bs-body-bg);
+    /* Matches background to hide the border line */
+    background-color: #F8F9FF; 
     padding: 0 0.4em;
     font-size: 0.85rem;
     color: var(--bs-secondary-color);
     border-radius: 0.25rem;
+    z-index: 10;
 }
 
-/* Shared padding for inputs and selects */
 .custom-border-label-group .custom-input,
 .custom-border-label-group .custom-select {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
 }
 
-/* Large screen adjustments */
+
+/* --- SIDE LABEL (Visible only on Very Large Screens) --- */
+.h3-absolute {
+    display: none;
+}
+
 @media (min-width: 1800px) {
     .h3-absolute {
+        display: block;
         position: absolute;
         left: 0rem;
         padding: 3rem 5rem 3rem 5rem;
@@ -46,8 +71,68 @@
     }
 }
 
-@media (max-width: 1800px) {
-    .h3-absolute {
-        display: none;
+
+/* --- MOBILE VIEW (< 768px) --- */
+@media (max-width: 768px) {
+    
+    /* 1. Shrink the main container padding/margin */
+    .create-appointment-form-bg {
+        padding: 1.5rem 1rem; 
+        margin: 0.5rem;       
+        border-radius: 15px;
     }
+
+    /* 2. Remove Bootstrap container padding to maximize width */
+    .fillout-content-gap.container {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* 3. Reduce vertical gap (tighter stack) */
+    .fillout-content-gap {
+        gap: 1rem; 
+    }
+
+    /* 4. Smaller Title */
+    .fillout-title {
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem; 
+    }
+
+    /* 5. Smaller Side Label Spacing */
+    .fillout-side-label {
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+    }
+}
+
+.subject-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: -25px;
+    margin-bottom: 5px;
+}
+
+.static-label {
+    position: static !important;
+    transform: none !important;
+    background-color: transparent !important;
+    margin-bottom: 0 !important;
+}
+
+.cant-find-course-link {
+    background: none;
+    border: none;
+    color: #616DBE;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 10px;
+    z-index: 10;
+    transition: color 0.2s ease;
+}
+
+.cant-find-course-link:hover {
+    color: #4a5568;
 }

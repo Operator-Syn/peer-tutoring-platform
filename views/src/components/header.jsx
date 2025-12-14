@@ -182,9 +182,6 @@ function Header() {
                 <p>
                   <img src={notifIcon} alt="Notifications" /> Notifications
                 </p>
-                <p>
-                  <img src={histIcon} alt="History" /> History
-                </p>
                 <p
                   style={{ cursor: "pointer" }}
                   onClick={() => {
@@ -204,7 +201,11 @@ function Header() {
                  
                     < img src={feedIcon} alt="Feedback" /> Rate Session
                 </p>
-                <p>
+                <p onClick = {()=>{
+                  setPopup(false);
+                  handleNavClick();
+                  window.location.href = "https://myiit.msuiit.edu.ph";
+                  }}>
                   <img src={webIcon} alt="Website" /> Myiit
                 </p>
                 <p onClick={() => {
@@ -214,9 +215,15 @@ function Header() {
                 }}>
                   <img src={tutorsIcon} alt="Tutors" /> Tutors
                 </p>
-                <p>
-                  <img src={reportIcon} alt="Report a bug" /> Report a bug
-                </p>
+                {user && user.role === 'ADMIN' && (
+                  <p onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate("/admin");
+                  }}>
+                    <img src={reportIcon} alt="Admin Page" /> Admin Page
+                  </p>
+                )}
                 {user && (
                   <p onClick={() => {
                     setPopup(false);

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from psycopg2.extras import RealDictCursor
+from psycopg2 import IntegrityError
 from utils.db import get_connection
 
 @dataclass
@@ -27,8 +28,8 @@ class PendingAppointment:
     def create(cls, vacant_id, tutee_id, course_code, appointment_date):
         """
         Validates data against the DB and inserts a new appointment.
-        Raises ValueError if validation fails.
-        Returns the new appointment_id.
+        Raises ValueError for logic issues (caught as 400).
+        Raises IntegrityError for DB constraint issues (caught as 500 or 409).
         """
         conn = get_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -44,16 +45,26 @@ class PendingAppointment:
             if not cur.fetchone():
                 raise ValueError("Invalid course code")
 
-            # 3. Check for Duplicates (Double Booking prevention)
+            # 3. LOGIC CHECKS (Updated to match your Schema)
+            
+            # Check A: Is the slot already successfully BOOKED by anyone?
             cur.execute("""
                 SELECT 1 FROM appointment 
-                WHERE vacant_id = %s AND appointment_date = %s AND status IN ('BOOKED', 'PENDING');
+                WHERE vacant_id = %s AND appointment_date = %s AND status = 'BOOKED';
             """, (vacant_id, appointment_date))
-            
             if cur.fetchone():
-                raise ValueError("This slot is already booked or pending for the selected date")
+                raise ValueError("This slot has already been booked by another student.")
 
-            # 4. Insert Record
+            # Check B: Did *THIS* student already send a request?
+            cur.execute("""
+                SELECT 1 FROM appointment 
+                WHERE vacant_id = %s AND appointment_date = %s 
+                AND tutee_id = %s AND status = 'PENDING';
+            """, (vacant_id, appointment_date, tutee_id))
+            if cur.fetchone():
+                raise ValueError("You already have a pending request for this slot.")
+
+            # 4. Insert Record (Safe to insert now)
             cur.execute("""
                 INSERT INTO appointment (
                     vacant_id, tutee_id, course_code, appointment_date, status
@@ -65,9 +76,20 @@ class PendingAppointment:
             conn.commit()
             return new_id
 
+        except IntegrityError as e:
+            # This is a fallback in case a Race Condition happens 
+            # (two people clicked 'Submit' at the EXACT same millisecond)
+            conn.rollback()
+            if "unique_request_per_student" in str(e):
+                raise ValueError("You already have a pending request for this slot.")
+            elif "unique_confirmed_booking" in str(e):
+                raise ValueError("This slot was just booked by someone else.")
+            else:
+                raise e # Raise unexpected DB errors to the controller
+
         except Exception as e:
             conn.rollback()
-            raise e  # Re-raise to be caught by controller
+            raise e
         finally:
             cur.close()
             conn.close()

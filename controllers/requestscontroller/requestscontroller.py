@@ -6,7 +6,6 @@ from datetime import datetime
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
-
 @requests_bp.route("/pending/<tutor_id>", methods=["GET"])
 def get_pending_requests(tutor_id):
     conn = get_connection()
@@ -65,8 +64,7 @@ def update_appointment_status(appointment_id):
     cur = conn.cursor()
 
     try:
-        # ✅ Fetch appointment info INCLUDING appointment_date
-        # Needed so we only cancel competitors for this exact date (not other days)
+        # Fetch appointment info including appointment_date
         cur.execute(
             """
             SELECT 
@@ -90,7 +88,7 @@ def update_appointment_status(appointment_id):
 
         vacant_id, tutee_id, course_code, appointment_date, tutor_id, start_time, end_time = appt
 
-        # ✅ Update the appointment status
+        # Update the appointment status
         cur.execute(
             """
             UPDATE appointment
@@ -100,9 +98,9 @@ def update_appointment_status(appointment_id):
             (new_status, appointment_id),
         )
 
-        # ✅ If BOOKED, cancel competitors + log + notify
+        # If BOOKED, cancel competitors + log + notify
         if new_status == "BOOKED":
-            # A) Auto-decline competitors on same slot + same date
+            # Auto-decline competitors on same slot + same date
             cur.execute(
                 """
                 UPDATE appointment
@@ -115,7 +113,7 @@ def update_appointment_status(appointment_id):
                 (vacant_id, appointment_date, appointment_id),
             )
 
-            # B) Log history
+            # Log history
             cur.execute(
                 """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
@@ -124,13 +122,23 @@ def update_appointment_status(appointment_id):
                 (tutor_id, tutee_id, start_time, end_time, course_code),
             )
 
-            # C) Notify
+            # Notify winner
             cur.execute(
                 """
-                INSERT INTO notifications (tutor_id, tutee_id)
-                VALUES (%s, %s)
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
                 """,
-                (tutor_id, tutee_id),
+                (tutor_id, tutee_id, new_status),
+            )
+
+        elif new_status in ("CANCELLED", "COMPLETED"):
+            # Notify for other updates too (optional but consistent)
+            cur.execute(
+                """
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+                """,
+                (tutor_id, tutee_id, new_status),
             )
 
         conn.commit()
@@ -144,19 +152,6 @@ def update_appointment_status(appointment_id):
     finally:
         cur.close()
         conn.close()
-
-
-@requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
-def delete_request(request_id):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM request WHERE request_id = %s", (request_id,))
-    conn.commit()
-
-    cur.close()
-    conn.close()
-    return jsonify({"message": f"Request {request_id} deleted"}), 200
 
 
 @requests_bp.route("/search", methods=["GET"])
@@ -179,7 +174,7 @@ def search_requests():
                 a.tutee_id,
                 {name_concat} AS name,
                 a.course_code,
-                tu.program_code,
+                t.program_code,
                 a.appointment_date,
                 av.day_of_week,
                 av.start_time,
@@ -187,7 +182,6 @@ def search_requests():
                 a.status
             FROM appointment a
             JOIN tutee t ON a.tutee_id = t.id_number
-            JOIN tutee tu ON a.tutee_id = tu.id_number
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE av.tutor_id = %s
             AND a.status = 'PENDING'
@@ -199,7 +193,7 @@ def search_requests():
                     {name_concat} ILIKE %s OR
                     a.tutee_id::TEXT ILIKE %s OR
                     a.course_code ILIKE %s OR
-                    tu.program_code ILIKE %s OR
+                    t.program_code ILIKE %s OR
                     a.status ILIKE %s OR
                     TO_CHAR(a.appointment_date, 'YYYY-MM-DD') ILIKE %s
                 )
@@ -316,7 +310,6 @@ def update_appointment_status_and_log(appointment_id):
     cur = conn.cursor()
 
     try:
-        # ✅ Include vacant_id + appointment_date so we can auto-cancel competitors
         cur.execute(
             """
             SELECT 
@@ -340,7 +333,7 @@ def update_appointment_status_and_log(appointment_id):
 
         tutee_id, course_code, vacant_id, appointment_date, tutor_id, start_time, end_time = appt
 
-        # 2) Update target status
+        # Update target status
         cur.execute(
             """
             UPDATE appointment
@@ -349,9 +342,11 @@ def update_appointment_status_and_log(appointment_id):
             """,
             (new_status, appointment_id),
         )
+
         auto_cancelled = 0
+
         if new_status == "BOOKED":
-            # A) Log history
+            # Log history
             cur.execute(
                 """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
@@ -360,7 +355,7 @@ def update_appointment_status_and_log(appointment_id):
                 (tutor_id, tutee_id, start_time, end_time, course_code),
             )
 
-            # B) Notify winner
+            # Notify winner
             cur.execute(
                 """
                 INSERT INTO notifications (tutor_id, tutee_id, action)
@@ -369,22 +364,20 @@ def update_appointment_status_and_log(appointment_id):
                 (tutor_id, tutee_id, new_status),
             )
 
-            # C) Auto-decline competitors
+            # Auto-decline competitors (same slot + same date)
             cur.execute(
-    """
-    UPDATE appointment
-    SET status = 'CANCELLED'
-    WHERE vacant_id = %s
-      AND appointment_date = %s
-      AND status = 'PENDING'
-      AND appointment_id != %s
-    RETURNING appointment_id
-    """,
-    (vacant_id, appointment_date, appointment_id),
-)
-
+                """
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+                RETURNING appointment_id
+                """,
+                (vacant_id, appointment_date, appointment_id),
+            )
             auto_cancelled = cur.rowcount
-
 
         elif new_status == "CANCELLED":
             # Notify declined
@@ -397,11 +390,12 @@ def update_appointment_status_and_log(appointment_id):
             )
 
         conn.commit()
-        return jsonify({
-    "message": f"Appointment {new_status} successfully!",
-    "auto_cancelled": auto_cancelled if new_status == "BOOKED" else 0
-}), 200
-
+        return jsonify(
+            {
+                "message": f"Appointment {new_status} successfully!",
+                "auto_cancelled": auto_cancelled if new_status == "BOOKED" else 0,
+            }
+        ), 200
 
     except Exception as e:
         conn.rollback()
@@ -411,6 +405,73 @@ def update_appointment_status_and_log(appointment_id):
     finally:
         cur.close()
         conn.close()
+
+
+@requests_bp.route("/create-pending-appointment", methods=["POST"])
+def create_pending_appointment():
+    data = request.get_json(silent=True) or {}
+
+    vacant_id = data.get("vacant_id")
+    tutee_id = data.get("tutee_id")
+    course_code = data.get("course_code")
+    appointment_date = data.get("appointment_date")
+
+    status = "PENDING"
+
+    if not all([vacant_id, tutee_id, course_code, appointment_date]):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # Find tutor_id for this vacant slot
+        cur.execute("SELECT tutor_id FROM availability WHERE vacant_id = %s", (vacant_id,))
+        tutor_row = cur.fetchone()
+
+        if not tutor_row:
+            return jsonify({"error": "Availability slot not found"}), 404
+
+        tutor_id = tutor_row[0]
+
+        # Create PENDING appointment
+        cur.execute(
+            """
+            INSERT INTO appointment (vacant_id, tutee_id, course_code, appointment_date, status)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING appointment_id
+            """,
+            (vacant_id, tutee_id, course_code, appointment_date, status),
+        )
+        new_appt_id = cur.fetchone()[0]
+
+        # Notify tutor (REQUEST action)
+        cur.execute(
+            """
+            INSERT INTO notifications (tutor_id, tutee_id, action)
+            VALUES (%s, %s, 'REQUEST')
+            """,
+            (tutor_id, tutee_id),
+        )
+
+        conn.commit()
+        return jsonify({"message": "Appointment requested successfully", "id": new_appt_id}), 201
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error creating appointment:", e)
+
+        if "unique_request_per_student" in str(e):
+            return jsonify({"error": "You already have a pending request for this slot."}), 409
+        if "unique_active_booking" in str(e):
+            return jsonify({"error": "This slot is currently locked by another student."}), 409
+
+        return jsonify({"error": "Failed to create appointment"}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
 
 @requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
 def finish_appointment(appointment_id):
@@ -422,7 +483,7 @@ def finish_appointment(appointment_id):
     cur = conn.cursor()
 
     try:
-        # 1) Get all needed info
+        # Get all needed info
         cur.execute(
             """
             SELECT
@@ -444,7 +505,7 @@ def finish_appointment(appointment_id):
 
         tutee_id, tutor_id, course_code, appointment_date, start_time, end_time = row
 
-        # 2) Insert snapshot into session_rating (rating=0)
+        # Insert snapshot into session_rating (rating=0)
         cur.execute(
             """
             INSERT INTO session_rating
@@ -456,7 +517,7 @@ def finish_appointment(appointment_id):
             (appointment_id, tutee_id, tutor_id, course_code, appointment_date, start_time, end_time),
         )
 
-        # 3) Mark appointment as COMPLETED (instead of deleting)
+        # Mark appointment as COMPLETED
         cur.execute(
             """
             UPDATE appointment
