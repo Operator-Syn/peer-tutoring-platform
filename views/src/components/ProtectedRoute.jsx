@@ -28,7 +28,7 @@ export default function ProtectedRoute() {
         check();
     }, [location.pathname]);
 
-	if (!authChecked) return <div style={{padding: "15rem"}}>Loading...</div>;
+
 	if (!user) return null;
 
 	return <Outlet />;

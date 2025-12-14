@@ -411,3 +411,63 @@
     min-height: 50px;
   }
 }
+
+/* ==========================
+   Toast (React-Toastify) Theme
+   ========================== */
+:root {
+  --toastify-color-success: #4956AD;
+  --toastify-color-info: #4956AD;
+  --toastify-color-warning: #ffc107;
+  --toastify-color-error: #dc3545;
+
+  --toastify-toast-width: 340px;
+  --toastify-font-family: inherit;
+}
+
+/* toast box */
+.Toastify__toast {
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  font-size: 0.95rem;
+  padding: 12px 14px;
+}
+
+/* body text inside toast */
+.Toastify__toast-body {
+  margin: 0;
+  padding: 0;
+  font-weight: 500;
+  color: #1f2a44;
+}
+
+/* close button */
+.Toastify__close-button {
+  opacity: 0.6;
+}
+.Toastify__close-button:hover {
+  opacity: 1;
+}
+
+/* progress bar (uses toast type color by default) */
+.Toastify__progress-bar {
+  border-radius: 999px;
+}
+
+/* Optional: make success/info background more "soft" */
+.Toastify__toast--success,
+.Toastify__toast--info {
+  background: #f8f9ff;
+  border: 2px solid rgba(73, 86, 173, 0.25);
+}
+
+/* keep warning + error readable */
+.Toastify__toast--warning {
+  background: #fff8e1;
+  border: 2px solid rgba(255, 193, 7, 0.35);
+}
+
+.Toastify__toast--error {
+  background: #fff5f5;
+  border: 2px solid rgba(220, 53, 69, 0.25);
+}

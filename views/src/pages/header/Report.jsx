@@ -1,16 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom"; // 1. Import useLocation
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import "./Report.css";
+
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Report() {
-  // 2. Initialize location hook to access state passed from navigate()
   const location = useLocation();
 
   const [selectedReasons, setSelectedReasons] = useState([]);
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
+  const fileInputRef = useRef(null);
 
   const [showOptions, setShowOptions] = useState(false);
   const [nameOptions, setNameOptions] = useState([]);
@@ -24,6 +27,8 @@ function Report() {
   const [reportedId, setReportedId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+
   const reasons = [
     "Harassment",
     "Racist",
@@ -34,82 +39,92 @@ function Report() {
     "Other",
   ];
 
-  // ✅ derived filtered list (safe + fast)
+  const toastOpts = {
+    position: "top-right",
+    autoClose: 2500,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  };
+
   const filteredOptions = useMemo(() => {
     return nameOptions.filter((opt) =>
       opt.toLowerCase().includes(name.toLowerCase())
     );
   }, [nameOptions, name]);
 
-  // 3. NEW: Effect to handle pre-filled name from Navigation State
-  // We wait until nameToIdMap is populated (from fetchTutees) to ensure we can map the name to an ID
+  // ✅ Prefill name from navigation state: navigate("/report", { state: { prefilledName: "..." } })
+  // Wait for nameToIdMap to exist so we can auto-map name -> id
   useEffect(() => {
     if (location.state?.prefilledName && Object.keys(nameToIdMap).length > 0) {
-        const prefilledName = location.state.prefilledName;
-        
-        // Set the text input
-        setName(prefilledName);
+      const prefilledName = location.state.prefilledName;
 
-        // Auto-set the reported ID if it exists in our map
-        if (nameToIdMap[prefilledName]) {
-            setReportedId(nameToIdMap[prefilledName]);
+      setName(prefilledName);
+
+      if (nameToIdMap[prefilledName]) {
+        // prevent self-report
+        if (nameToIdMap[prefilledName] === tuteeId) {
+          setReportedId("");
+          toast.warning("You can’t report yourself.", toastOpts);
+        } else {
+          setReportedId(nameToIdMap[prefilledName]);
         }
+      }
     }
-  }, [location.state, nameToIdMap]);
+  }, [location.state, nameToIdMap, tuteeId]);
 
+  // 1) Get all tutees → build name list & map fullName -> id_number (excluding self)
+useEffect(() => {
+  const fetchTutees = async () => {
+    try {
+      if (!API_BASE_URL) return;
 
-  // 1) Get all tutees → build name list & map fullName -> id_number
-  // ✅ EXCLUDES self once tuteeId is known
-  useEffect(() => {
-    const fetchTutees = async () => {
-      try {
-        if (!API_BASE_URL) return;
+      const res = await fetch(`${API_BASE_URL}/api/tutee/all`, {
+        credentials: "include",
+      });
 
-        const res = await fetch(`${API_BASE_URL}/api/tutee/all`, {
-          credentials: "include",
+      if (!res.ok) {
+        console.error("tutee/all failed:", res.status, await res.text());
+        toast.error("Failed to load names list.", toastOpts);
+        return;
+      }
+
+      const data = await res.json();
+
+      const nameMap = {};
+      const names = data
+        .filter((t) => {
+          // ✅ Exclude self by ID if we have it
+          if (tuteeId) return t.id_number !== tuteeId;
+
+          // ✅ Fallback: exclude self by google_id (works even for tutors)
+          if (userGoogleId) return t.google_id !== userGoogleId;
+
+          // If we don't know who user is yet, don't filter
+          return true;
+        })
+        .map((tutee) => {
+          const fullName = [tutee.first_name, tutee.middle_name, tutee.last_name]
+            .filter(Boolean)
+            .join(" ");
+
+          if (fullName) nameMap[fullName] = tutee.id_number;
+          return fullName;
         });
 
-        if (!res.ok) {
-          console.error("tutee/all failed:", res.status, await res.text());
-          return;
-        }
+      setNameOptions([...new Set(names)].filter(Boolean));
+      setNameToIdMap(nameMap);
+    } catch (err) {
+      console.error("Error fetching tutees:", err);
+      toast.error("Something went wrong while loading names.", toastOpts);
+    }
+  };
 
-        const data = await res.json();
+  fetchTutees();
+}, [tuteeId, userGoogleId]); // ✅ include userGoogleId dependency
 
-        const nameMap = {};
-        const names = data
-          .filter((t) => {
-            // if tuteeId not loaded yet, don't filter
-            if (!tuteeId) return true;
-            return t.id_number !== tuteeId; // ✅ remove self
-          })
-          .map((tutee) => {
-            const fullName = [
-              tutee.first_name,
-              tutee.middle_name,
-              tutee.last_name,
-            ]
-              .filter(Boolean)
-              .join(" ");
 
-            if (fullName) {
-              nameMap[fullName] = tutee.id_number;
-            }
-            return fullName;
-          });
-
-        const uniqueNames = [...new Set(names)].filter(Boolean);
-        setNameOptions(uniqueNames);
-        setNameToIdMap(nameMap);
-      } catch (err) {
-        console.error("Error fetching tutees:", err);
-      }
-    };
-
-    fetchTutees();
-  }, [tuteeId]); // ✅ refetch when your id is known
-
-  // 2) Get logged-in user (google id)
+  // 2) Get logged in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -121,22 +136,24 @@ function Report() {
 
         if (!res.ok) {
           console.error("get_user failed:", res.status, await res.text());
+          toast.error("Please log in again.", toastOpts);
+          setLoading(false);
           return;
         }
 
         const data = await res.json();
-        console.log("get_user data:", data);
-
         setUserGoogleId(data.sub || data.google_id);
       } catch (err) {
         console.error("Failed to fetch logged-in user:", err);
+        toast.error("Could not identify your session. Please re-login.", toastOpts);
+        setLoading(false);
       }
     };
 
     fetchUser();
   }, []);
 
-  // 3) Get tutee id_number (reporter_id) from google id
+  // 3) Get tuteeId from google id
   useEffect(() => {
     const fetchTuteeId = async () => {
       if (!userGoogleId || !API_BASE_URL) return;
@@ -149,17 +166,21 @@ function Report() {
 
         if (!res.ok) {
           console.error("by_google failed:", res.status, await res.text());
+          toast.error("Could not load your account info.", toastOpts);
           return;
         }
 
         const data = await res.json();
-        console.log("by_google data:", data);
-
         if (data.id_number) {
           setTuteeId(data.id_number);
+        } else {
+          toast.error("Account not found. Please re-login.", toastOpts);
         }
       } catch (err) {
         console.error("Error fetching tutee ID:", err);
+        toast.error("Something went wrong while loading your account.", toastOpts);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -168,14 +189,13 @@ function Report() {
 
   const toggleReason = (reason) => {
     setSelectedReasons((prev) =>
-      prev.includes(reason)
-        ? prev.filter((r) => r !== reason)
-        : [...prev, reason]
+      prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason]
     );
   };
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
+    if (e.target.files?.length) toast.info("Files attached.", toastOpts);
   };
 
   const handleConfirmClick = () => {
@@ -186,15 +206,15 @@ function Report() {
     setShowConfirmModal(false);
 
     if (!tuteeId) {
-      alert("Could not identify your account. Please re-login.");
+      toast.error("Could not identify your account. Please re-login.", toastOpts);
       return;
     }
     if (!reportedId) {
-      alert("Please choose a person from the suggestions list.");
+      toast.warning("Please choose a person from the suggestions list.", toastOpts);
       return;
     }
     if (selectedReasons.length === 0 && description.trim() === "") {
-      alert("Please select at least one reason or add a description.");
+      toast.warning("Select at least one reason or add a description.", toastOpts);
       return;
     }
 
@@ -220,16 +240,21 @@ function Report() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
-      alert("Report submitted successfully!");
+      toast.success(
+        `Report submitted successfully! Uploaded ${data?.file_urls?.length || 0} file(s).`,
+        toastOpts
+      );
 
       setSelectedReasons([]);
       setDescription("");
       setName("");
       setReportedId("");
       setFiles([]);
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("Report submission error:", err);
-      alert("Error submitting report. Please try again.");
+      toast.error(err.message || "Error submitting report. Please try again.", toastOpts);
     } finally {
       setIsSubmitting(false);
     }
@@ -237,8 +262,23 @@ function Report() {
 
   const handleConfirmNo = () => setShowConfirmModal(false);
 
+  if (loading) {
+    return (
+      <div className="report-loading">
+        <div className="report-loading-box">
+          <div className="spinner-border" role="status" />
+          <span className="ms-2">Loading report form...</span>
+        </div>
+
+        <ToastContainer newestOnTop limit={2} theme="light" />
+      </div>
+    );
+  }
+
   return (
     <div className="spacing">
+      <ToastContainer newestOnTop limit={2} theme="light" />
+
       <div className="container my-5 mt-0 p-5">
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-9">
@@ -250,13 +290,12 @@ function Report() {
                   </div>
 
                   <p className="Report-message">
-                    LAV has a zero-tolerance policy for bullying. Please
-                    describe the incident truthfully and with as much detail
-                    as possible. We will review the report and, if warranted,
-                    impose appropriate consequences.
+                    LAV has a zero-tolerance policy for bullying. Please describe the
+                    incident truthfully and with as much detail as possible. We will
+                    review the report and, if warranted, impose appropriate
+                    consequences.
                   </p>
 
-                  {/* Reason chips */}
                   <div className="report-options">
                     {reasons.map((reason) => (
                       <div
@@ -272,7 +311,6 @@ function Report() {
                     ))}
                   </div>
 
-                  {/* Description */}
                   <div className="mt-4 w-100">
                     <label
                       htmlFor="description"
@@ -290,7 +328,6 @@ function Report() {
                     />
                   </div>
 
-                  {/* Attach files */}
                   <div className="mt-3 w-100">
                     <label
                       htmlFor="reportFiles"
@@ -303,6 +340,7 @@ function Report() {
                       type="file"
                       className="form-control"
                       multiple
+                      ref={fileInputRef}
                       onChange={handleFileChange}
                     />
 
@@ -315,7 +353,6 @@ function Report() {
                     )}
                   </div>
 
-                  {/* Name with suggestions */}
                   <div className="mt-3 w-100 position-relative">
                     <label
                       htmlFor="fullName"
@@ -336,10 +373,10 @@ function Report() {
 
                         const chosenId = nameToIdMap[value] || "";
 
-                        // ✅ if user typed self name manually, block it
                         if (chosenId && chosenId === tuteeId) {
                           setReportedId("");
                           setShowOptions(false);
+                          toast.warning("You can’t report yourself.", toastOpts);
                           return;
                         }
 
@@ -363,14 +400,14 @@ function Report() {
                       <div className="border rounded bg-white position-absolute w-100 mt-1 shadow-sm z-3 name-suggestions">
                         {filteredOptions.map((opt) => {
                           const optId = nameToIdMap[opt];
-                          if (optId === tuteeId) return null; 
+                          if (optId === tuteeId) return null;
+
                           return (
                             <div
                               key={opt}
                               className="px-3 py-2 option-item cursor-pointer"
-                           
                               onMouseDown={() => {
-                                if (nameToIdMap[opt] === tuteeId) return; 
+                                if (nameToIdMap[opt] === tuteeId) return;
                                 setName(opt);
                                 setReportedId(nameToIdMap[opt] || "");
                                 setShowOptions(false);
@@ -384,54 +421,49 @@ function Report() {
                     )}
                   </div>
 
-                  {/* Buttons (Confirm only) */}
                   <div className="mt-4 d-flex justify-content-center gap-4">
                     <button
                       type="button"
                       className="btn btn-primary btn-lg px-4 report-confirm-btn"
                       onClick={handleConfirmClick}
-                      disabled={isSubmitting || !tuteeId}
+                      disabled={isSubmitting}
+
                     >
-                      {!tuteeId
-                        ? "Loading user..."
-                        : isSubmitting
-                        ? "Submitting..."
-                        : "Confirm"}
+                      {isSubmitting ? "Submitting..." : "Confirm"}
                     </button>
                   </div>
                 </div>
               </div>
-              {/* End container */}
             </div>
+
+            {showConfirmModal && (
+              <div className="report-confirm-overlay">
+                <div className="report-confirm-modal">
+                  <h5>Submit Report</h5>
+                  <p>Are you sure you want to submit this report?</p>
+                  <div className="d-flex justify-content-end gap-2 mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary report-modal-cancel-btn"
+                      onClick={handleConfirmNo}
+                    >
+                      No
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary report-modal-confirm-btn"
+                      onClick={handleConfirmYes}
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
-
-      {/* Confirmation modal */}
-      {showConfirmModal && (
-        <div className="report-confirm-overlay">
-          <div className="report-confirm-modal">
-            <h5>Submit Report</h5>
-            <p>Are you sure you want to submit this report?</p>
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <button
-                type="button"
-                className="btn btn-outline-secondary report-modal-cancel-btn"
-                onClick={handleConfirmNo}
-              >
-                No
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary report-modal-confirm-btn"
-                onClick={handleConfirmYes}
-              >
-                Yes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

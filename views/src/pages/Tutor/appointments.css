@@ -1,33 +1,31 @@
-
-.my-no-btn{
-   background-color: #ffffff;   
+.my-no-btn {
+  background-color: #ffffff;
   border-color: #4956AD;
   color: #4956AD;
 }
 .my-yes-btn {
-  background-color: #4956AD;   
+  background-color: #4956AD;
   border-color: #4956AD;
   color: #fff;
 }
 
-
-.my-no-btn:hover{
-     background-color: #ffffff;   
+.my-no-btn:hover {
+  background-color: #ffffff;
   border-color: #4956AD;
   color: #4956AD;
 }
 .my-yes-btn:hover {
-  background-color: #4956AD;  
-  border-color: #4956AD;      
-  color: #fff;                 
-  box-shadow: none;           
-  transform: none;            
+  background-color: #4956AD;
+  border-color: #4956AD;
+  color: #fff;
+  box-shadow: none;
+  transform: none;
 }
 
 .confirm-overlay {
   position: fixed;
-  inset: 0;                
-  background: rgba(0, 0, 0, 0.5);  
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -43,24 +41,22 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-
-.no-appointments{
-  color: #4956AD; 
+.no-appointments {
+  color: #4956AD;
+  text-align: center;
 }
 
-.request-title{
-   color: #4956AD; 
+.request-title {
+  color: #4956AD;
 }
+
 .appointments-wrapper {
   position: relative;
-  max-height: 80vh; 
-  overflow-y: auto; 
+  max-height: 80vh;
+  overflow-y: auto;
   background-color: #f8f9ff;
- 
-
   padding: 2rem;
 }
-
 
 .appointments-wrapper::-webkit-scrollbar {
   width: 10px;
@@ -75,17 +71,9 @@
   background-color: #555;
 }
 
-
-.no-appointments {
-  color: white;
-  text-align: center;
-}
-
-
 .appointments-scroll {
   gap: 3rem;
 }
-
 
 .appointment-card {
   width: 23rem;
@@ -103,15 +91,15 @@
   height: 250px;
 }
 
-
 .schedules {
-  min-height: 100px; 
-  background-color: #ffffff; 
+  min-height: 100px;
+  background-color: #ffffff;
 }
 
 .appointments_page {
-  min-height: 1400px;
-  padding-bottom: 100px;
+  min-height: 100vh;
+  padding-top: 120px;
+  padding-bottom: 60px;
 }
 
 .requests {
@@ -128,12 +116,8 @@
   align-items: center;
   width: 100%;
   padding-bottom: 5vh;
-  
-  padding-top: 9rem; 
-
-
+  padding-top: 9rem;
 }
-
 
 .custom-alert {
   background-color: #F8F9FF;
@@ -141,7 +125,7 @@
   border-radius: 12px;
   width: 100%;
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -150,17 +134,13 @@
   transition: all 0.2s ease;
 }
 
-
 .profile-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-right: 1rem; 
+  margin-right: 1rem;
 }
-
-
-
 
 .profile-info {
   display: flex;
@@ -180,12 +160,10 @@
   font-weight: bold;
 }
 
-
 .box-name {
   font-weight: bold;
   font-size: 0.9rem;
 }
-
 
 .message-cell {
   flex-grow: 1;
@@ -193,18 +171,17 @@
   margin: 0.5rem 0;
 }
 
-
 .actions-cell {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-
 .actions-cell .btn {
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
 }
+
 .form-control {
   box-shadow: none !important;
   outline: none !important;
@@ -213,10 +190,8 @@
 .form-control:focus {
   box-shadow: none !important;
   outline: none !important;
-    border-color: #ced4da !important; 
+  border-color: #ced4da !important;
 }
-
-
 
 @media (max-width: 768px) {
   .action-buttons {
@@ -241,7 +216,6 @@
   padding: 0.5rem 1rem;
 }
 
-
 @media (min-width: 768px) {
   .alert.custom-alert {
     display: flex;
@@ -261,20 +235,19 @@
   }
 }
 
-
 @media (max-width: 767px) {
   .alert.custom-alert {
     flex-direction: column;
-    align-items: center; 
-    text-align: center;  
-    padding: 1rem;       
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
   }
 
   .info-section,
   .datetime-section {
     width: 100%;
     margin: 0.5rem 0;
-    text-align: center; 
+    text-align: center;
   }
 
   .datetime-section {
@@ -282,15 +255,13 @@
     padding-top: 1rem;
   }
 
-
   .custom-alert .text-center.me-52 {
     margin-right: 0 !important;
     margin-bottom: 1rem !important;
   }
 
-
   .action-buttons {
-    position: static !important; 
+    position: static !important;
     flex-direction: column;
     gap: 0.5rem;
     width: 100%;
@@ -298,7 +269,7 @@
   }
 
   .action-buttons .btn {
-    width: 90%; 
+    width: 90%;
     padding: 12px 0 !important;
   }
 }
@@ -316,9 +287,9 @@
 
   .alert.custom-alert {
     flex-direction: column !important;
-    align-items: center !important; 
+    align-items: center !important;
     justify-content: center !important;
-    text-align: center !important; 
+    text-align: center !important;
     width: 100%;
     padding: 1rem !important;
   }
@@ -347,7 +318,7 @@
 
   .action-buttons {
     flex-direction: column !important;
-    align-items: center !important; 
+    align-items: center !important;
     justify-content: center !important;
     width: 100% !important;
     gap: 0.5rem;
@@ -355,11 +326,174 @@
   }
 
   .action-buttons .btn {
-    width: 80% !important; 
+    width: 80% !important;
     font-size: 0.9rem !important;
     padding: 12px 0 !important;
   }
 }
 
+/* ============================
+   Slider + Arrow Styles
+   ============================ */
 
+.appointments-page-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-top: 10px;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
 
+.appointments-slider {
+  display: flex;
+  width: 200%;
+  transition: transform 0.4s ease-in-out;
+}
+
+.appointments-panel {
+  width: 50%;
+  flex-shrink: 0;
+}
+
+.appointments-slider.show-appointments {
+  transform: translateX(0%);
+}
+
+.appointments-slider.show-requests {
+  transform: translateX(-50%);
+}
+
+/* ============================
+   Modern Slider Arrow Styles
+   ============================ */
+
+.page-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(73, 86, 173, 0.25);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  color: #4956ad;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+  z-index: 1200;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.page-arrow:hover {
+  transform: translateY(-50%) scale(1.06);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+.page-arrow:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.page-arrow-right {
+  right: 22px;
+}
+
+.page-arrow-left {
+  left: 22px;
+}
+
+.page-arrow::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid rgba(73, 86, 173, 0.08);
+  pointer-events: none;
+}
+
+.page-arrow:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(73, 86, 173, 0.2),
+    0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .page-arrow {
+    width: 46px;
+    height: 46px;
+    font-size: 26px;
+    top: auto;
+    bottom: 18px;
+    transform: none;
+  }
+
+  .page-arrow:hover {
+    transform: scale(1.06);
+  }
+
+  .page-arrow:active {
+    transform: scale(0.98);
+  }
+
+  .page-arrow-right {
+    right: 16px;
+  }
+
+  .page-arrow-left {
+    left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-arrow {
+    transition: none;
+  }
+}
+
+/* Loading UI */
+.appointments-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appointments-loading-box {
+  background-color: #f8f9ff;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: #4956ad;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+/* Toast theme */
+:root {
+  --toastify-color-success: #4956AD;
+  --toastify-color-info: #4956AD;
+  --toastify-color-warning: #ffc107;
+  --toastify-color-error: #dc3545;
+}
+
+.Toastify__toast {
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  font-size: 0.95rem;
+}

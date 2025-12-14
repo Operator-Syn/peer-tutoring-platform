@@ -1,0 +1,184 @@
+/* Root container for this component only */
+.tutee-rate-page {
+  max-width: 600px;
+  margin: 40px auto;
+
+  border-radius: 16px;
+  border: 1px solid #dfe3ff;
+  box-shadow: 0 8px 22px rgba(73, 86, 173, 0.16);
+  padding: 20px 18px 22px;
+}
+
+/* Header: title + “View Ratings” button centered */
+.tutee-rate-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.tutee-rate-title {
+  margin: 0;
+  color: #4956ad; /* theme color */
+}
+
+/* View ratings button */
+.tutee-rate-view-btn {
+  padding: 0.35rem 1.1rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  border-color: #4956ad;
+  color: #4956ad;
+}
+
+.tutee-rate-view-btn:hover {
+  background-color: #4956ad;
+  color: #ffffff;
+}
+
+/* Session info text */
+.tutee-rate-session-info {
+  font-size: 0.9rem;
+  color: #4a4f7a;
+}
+
+.tutee-rate-session-info span {
+  color: #4956ad;
+}
+
+/* Stars row */
+.tutee-rate-stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+/* Individual star button */
+.tutee-rate-star-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.9rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #c4c8e6; /* inactive star */
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.tutee-rate-star-btn.active {
+  color: #4956ad; /* theme color for active star */
+}
+
+.tutee-rate-star-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Hint text under stars */
+.tutee-rate-hint {
+  text-align: center;
+  color: #7b88c4;
+}
+
+/* Comment area */
+.tutee-rate-comment-label {
+  color: #4956ad;
+}
+
+.tutee-rate-comment {
+  resize: vertical;
+  border-radius: 10px;
+  border: 1px solid #dfe3ff;
+}
+
+.tutee-rate-comment:focus {
+  border-color: #4956ad;
+  box-shadow: 0 0 0 0.15rem rgba(73, 86, 173, 0.2);
+}
+
+/* Submit button */
+.tutee-rate-submit-btn {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  padding-inline: 2.2rem;
+  background-color: #4956ad;
+  border-color: #4956ad;
+  border-radius: 999px;
+}
+
+.tutee-rate-submit-btn:hover {
+  background-color: #3b4690;
+  border-color: #3b4690;
+}
+
+/* Tutor ratings list (when viewing existing ratings) */
+.tutor-ratings h5 {
+  color: #4956ad;
+}
+
+.tutor-ratings .list-group-item {
+  border-color: #dfe3ff;
+}
+
+/* Confirm modal overlay + box (matches theme) */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.confirm-box {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.confirm-box h5 {
+  margin: 0;
+  color: #4956ad;
+}
+
+.confirm-box p {
+  color: #4a4f7a;
+}
+
+/* Yes / No buttons in modal */
+.my-no-btn {
+  border-radius: 999px;
+  border-color: #dfe3ff;
+  color: #4956ad;
+  background-color: #ffffff;
+}
+
+.my-no-btn:hover {
+  background-color: #f3f4ff;
+  border-color: #c4c8e6;
+}
+
+.my-yes-btn {
+  border-radius: 999px;
+  background-color: #4956ad;
+  border-color: #4956ad;
+}
+
+.my-yes-btn:hover {
+  background-color: #3b4690;
+  border-color: #3b4690;
+}
+
+/* Small screens */
+@media (max-width: 576px) {
+  .tutee-rate-page {
+    margin: 20px 10px;
+    padding: 18px 14px 20px;
+  }
+}
