@@ -19,8 +19,19 @@ const AdminDashboard = () => {
   const [selectedCorFile, setSelectedCorFile] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [reportList, setReportList] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+  const fetchAndShowReports = async (userId) => {
+    const res = await fetch(`/api/admin/users/${userId}/reports`);
+    const data = await res.json();
+    if (data.success) {
+        setReportList(data.reports);
+        setShowReportModal(true);
+    }
+};
 
   const handleShowCor = (url, isAppeal = false) => {
     const path = url.startsWith('http') ? url : (isAppeal || activeTab === 'appeals' ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
@@ -229,7 +240,16 @@ const AdminDashboard = () => {
                                         <td><div className="admin-bold">{user.first_name} {user.last_name}</div><div className="admin-sub">{user.email}</div></td>
                                         <td><span className="admin-role-badge">{user.role}</span></td>
                                         <td><span className={`admin-status-badge ${user.status?.toLowerCase()}`}>{user.status}</span>{user.status_note && <div className="admin-note">"{user.status_note}"</div>}</td>
-                                        <td>{user.pending_reports > 0 ? <span className="admin-danger">{user.pending_reports}</span> : "0"}</td>
+                                        <td>
+                                            {user.pending_reports > 0 ? (
+                                                <button 
+                                                    className="btn btn-sm btn-outline-danger" 
+                                                    onClick={() => fetchAndShowReports(user.google_id)}
+                                                >
+                                                    {user.pending_reports} Pending
+                                                </button>
+                                            ) : "0"}
+                                        </td>
                                         <td><div className="admin-flex-end">
                                             {user.status !== 'ACTIVE' && <button className="admin-btn-green" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>}
                                             {user.status !== 'PROBATION' && <button className="admin-btn-orange" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>}
@@ -371,6 +391,26 @@ const AdminDashboard = () => {
             )}
         </Modal.Footer>
       </Modal>
+
+      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} size="lg" centered>
+            <Modal.Header closeButton><Modal.Title>User Reports</Modal.Title></Modal.Header>
+            <Modal.Body>
+                {reportList.length === 0 ? <p>No reports found.</p> : (
+                    <div className="list-group">
+                        {reportList.map(r => (
+                            <div key={r.report_id} className="list-group-item">
+                                <div className="d-flex justify-content-between">
+                                    <h5 className="mb-1">{r.type}</h5>
+                                    <small>{r.date_submitted}</small>
+                                </div>
+                                <p className="mb-1">{r.description}</p>
+                                <small className="text-muted">Reporter: {r.reporter_id}</small>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </Modal.Body>
+        </Modal>
 
       {showCorModal && (
         <div className="modal fade show custom-dark-modal">
