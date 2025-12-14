@@ -1,15 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, Button } from "react-bootstrap"; 
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
+import { useLoginCheck } from "../hooks/useLoginCheck";
 
 export default function Banned() {
+    const navigate = useNavigate();
+    const loginCheck = useLoginCheck({ login: true });
     const [appealText, setAppealText] = useState("");
     const [files, setFiles] = useState([]);
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [checking, setChecking] = useState(true);
 
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState({ title: "", body: "" });
+
+    // Only allow access if user is actually banned
+    useEffect(() => {
+        async function ensureBanned() {
+            try {
+                const user = await loginCheck();
+                if (!user || user.status !== "BANNED") {
+                    navigate("/", { replace: true });
+                }
+            } finally {
+                setChecking(false);
+            }
+        }
+        ensureBanned();
+    }, []);
 
     // Handle file selection (Multiple files)
     const handleFileChange = (e) => {
@@ -56,6 +76,14 @@ export default function Banned() {
             setLoading(false);
         }
     };
+
+    if (checking) {
+        return (
+            <div className="container d-flex align-items-center justify-content-center vh-100">
+                <div className="text-muted">Checking account status…</div>
+            </div>
+        );
+    }
 
     return (
         <div className="container d-flex flex-column align-items-center justify-content-center vh-100 pt-5">

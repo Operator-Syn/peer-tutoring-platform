@@ -45,7 +45,7 @@ function App() {
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
-            <Route path ="Banned" element={<Banned />} />
+            <Route path ="banned" element={<Banned />} />
             <Route path="TuteeList" element={<TuteeList />} />
             <Route path= "Feedback" element = {<Feedback/>}/>
 
