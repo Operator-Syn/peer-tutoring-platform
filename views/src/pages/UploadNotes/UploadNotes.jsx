@@ -153,7 +153,13 @@ export default function UploadNotes() {
             const filteredPrev = prevFiles.filter(
                 oldFile => !newFiles.some(newFile => newFile.name === oldFile.name)
             );
-            return [...filteredPrev, ...newFiles];
+            // Combine and limit to 10 files
+            const combined = [...filteredPrev, ...newFiles];
+            if (combined.length > 10) {
+                showMessage("You can only upload up to 10 files.");
+                return combined.slice(0, 10);
+            }
+            return combined;
         });
         console.log("Selected files:", newFiles);
     };
