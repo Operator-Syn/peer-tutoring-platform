@@ -105,3 +105,34 @@
         font-size: 1.25rem;
     }
 }
+
+.subject-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: -25px;
+    margin-bottom: 5px;
+}
+
+.static-label {
+    position: static !important;
+    transform: none !important;
+    background-color: transparent !important;
+    margin-bottom: 0 !important;
+}
+
+.cant-find-course-link {
+    background: none;
+    border: none;
+    color: #616DBE;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 10px;
+    z-index: 10;
+    transition: color 0.2s ease;
+}
+
+.cant-find-course-link:hover {
+    color: #4a5568;
+}
