@@ -44,7 +44,7 @@ export default function UploadNotes() {
         const fileUrls = [];
         for (const file of files) {
             const uploadedUrl = await uploadFileToServer(file);
-            console.log("Uploaded file URL:", fileUrls);
+            // console.log("Uploaded file URL:", fileUrls);
             if (!uploadedUrl) {
                 showMessage("File upload failed. Please try again.");
                 setUploadProcess(false);
@@ -62,7 +62,7 @@ export default function UploadNotes() {
             tutor_id: tutorId    
         };
 
-        console.log("Submitting payload:", payload);
+        // console.log("Submitting payload:", payload);
 
         try {
             const response = await fetch(`${API_URL}/api/notes-sharing/all`, {
@@ -89,19 +89,19 @@ export default function UploadNotes() {
         const checkIfTUtor = async () => {
             const res = await fetch(`${API_URL}/api/auth/get_user`, { credentials: 'include' });
             const user = await res.json();
-            console.log("Current user:", user);
+            // console.log("Current user:", user);
             // Fetch tutor ID from tutee based on user info
             const tutorId = await fetch(`${API_URL}/api/tutee/by_google/${user.sub}`, {
                 method: 'GET',
             });
             const tutorData = await tutorId.json();
-            console.log("Tutor data:", tutorData);
+            // console.log("Tutor data:", tutorData);
             //Check if tutee ID is tutor
             const tutorCheck = await fetch(`${API_URL}/api/notes-sharing/check-tutor/${tutorData.id_number}`, {
                 method: 'GET',
             });
             const tutorCheckData = await tutorCheck.json();
-            console.log("Tutor check response:", tutorCheckData.is_tutor);
+            // console.log("Tutor check response:", tutorCheckData.is_tutor);
             if (!tutorCheckData.is_tutor) {
                 navigate('/profile/apply');
                 return;
@@ -161,7 +161,7 @@ export default function UploadNotes() {
             }
             return combined;
         });
-        console.log("Selected files:", newFiles);
+        // console.log("Selected files:", newFiles);
     };
 
     const deleteFile = (fileName) => {

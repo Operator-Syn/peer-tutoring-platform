@@ -40,7 +40,7 @@ export default function TutorNotesList({ tutorId }) {
             if (resUser.ok) {
                 const userData = await resUser.json();
                 setIsOwnProfile(userData.is_owner);
-                console.log("Is own profile:", userData.is_owner);
+                // console.log("Is own profile:", userData.is_owner);
             }
         };
         checkOwnProfile();
