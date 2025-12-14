@@ -13,6 +13,7 @@ import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
 import logoutIcon from "../assets/images/M_layouts/logout.png";
 import profilePlaceholder from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
+import uploadIcon from "../assets/images/M_layouts/upload.svg";
 
 function Header() {
   const [user, setUser] = useState(null);
@@ -38,14 +39,13 @@ function Header() {
     }
 
     try {
-      // ✅ backend should return: { profile_img_url: "https://..." } or null
-      const res = await fetch(`/api/tutor/profile_img_url/by_google/${googleId}`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `/api/tutor/profile_img_url/by_google/${googleId}`,
+        { credentials: "include" }
+      );
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.profile_img_url) {
-        // ✅ cache bust so newly uploaded image shows immediately
         setProfileUrl(`${data.profile_img_url}?v=${Date.now()}`);
       } else {
         setProfileUrl(null);
@@ -71,6 +71,7 @@ function Header() {
       window.removeEventListener("profile-img-updated", onUpdated);
       window.removeEventListener("storage", onStorage);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // close popup when route changes
@@ -190,7 +191,11 @@ function Header() {
             {user && (
               <>
                 <li className="nav-item">
-                  <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
+                  <Link
+                    to="/Messages"
+                    className="nav-link"
+                    onClick={handleNavClick}
+                  >
                     Messages
                   </Link>
                 </li>
@@ -206,8 +211,11 @@ function Header() {
 
         {!menuOpen && !menuAnimating && (
           <div className="position-relative ms-3">
-            <div className="prof" onClick={() => setPopup(!popup)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {/* ✅ profile circle image */}
+            <div
+              className="prof"
+              onClick={() => setPopup(!popup)}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
               <img
                 src={profileSrc}
                 alt="profile"
@@ -219,7 +227,6 @@ function Header() {
                   objectFit: "cover",
                   objectPosition: "center",
                   display: "block",
-                 
                 }}
               />
 
@@ -275,6 +282,17 @@ function Header() {
                   <img src={tutorsIcon} alt="Tutors" /> Tutors
                 </p>
 
+                <p
+                  onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate(`/uploadnotes`);
+                  }}
+                >
+                  <img src={uploadIcon} width={30} height={30} alt="Upload Notes" />{" "}
+                  Upload Notes
+                </p>
+
                 {user && user.role === "ADMIN" && (
                   <p
                     onClick={() => {
@@ -295,7 +313,8 @@ function Header() {
                       window.location.href = `/api/auth/logout`;
                     }}
                   >
-                    <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
+                    <img src={logoutIcon} width={30} height={30} alt="Logout" />{" "}
+                    Logout
                   </p>
                 )}
               </div>

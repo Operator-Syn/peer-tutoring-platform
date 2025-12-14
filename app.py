@@ -63,9 +63,9 @@ def create_app():
     # Users / lists
     from api.getuser import tutee_bp, tutor_bp
     from api.tutor_list import tutor_list
-    from api.tutee_list import tutee_list  # ✅ from HEAD
-
-    # Core controllers
+    from api.tutee_list import tutee_list
+    from api.notes_sharing import notes_sharing
+    
     from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
     from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
     from controllers.getCreateAppointmentsFormScheduleController.getCreateAppointmentsFormScheduleController import bp_availability
@@ -90,6 +90,7 @@ def create_app():
 
     # -- Core Features --
     app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
+    app.register_blueprint(notes_sharing, url_prefix="/api/notes-sharing")
     app.register_blueprint(bp_appointments)
     app.register_blueprint(requests_bp)
     app.register_blueprint(bp_fillout)
