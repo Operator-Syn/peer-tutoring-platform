@@ -43,7 +43,6 @@
   margin-bottom: 2rem;
 }
 
-/* TARGET ANY CHILD CARD GENERICALLY TO PREVENT BREAKAGE */
 .admin-stats-grid > * { 
   width: 100% !important; 
   height: 100px !important;
@@ -54,7 +53,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-radius: 12px; /* Ensure cards have rounded corners even if class is missing */
+  border-radius: 12px;
 }
 
 .admin-stats-grid > *:hover {
@@ -101,7 +100,7 @@
 .admin-search-wrapper {
   display: flex;
   gap: 0.5rem;
-  min-width: 400px; /* INCREASED WIDTH HERE */
+  min-width: 400px;
   flex-shrink: 0;
 }
 
@@ -120,7 +119,7 @@
 }
 .admin-btn-search:hover { background-color: #4752c4; }
 
-/* CARDS LIST (Applications) */
+/* CARDS LIST */
 .admin-card-list { display: flex; flex-direction: column; gap: 1rem; }
 .admin-app-card {
   background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; position: relative;
@@ -145,7 +144,7 @@
 /* TABLE */
 .admin-table-box {
   background: white; border-radius: 12px; border: 1px solid #e2e8f0; 
-  overflow-x: auto; /* CHANGED from hidden to auto so table scrolls */
+  overflow-x: auto; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .admin-table {
@@ -157,15 +156,39 @@
 }
 .admin-table td {
   padding: 0.75rem 1.5rem; border-bottom: 1px solid #f7fafc; vertical-align: middle;
-  color: #2d3748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: #2d3748; 
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   transition: background 0.2s;
 }
 .admin-table tr:hover td { background-color: #fafbfc; }
 .admin-table th:last-child, .admin-table td:last-child { text-align: right; }
 
-/* Columns */
-.col-user { width: 30%; } .col-role { width: 15%; } .col-status { width: 15%; } .col-reports { width: 10%; } .col-actions { width: 30%; }
-.col-msg { width: 30%; } .col-file { width: 15%; }
+/* SHARED COLUMNS */
+.col-user { width: 25%; } 
+.col-role { width: 10%; } 
+.col-status { width: 15%; } 
+.col-reports { width: 10%; } 
+.col-actions { width: 20%; } 
+.col-msg { width: 30%; } 
+.col-file { width: 15%; }
+
+.col-req-user { 
+    width: 25%; 
+    white-space: normal !important; 
+    overflow: visible !important; 
+    text-overflow: clip !important;
+}
+.col-req-role { width: 10%; }
+.col-req-subj { 
+    width: 20%; 
+    white-space: normal !important;
+    overflow: visible !important; 
+    text-overflow: clip !important;
+}
+/* Stacked Status & Date Column */
+.col-req-status-date { width: 15%; }
+
+.col-req-actions { width: 30%; } 
 
 /* BUTTONS & BADGES */
 .admin-btn-accept, .admin-btn-activate, .admin-btn-green {
@@ -189,6 +212,10 @@
 }
 .admin-btn-icon:hover { transform: scale(1.1); background: #4752c4; }
 .admin-btn-icon.disabled { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; transform: none; }
+.admin-btn-blue {
+    background: #3182ce; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 500; font-size: 0.85rem; cursor: pointer; margin-right: 5px; transition: background 0.2s;
+}
+.admin-btn-blue:hover { background: #2b6cb0; }
 
 .admin-badge {
   padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
@@ -220,7 +247,6 @@
 .admin-btn-page:hover:not(:disabled) { background: #f7fafc; color: #2d3748; }
 .admin-select-rows { padding: 0.4rem; border-radius: 6px; border: 1px solid #e2e8f0; background: white; margin-left: 5px; }
 
-/* RESTORED MODAL STYLES (Previously Missing) */
 .custom-dark-modal .modal-content {
   border: none;
   background-color: transparent;

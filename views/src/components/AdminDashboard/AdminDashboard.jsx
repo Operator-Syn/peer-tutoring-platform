@@ -13,7 +13,7 @@ const AdminDashboard = () => {
   } = useAdminDashboardData();
 
   const [showActionModal, setShowActionModal] = useState(false);
-  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [], finalCode: '' });
+  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [], finalCode: '', details: null });
   const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
@@ -29,7 +29,7 @@ const AdminDashboard = () => {
   };
 
   const openActionModal = (actionType, item, targetStatus) => {
-    let title = "", noteRequired = false, id = null, files = [], finalCode = "";
+    let title = "", noteRequired = false, id = null, files = [], finalCode = "", details = null;
     
     if (actionType === 'USER') {
         id = item.google_id;
@@ -45,12 +45,16 @@ const AdminDashboard = () => {
         title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application`;
     } else if (actionType === 'REQUEST') {
         id = item.request_id;
-        title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request`;
-        // Pre-fill the input with the user's request so Admin can edit it
-        finalCode = item.subject_code; 
+        if (targetStatus === 'VIEW') {
+            title = `Request Details: ${item.subject_code}`;
+            details = item; 
+        } else {
+            title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request`;
+            finalCode = item.subject_code; 
+        }
     }
     
-    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode });
+    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode, details });
     setActionNote('');
     setShowActionModal(true);
   };
@@ -73,7 +77,6 @@ const AdminDashboard = () => {
         apiAction = actionData.targetStatus === 'APPROVED' ? 'APPROVE_APP' : 'REJECT_APP';
     } else if (actionData.type === 'REQUEST') {
         apiAction = 'RESOLVE_REQUEST';
-        // Pass the edited code to the backend
         payload = { 
             action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT',
             final_code: actionData.finalCode 
@@ -168,7 +171,7 @@ const AdminDashboard = () => {
 
                 {activeTab === 'users' && (
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
-                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option><option value="ADMIN">Admin</option>
+                        <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
                     </select>
                 )}
             </div>
@@ -203,7 +206,7 @@ const AdminDashboard = () => {
                                         {app.status === 'PENDING' ? (
                                             <>
                                                 <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')}>Accept</button>
-                                                <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')}>Decline</button>
+                                                <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECT')}>Decline</button>
                                             </>
                                         ) : (
                                             <span className="admin-text-muted">Processed</span>
@@ -272,13 +275,11 @@ const AdminDashboard = () => {
                         <table className="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Requester</th>
-                                    <th>Role</th>
-                                    <th>Subject</th>
-                                    <th>Reason</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
+                                    <th className="col-req-user">Requester</th>
+                                    <th className="col-req-role">Role</th>
+                                    <th className="col-req-subj">Subject</th>
+                                    <th className="col-req-status-date">Status / Date</th>
+                                    <th className="col-req-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -290,16 +291,20 @@ const AdminDashboard = () => {
                                         </td>
                                         <td><span className="admin-role-badge">{req.role}</span></td>
                                         <td><div className="admin-bold">{req.subject_code}</div></td>
-                                        <td><div className="admin-msg-box">{req.description || "N/A"}</div></td>
-                                        <td>{req.created_at}</td>
-                                        <td><span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span></td>
                                         <td>
-                                            {req.status === 'PENDING' ? (
-                                                <div className="admin-flex-end">
-                                                    <button className="admin-btn-green" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Approve</button>
-                                                    <button className="admin-btn-red" onClick={() => openActionModal('REQUEST', req, 'REJECT')}>Reject</button>
-                                                </div>
-                                            ) : <span className="admin-text-muted">Processed</span>}
+                                            <span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span>
+                                            <div className="admin-text-muted mt-1" style={{fontSize: '0.8rem'}}>{req.created_at}</div>
+                                        </td>
+                                        <td>
+                                            <div className="admin-flex-end">
+                                                <button className="admin-btn-icon" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')} style={{marginRight: '10px'}}><i className="bi bi-eye"></i></button>
+                                                {req.status === 'PENDING' && (
+                                                    <>
+                                                        <button className="admin-btn-accept" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Accept</button>
+                                                        <button className="admin-btn-decline" onClick={() => openActionModal('REQUEST', req, 'REJECT')}>Decline</button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -316,7 +321,16 @@ const AdminDashboard = () => {
       <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
         <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
-            <p>Are you sure you want to proceed?</p>
+            {actionData.targetStatus === 'VIEW' && actionData.details && (
+                <div className="admin-details-view">
+                    <p><strong>Subject Code:</strong> {actionData.details.subject_code}</p>
+                    <p><strong>Reason/Description:</strong></p>
+                    <div className="p-2 bg-light rounded mb-2">{actionData.details.description || "No description provided."}</div>
+                    <p className="mb-0"><small className="text-muted">Requested by {actionData.details.first_name} {actionData.details.last_name} ({actionData.details.requester_id}) on {actionData.details.created_at}</small></p>
+                </div>
+            )}
+
+            {actionData.targetStatus !== 'VIEW' && <p>Are you sure you want to proceed?</p>}
             
             {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && (
                 <div className="admin-modal-files">
@@ -347,8 +361,14 @@ const AdminDashboard = () => {
             {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} /></Form.Group>}
         </Modal.Body>
         <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
-            <Button variant={actionData.targetStatus.includes('REJECT') || actionData.targetStatus.includes('BAN') ? 'danger' : 'success'} onClick={submitAction}>Confirm</Button>
+            {actionData.targetStatus === 'VIEW' ? (
+                 <Button variant="secondary" onClick={() => setShowActionModal(false)}>Close</Button>
+            ) : (
+                <>
+                    <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
+                    <Button variant={actionData.targetStatus.includes('REJECT') || actionData.targetStatus.includes('BAN') ? 'danger' : 'success'} onClick={submitAction}>Confirm</Button>
+                </>
+            )}
         </Modal.Footer>
       </Modal>
 
