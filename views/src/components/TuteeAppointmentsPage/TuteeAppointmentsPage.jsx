@@ -2,31 +2,33 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 // Import Pagination from react-bootstrap
 import { Pagination as BootstrapPagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import waitingImage from "../../assets/cropped-waiting.png";
-import approvedImage from "../../assets/approving-owl.png";
-import sadOwl from "../../assets/sad-owl.png";
 import CardComponent from "../CardComponent/CardComponent";
 import { ConfirmButton, CloseButton, CancelAppointmentButton } from "../../data/AppointmentsPageModalButtons";
 import "./TuteeAppointmentsPage.css";
 import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 import AppointmentFilterModal from "./AppointmentFilterModal";
 
+const waitingImage = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/cropped-waiting.png";
+const approvedImage = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/approving-owl.png";
+const sadOwl = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/sad-owl.png";
+const completedOwl = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/appointment-submitted.png";
+
 // --- REPLACED: Custom Pagination Component with React-Bootstrap Logic ---
 const TuteePagination = ({ totalPages, currentPage, onPageChange }) => {
     if (totalPages <= 1) return null;
-    
+
     // Apply styling from the Schedule component for consistent button size
     const paginationBtnStyle = { minWidth: "3rem", textAlign: "center" };
 
     return (
         <div className="d-flex justify-content-center mt-4 pb-2">
             <BootstrapPagination size="md">
-                <BootstrapPagination.Prev 
-                    onClick={() => onPageChange(currentPage - 1)} 
+                <BootstrapPagination.Prev
+                    onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     style={paginationBtnStyle}
                 />
-                
+
                 {[...Array(totalPages)].map((_, index) => (
                     <BootstrapPagination.Item
                         key={index + 1}
@@ -38,8 +40,8 @@ const TuteePagination = ({ totalPages, currentPage, onPageChange }) => {
                     </BootstrapPagination.Item>
                 ))}
 
-                <BootstrapPagination.Next 
-                    onClick={() => onPageChange(currentPage + 1)} 
+                <BootstrapPagination.Next
+                    onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     style={paginationBtnStyle}
                 />
@@ -51,10 +53,10 @@ const TuteePagination = ({ totalPages, currentPage, onPageChange }) => {
 
 export default function TuteeAppointmentsPage() {
     useRoleRedirect('TUTEE');
-    
+
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+
     // --- 1. Filter State ---
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
@@ -67,11 +69,11 @@ export default function TuteeAppointmentsPage() {
     // --- 2. Pagination State ---
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(6); // Set a fixed number of cards per page
-    
+
     const fetchAppointments = useCallback(async () => {
         setLoading(true);
         // Reset to first page whenever we refetch
-        setCurrentPage(1); 
+        setCurrentPage(1);
         try {
             const res = await fetch("/api/appointments");
             if (!res.ok) throw new Error("Failed to fetch");
@@ -94,6 +96,7 @@ export default function TuteeAppointmentsPage() {
         if (lower.includes("pending") || lower.includes("left")) return waitingImage;
         if (lower.includes("started")) return approvedImage;
         if (lower.includes("cancelled") || lower.includes("declined")) return sadOwl;
+        if (lower.includes("completed") || lower.includes("submitted")) return completedOwl;
         return undefined;
     };
 
@@ -104,7 +107,7 @@ export default function TuteeAppointmentsPage() {
             [status]: !prev[status]
         }));
         // Reset to page 1 when filters change
-        setCurrentPage(1); 
+        setCurrentPage(1);
     };
 
     // Filter the appointments based on the current state (Memoized)
@@ -116,18 +119,18 @@ export default function TuteeAppointmentsPage() {
 
     // --- 4. Pagination Calculation and Slicing (Memoized) ---
     const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-    
+
     // Calculate the indices for slicing the array
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    
+
     // Get the appointments for the current page
     const currentAppointments = filteredAppointments.slice(indexOfFirstItem, indexOfLastItem);
 
     // --- COUNTER LOGIC ---
     // Start index for display (1-based)
     const displayStartIndex = filteredAppointments.length > 0 ? indexOfFirstItem + 1 : 0;
-    
+
     // End index for display. This must not exceed the total filtered count.
     const displayEndIndex = Math.min(indexOfLastItem, filteredAppointments.length);
     // ---------------------
@@ -144,7 +147,7 @@ export default function TuteeAppointmentsPage() {
 
     return (
         <div className="container large-padding">
-            
+
             {/* Header Section */}
             <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <div>
@@ -157,10 +160,10 @@ export default function TuteeAppointmentsPage() {
                     </small>
                     {/* ---------------------------------- */}
                 </div>
-                
+
                 <div className="d-flex gap-2">
                     {/* Filter Button */}
-                    <button 
+                    <button
                         className="btn btn-light border d-flex align-items-center gap-2"
                         onClick={() => setIsFilterOpen(true)}
                         style={{ height: "38px", fontWeight: 500 }}
@@ -169,8 +172,8 @@ export default function TuteeAppointmentsPage() {
                     </button>
 
                     {/* Refresh Button */}
-                    <button 
-                        className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2" 
+                    <button
+                        className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
                         onClick={fetchAppointments}
                         disabled={loading}
                         style={{ height: "38px" }}
@@ -181,8 +184,8 @@ export default function TuteeAppointmentsPage() {
             </div>
 
             {/* --- Filter Modal --- */}
-            <AppointmentFilterModal 
-                isOpen={isFilterOpen} 
+            <AppointmentFilterModal
+                isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
                 filters={filters}
                 onToggle={handleFilterToggle}
@@ -202,8 +205,8 @@ export default function TuteeAppointmentsPage() {
                     <img src={waitingImage} alt="No appointments" style={{ width: "120px", opacity: 0.7, marginBottom: "1rem" }} />
                     <h4>No Appointments Found</h4>
                     <p className="text-muted">
-                        {appointments.length === 0 
-                            ? "You have no scheduled tutoring sessions yet." 
+                        {appointments.length === 0
+                            ? "You have no scheduled tutoring sessions yet."
                             : "No appointments match your selected filters."}
                     </p>
                 </div>
@@ -229,7 +232,7 @@ export default function TuteeAppointmentsPage() {
                     </div>
 
                     {/* --- Pagination Component --- */}
-                    <TuteePagination 
+                    <TuteePagination
                         totalPages={totalPages}
                         currentPage={currentPage}
                         onPageChange={handlePageChange}
