@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { io } from "socket.io-client";
+import { useLocation } from "react-router-dom"; // 🎯 Import useLocation
 import LeftPanel from "./LeftPanel/LeftPanel";
 import CurrentChat from "./LeftPanel/CurrentChat/CurrentChat";
 import MobileChatLayout from "./MobileChatLayout";
 
 export default function ChatInterface({ googleId: propGoogleId }) {
+    const location = useLocation(); 
     const [googleId, setGoogleId] = useState(propGoogleId);
     const [dbUser, setDbUser] = useState(null);
     const [users, setUsers] = useState([]);
@@ -13,7 +15,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     const [socket, setSocket] = useState(null);
     const [loading, setLoading] = useState(true);
     
-    // 🟢 NEW GLOBAL NOTIFICATION STATES
+    // 🟢 NEW GLOBAL NOTIFICATION STATES (Kept for completeness, though managed by parent/Header)
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0); 
 
@@ -57,8 +59,6 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             
             // LOGIC: If chat is open, force unread to 0. Otherwise, increment.
             if (isChatOpen) {
-                // If chat is open, we let the explicit setUsers call in onReceiveMessage handle the clear.
-                // We ensure it's 0 here just for the reordered object consistency.
                 movedUser.unread_count = 0; 
             } else if (!isOwnMessage) {
                 movedUser.unread_count = (movedUser.unread_count || 0) + 1;
@@ -72,15 +72,14 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     // 🟢 NEW HANDLER TO MARK GLOBAL CHAT NOTIFICATION AS READ LOCALLY (WITH RECIPIENT CHECK)
     const markChatNotificationAsReadLocally = (appointmentId) => {
         let wasUnread = false;
-        const currentRecipientId = dbUserRef.current?.id_number; // Get current user's ID
+        const currentRecipientId = dbUserRef.current?.id_number;
 
         // 1. Mark the specific NEW_MESSAGE notification as read
         setNotifications(prev => 
             prev.map(n => {
-                // Ensure the notification is for this chat AND this recipient
                 if (n.type === 'NEW_MESSAGE' && 
                     String(n.reference_id) === String(appointmentId) && 
-                    String(n.recipient_id) === String(currentRecipientId) && // <-- CRITICAL CHECK
+                    String(n.recipient_id) === String(currentRecipientId) &&
                     !n.is_read) 
                 {
                     wasUnread = true;
@@ -146,7 +145,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     }, [dbUser, socketUrl]);
 
     // =========================================================
-    // 🟢 6. Socket LISTENERS (FIXED Auto-Read)
+    // 🟢 6. Socket LISTENERS
     // =========================================================
     useEffect(() => {
         if (!socket) return;
@@ -159,7 +158,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             // 1. Update Messages List
             if (isForOpenChat) {
                 
-                // Existing logic for updating messages list, deduplication, and optimistic update handling
+                // ... (deduplication/optimistic update logic)
                 setMessages((prev) => {
                     const isDuplicate = prev.some(m => {
                         if (m.id && msg.id) return m.id === msg.id;
@@ -180,10 +179,10 @@ export default function ChatInterface({ googleId: propGoogleId }) {
                     return [...prev, msg];
                 });
 
-                // 2. 🔥 AUTO-READ FIX: Execute the read-marking logic immediately.
+                // 2. AUTO-READ: Execute the read-marking logic.
                 if (dbUserRef.current) {
                     
-                    // 💥 FINAL FIX: Explicitly clear the chat badge in the sidebar for the active chat
+                    // Explicitly clear the chat badge in the sidebar for the active chat
                     setUsers(prev => prev.map(u => 
                         String(u.appointment_id) === String(currentApptId) ? { ...u, unread_count: 0 } : u
                     ));
@@ -194,24 +193,29 @@ export default function ChatInterface({ googleId: propGoogleId }) {
                         user_id: dbUserRef.current.id_number
                     });
                     
-                    // 🟢 Mark chat notification as read locally (prevents global bell unread status)
+                    // Mark chat notification as read locally and on the server 
                     markChatNotificationAsReadLocally(msg.appointment_id);
-                    
-                    // 🟢 Mark chat notification as read on the server 
                     const apptId = msg.appointment_id;
                     const recipientId = dbUserRef.current.id_number;
                     
-                    // FIX: Ensure both IDs are explicitly cast to string for the URL
                     fetch(`/api/notifications/mark_chat_read/${String(apptId)}/${String(recipientId)}`, { method: 'POST' })
+                        .then(() => {
+                             // 🟢 CRITICAL SYNC EMIT (Receive Message): Notify other components (Header/NotificationPanel) that this chat notification is now read
+                            socket.emit("notification_read_sync", {
+                                type: 'NEW_MESSAGE',
+                                reference_id: apptId, // The appointment ID
+                                user_id: recipientId // The user who marked it read
+                            });
+                        })
                         .catch(err => console.error("Failed to mark chat notification as read on server (socket receive):", err));
                     
-                    // 3. SIDEBAR SYNC: Update the sidebar order. Count is already 0.
+                    // 3. SIDEBAR SYNC: Update the sidebar order.
                     handleIncomingMessage(msg, false); 
                     
                 }
             
             } else {
-                // If chat is NOT open, just update the sidebar order and badges (which will increment count)
+                // If chat is NOT open, just update the sidebar order and badges
                 handleIncomingMessage(msg, false);
             }
         };
@@ -240,14 +244,13 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             }
         };
         
-        // 🟢 C. Handle Incoming Global Notifications (FIXED FOR DUPLICATES/RACE CONDITIONS)
+        // C. Handle Incoming Global Notifications
         const onNewGlobalNotification = (newNotif) => {
             console.log("🚨 New Global Notification:", newNotif);
             
             const currentApptId = selectedUserRef.current?.appointment_id;
-            const currentUserId = dbUserRef.current?.id_number; // Get current user's ID
+            const currentUserId = dbUserRef.current?.id_number;
             
-            // 1. Ignore notifications not meant for this user immediately
             if (String(newNotif.recipient_id) !== String(currentUserId)) {
                 return;
             }
@@ -257,28 +260,37 @@ export default function ChatInterface({ googleId: propGoogleId }) {
                 currentApptId && 
                 String(currentApptId) === String(newNotif.reference_id);
 
-            // 2. If notification is for the currently open chat, mark it read and STOP processing it.
+            // If a new message notification arrives while the chat is open, mark it read immediately
             if (isForOpenChat) {
-                // This will execute markChatNotificationAsReadLocally, clearing the badge.
                 markChatNotificationAsReadLocally(newNotif.reference_id);
+                // Also trigger server read and sync emit to ensure Header is updated
+                if (dbUserRef.current) {
+                    const apptId = newNotif.reference_id;
+                    const recipientId = currentUserId;
+                    fetch(`/api/notifications/mark_chat_read/${String(apptId)}/${String(recipientId)}`, { method: 'POST' })
+                        .then(() => {
+                            socket.emit("notification_read_sync", {
+                                type: 'NEW_MESSAGE',
+                                reference_id: apptId, 
+                                user_id: recipientId 
+                            });
+                        })
+                        .catch(err => console.error("Failed to mark chat notification as read on server (socket new notif):", err));
+                }
                 return; 
             }
 
-            // 3. Check for an existing notification with the same ID.
             const existingNotif = notificationsRef.current.find(n => n.notification_id === newNotif.notification_id);
             
             if (existingNotif) {
-                // If it exists (e.g., received as a duplicate event or an update), only update the state
                 if (existingNotif.is_read !== newNotif.is_read || existingNotif.created_at !== newNotif.created_at) {
                      setNotifications(prev => prev.map(n => 
                         String(n.notification_id) === String(newNotif.notification_id) ? newNotif : n 
                     ));
                 }
             } else {
-                // 4. If it is a completely NEW notification, add it and increment the count.
                 setNotifications(prev => [newNotif, ...prev]);
                 
-                // 5. Only increment the count if it's new AND unread.
                 if (!newNotif.is_read) {
                     setUnreadCount(prev => prev + 1);
                 }
@@ -306,7 +318,7 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         socket.emit("monitor_appointments", { appointment_ids: appointmentIds });
     }, [socket, users.length]); 
     
-    // 🟢 8. Initial Load of Global Notifications
+    // 8. Initial Load of Global Notifications
     useEffect(() => {
         if (!dbUser) return;
         
@@ -329,8 +341,43 @@ export default function ChatInterface({ googleId: propGoogleId }) {
     }, [dbUser]);
 
 
+    // =========================================================
+    // 🎯 9. Deep Linking via Router State
+    // =========================================================
+    useEffect(() => {
+        if (loading || !dbUser || users.length === 0) return;
+
+        const deepLinkAppointmentId = location.state?.deepLinkAppointmentId;
+
+        if (deepLinkAppointmentId) {
+            console.log(`Attempting deep link for Appointment ID: ${deepLinkAppointmentId}`);
+            const targetUser = users.find(u => String(u.appointment_id) === String(deepLinkAppointmentId));
+            
+            if (targetUser) {
+                handleSelectUser(targetUser); 
+                
+                // Clean up the state so refreshing the page doesn't re-select the chat
+                if (window.history.replaceState) {
+                    const newState = { ...location.state };
+                    delete newState.deepLinkAppointmentId;
+                    window.history.replaceState(newState, '', location.pathname);
+                }
+            } else {
+                console.warn(`Deep link failed: User not found for Appointment ID: ${deepLinkAppointmentId}`);
+            }
+        }
+    }, [dbUser, users, location.state, loading]);
+
+
     // --- User Actions ---
     const handleSelectUser = (user) => {
+        
+        // 💥 CRITICAL FIX: PREVENT REDUNDANT CALLS TO join_appointment
+        if (selectedUserRef.current && String(selectedUserRef.current.appointment_id) === String(user.appointment_id)) {
+            console.log("Chat already active. Skipping re-selection logic to save DB connections.");
+            return; 
+        }
+
         setSelectedUser(user);
         
         // 1. Reset chat sidebar unread locally immediately
@@ -338,19 +385,28 @@ export default function ChatInterface({ googleId: propGoogleId }) {
             String(u.appointment_id) === String(user.appointment_id) ? { ...u, unread_count: 0 } : u
         ));
 
-        // 🟢 2. Mark the global chat notification as read locally and on server
+        // 🟢 2. Mark the global chat notification as read LOCALLY and on the Server.
         if (dbUser) {
             markChatNotificationAsReadLocally(user.appointment_id);
             
             const apptId = user.appointment_id;
             const recipientId = dbUser.id_number;
 
-            // FIX: Ensure both IDs are explicitly cast to string for the URL
             fetch(`/api/notifications/mark_chat_read/${String(apptId)}/${String(recipientId)}`, { method: 'POST' })
+                .then(() => {
+                    // 🟢 CRITICAL SYNC EMIT (Select User): Notify Header/NotificationPanel that this chat notification is now read
+                    if (socket) {
+                        socket.emit("notification_read_sync", {
+                            type: 'NEW_MESSAGE',
+                            reference_id: apptId, // The appointment ID
+                            user_id: recipientId // The user who marked it read
+                        });
+                    }
+                })
                 .catch(err => console.error("Failed to mark chat notification as read on server (select user):", err));
         }
 
-
+        // 3. Join the appointment room and implicitly mark messages as read on the server
         if (socket && dbUser) {
             socket.emit("join_appointment", {
                 appointment_id: user.appointment_id,
@@ -375,22 +431,29 @@ export default function ChatInterface({ googleId: propGoogleId }) {
         socket.emit("send_message", payload);
         handleIncomingMessage(payload, true); 
         
-        // 🟢 FIX: When sending a message, the user is viewing the chat,
-        // so we must clear any existing unread notification for the *current user*.
+        // Mark notification as read when sending a message
         if (dbUser) {
             const apptId = selectedUser.appointment_id;
             const recipientId = dbUser.id_number;
 
-            // Mark locally
             markChatNotificationAsReadLocally(apptId);
             
-            // Mark on server
             fetch(`/api/notifications/mark_chat_read/${String(apptId)}/${String(recipientId)}`, { method: 'POST' })
+                .then(() => {
+                     // 🟢 CRITICAL SYNC EMIT (Send Message): Notify Header/NotificationPanel that this chat notification is now read
+                    if (socket) {
+                        socket.emit("notification_read_sync", {
+                            type: 'NEW_MESSAGE',
+                            reference_id: apptId, 
+                            user_id: recipientId
+                        });
+                    }
+                })
                 .catch(err => console.error("Failed to mark chat notification as read on server (send message):", err));
         }
     };
     
-    // 🟢 NEW: HANDLER TO MARK ANY GLOBAL NOTIFICATION AS READ
+    // 🟢 HANDLER TO MARK ANY GLOBAL NOTIFICATION AS READ (Kept for completeness, though primary logic is in NotificationPanel)
     const markNotificationAsRead = async (notifId) => {
         try {
             await fetch(`/api/notifications/read/${notifId}`, { method: 'POST' });

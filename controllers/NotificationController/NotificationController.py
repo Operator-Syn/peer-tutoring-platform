@@ -31,6 +31,7 @@ def get_current_user_id():
         print(f"Error resolving user ID in helper: {e}")
         return None
 
+# --- Existing Endpoint: Used by ChatInterface to get initial notification count ---
 @bp_notifications.route("/", methods=["GET"])
 def get_notifications():
     # 1. Get Email from Session
@@ -48,14 +49,43 @@ def get_notifications():
     data = Notification.get_user_notifications(user_id)
     return jsonify(data), 200
 
+# --- NEW Endpoint: Used by NotificationPanel to fetch data with a URL parameter ---
+@bp_notifications.route("/user/<string:user_id>", methods=["GET"])
+def get_notifications_by_id(user_id):
+    """
+    Frontend calls: /api/notifications/user/<userId>
+    Fetches notifications for a specific user ID.
+    """
+    session_user_id = get_current_user_id()
+    
+    # 1. Security Check: Ensure session user is the ID requested
+    if not session_user_id or session_user_id != str(user_id).strip():
+        print(f"SECURITY ALERT: Session user {session_user_id} tried to fetch notifications for {user_id}.")
+        return jsonify({"error": "Unauthorized or Forbidden"}), 403
+
+    # 2. Fetch Notifications
+    data = Notification.get_user_notifications(session_user_id)
+    return jsonify(data), 200
+
+
+# --- Existing Endpoint: Used by ChatInterface for a specific type of read (now aliased) ---
 @bp_notifications.route("/read/<int:notif_id>", methods=["POST"])
 def mark_read(notif_id):
-    """Marks a single notification as read."""
-    # NOTE: You may want to add security to check if the session user is the recipient.
+    """Marks a single notification as read (Legacy/Internal ChatInterface call)."""
+    Notification.mark_as_read(notif_id)
+    return jsonify({"success": True}), 200
+
+# --- NEW Endpoint: Used by NotificationPanel for marking a single item read ---
+@bp_notifications.route("/mark-read/<int:notif_id>", methods=["POST"])
+def mark_read_frontend(notif_id):
+    """
+    Frontend calls: /api/notifications/mark-read/<notif_id>
+    Marks a single notification as read.
+    """
     Notification.mark_as_read(notif_id)
     return jsonify({"success": True}), 200
     
-# 🟢 NEW ENDPOINT to mark all chat notifications for an appointment as read
+# 🟢 Existing Endpoint: to mark all chat notifications for an appointment as read
 @bp_notifications.route("/mark_chat_read/<int:appointment_id>/<string:recipient_id>", methods=["POST"])
 def mark_chat_read(appointment_id, recipient_id):
     """

@@ -108,6 +108,16 @@ def handle_message(data):
             sender_id=sender_id
         )
         print(f"🔔 Chat Notification created/reset for {recipient_id}")
+        
+        # 🟢 CRITICAL ADDITION: Emit a global notification event to the recipient's personal room
+        new_notification = Notification.get_latest_notification_by_recipient(recipient_id)
+
+        if new_notification:
+            # Emit to the recipient's personal room
+            personal_room = str(recipient_id)
+            # The client-side logic will format this notification object
+            emit("new_global_notification", new_notification, room=personal_room)
+            print(f"🔔 Emitted new_global_notification to room: {personal_room}")
             
     except ValueError:
          print(f"❌ Error sending chat notification: Appointment ID '{appointment_id}' is not a valid integer.")
@@ -121,6 +131,22 @@ def handle_mark_read(data):
     appointment_id = data.get("appointment_id")
     user_id = data.get("user_id")
     if appointment_id and user_id:
-        # Assuming MessageModel.mark_messages_as_read handles string conversion internally, 
-        # but passing int is safer if possible. We leave it as is if the function signature requires a string.
         MessageModel.mark_messages_as_read(appointment_id, user_id)
+
+# 🟢 NEW HANDLER: Synchronize read status across all user's clients
+@socketio.on("notification_read_sync")
+def handle_read_sync(data):
+    """
+    Receives an event when a notification (chat or general) is marked read on one client.
+    Re-emits it to the user's personal room to update all other clients instantly.
+    """
+    user_id = data.get("user_id")
+    
+    if user_id:
+        personal_room = str(user_id)
+        # Re-emit the entire data payload to the user's personal room.
+        # skip_sid=request.sid prevents the event from being sent back to the client that sent it.
+        emit("notification_read_sync", data, room=personal_room, skip_sid=request.sid)
+        print(f"🔄 Emitted notification_read_sync for user {user_id} to room {personal_room}")
+    else:
+        print("❌ Received notification_read_sync without a user_id.")
