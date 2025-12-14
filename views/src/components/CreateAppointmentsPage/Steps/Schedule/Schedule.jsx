@@ -6,7 +6,7 @@ import "./Schedule.css";
 
 // --- CDN CONSTANTS ---
 const NO_TUTOR_IMAGE_URL = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/no-tutor-around.png";
-const SCHEDULE_OWL_URL = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/schedule-owl.png";
+const SCHEDULE_OWL_URL = "https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/secondary-tutor-available.png";
 
 export default function Schedule({ data, update }) {
     const [availabilities, setAvailabilities] = useState([]);
@@ -21,9 +21,7 @@ export default function Schedule({ data, update }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [emptyStateImgLoaded, setEmptyStateImgLoaded] = useState(false);
     
-    // 1. CHANGED: Ref is now attached to the Header, not the grid
     const headerRef = useRef(null);
-    // Track if it's the first render to prevent annoying auto-scroll on page load
     const isFirstRender = useRef(true);
 
     // Handle Screen Resize
@@ -48,7 +46,11 @@ export default function Schedule({ data, update }) {
         setEmptyStateImgLoaded(false);
         setCurrentPage(1); // Reset page on new fetch
 
-        fetch(`/api/availability/by-subject?course_code=${data.courseCode}&appointment_date=${data.preferredDate}`)
+        // 🚨 FIXED: Added credentials: 'include' so backend gets the session cookie
+        fetch(`/api/availability/by-subject?course_code=${data.courseCode}&appointment_date=${data.preferredDate}`, {
+            method: 'GET',
+            credentials: 'include' 
+        })
             .then(res => res.json())
             .then(fetchedData => {
                 setAvailabilities(fetchedData);
@@ -62,21 +64,19 @@ export default function Schedule({ data, update }) {
             });
     }, [data.courseCode, data.preferredDate]);
 
-    // 2. CHANGED: Improved Scroll Logic
+    // Improved Scroll Logic
     useEffect(() => {
-        // Skip the very first render (so we don't jump when the component first appears)
         if (isFirstRender.current) {
             isFirstRender.current = false;
             return;
         }
 
         if (headerRef.current) {
-            // setTimeout ensures the DOM has finished updating the list height before we scroll
             setTimeout(() => {
                 headerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
-    }, [currentPage]); // Triggers on ANY page change (Next or Prev)
+    }, [currentPage]); 
 
     const handleSelect = (vacant_id) => {
         if (selected === vacant_id) {
@@ -167,7 +167,6 @@ export default function Schedule({ data, update }) {
 
         return (
             <>
-                {/* 3. CHANGED: Removed the ref from here */}
                 <div className="appointments-grid fillout-content-gap">
                     {currentItems.map(a => {
                         const isSelected = selected === a.vacant_id;
@@ -243,11 +242,10 @@ export default function Schedule({ data, update }) {
     return (
         <div className="container create-appointment-form-bg p-3 p-md-5 mb-4">
             <div className="d-flex align-items-center justify-content-between mb-3">
-                {/* 4. CHANGED: Attached Ref here so the User sees the Title when auto-scrolling */}
                 <h3 
                     ref={headerRef} 
-                    className="mb-0 h3-absolute-md" 
-                    style={{ scrollMarginTop: "20px" }} // Adds a little breathing room at top
+                    className="mb-0 h3-absolute" 
+                    style={{ scrollMarginTop: "20px" }} 
                 >
                     Schedule
                 </h3>

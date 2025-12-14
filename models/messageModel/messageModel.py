@@ -51,7 +51,6 @@ class MessageModel:
             cur.close()
             conn.close()
 
-    # 🟢 NEW METHOD
     @staticmethod
     def mark_messages_as_read(appointment_id, user_id):
         """Mark messages in this appointment as read if they were sent by the OTHER person."""
@@ -68,6 +67,32 @@ class MessageModel:
             conn.commit()
         except Exception as e:
             print(f"Error marking messages read: {e}")
+        finally:
+            cur.close()
+            conn.close()
+
+    # 🟢 NEW: Fetches the student and tutor for an appointment
+    @staticmethod
+    def get_appointment_participants(appointment_id):
+        """
+        Helper: Returns (tutee_id, tutor_id) for a specific appointment.
+        Used to determine who receives the chat notification.
+        """
+        conn = get_connection()
+        cur = conn.cursor()
+        try:
+            # Join appointment -> availability to get both IDs
+            query = """
+                SELECT a.tutee_id, av.tutor_id 
+                FROM appointment a
+                JOIN availability av ON a.vacant_id = av.vacant_id
+                WHERE a.appointment_id = %s
+            """
+            cur.execute(query, (appointment_id,))
+            return cur.fetchone() # Returns tuple (student_id, tutor_id)
+        except Exception as e:
+            print(f"Error fetching participants: {e}")
+            return None
         finally:
             cur.close()
             conn.close()

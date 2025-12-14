@@ -10,73 +10,61 @@ import './HomePage.css';
 import BasicButton from '../../../components/BasicButton/BasicButton';
 import HomePageCard from '../../../components/HomePageCard/HomePageCard';
 import Carousel from 'react-bootstrap/Carousel';
+
+// 1. Import useState and useEffect
 import { useNavigate } from 'react-router-dom';
 import { useLoginCheck } from '../../../hooks/useLoginCheck';
+import { useState, useEffect } from 'react';
 
 export default function HomePage() {
     const navigate = useNavigate();
     const loginCheck = useLoginCheck({ route: "/Appointments" });
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
 
-const handleAppointmentsClick = async () => {
-        try {
-            // 1. Get the current logged-in user to find their ID
-            const userRes = await fetch("/api/auth/get_user");
-            
-            if (!userRes.ok) {
-                // Not logged in -> Redirect to standard appointments page (which handles login)
-                navigate("/Appointments");
-                return;
+    // 2. State to hold user data
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // 3. Effect: Fetch user data automatically when the page loads
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch("/api/auth/get_user");
+                if (res.ok) {
+                    const data = await res.json();
+                    setCurrentUser(data);
+                }
+            } catch (error) {
+                console.error("Background user fetch failed:", error);
             }
-            
-            const userData = await userRes.json();
-            // We need the 'id_number' to compare with 'tutor_id'
-            // Usually in your app, userData from /get_user includes the linked tutee info
-            // If /get_user only returns google info, we might need to fetch /api/tutee/by_google first
-            // But assuming userData has the ID or we can derive it:
-            
-            // NOTE: If /get_user returns Google info only, we need to get the Tutee ID first.
-            // Let's assume we need to fetch the tutee profile to get the ID number.
-            const tuteeRes = await fetch(`/api/tutee/by_google/${userData.sub}`);
-            if (!tuteeRes.ok) {
-                navigate("/Appointments"); // Not a registered tutee yet
-                return;
-            }
-            const tuteeData = await tuteeRes.json();
-            const myId = tuteeData.id_number;
+        };
+        fetchUser();
+    }, []); // Empty dependency array = runs once on mount
 
-            // 2. Fetch the Tutor List
-            const tutorsRes = await fetch("/api/tutor/all");
-            const tutorsList = await tutorsRes.json();
+    // 4. Handler: Now SYNCHRONOUS (Instant)
+    const handleAppointmentsClick = (appointmentId = null) => {
+        // We check the variable we already have in memory.
+        // No fetch, no waiting, no flash.
+        
+        const isActiveTutor = currentUser?.role === "TUTOR" && currentUser?.tutor_status === "ACTIVE";
 
-            // 3. Find if "I" am in the tutor list and active
-            const myTutorProfile = tutorsList.find(t => t.tutor_id === myId);
-
-            if (myTutorProfile && myTutorProfile.status === "ACTIVE") {
-                // I am an Active Tutor!
-                navigate("/TutorAppointments");
-            } else {
-                // I am just a student (or inactive tutor)
-                navigate("/Appointments");
-            }
-
-        } catch (error) {
-            console.error("Error checking tutor status:", error);
-            // Default to student view on error to be safe
-            navigate("/Appointments");
+        if (isActiveTutor) {
+            navigate("/TutorAppointments", { 
+                state: { highlightId: appointmentId } 
+            });
+        } else {
+            // Default for students, guests, or if data hasn't loaded yet
+            navigate("/Appointments", { 
+                state: { highlightId: appointmentId } 
+            });
         }
     };
-
-
 
     return (
         <>
             <div className='container-fluid justify-content-center align-items-center d-flex flex-column px-3'>
                 <div className='justify-content-between g-4 large-padding homepage-header mb-5'>
-                    {/* Header H1 */}
                     <h1 className='text-center'>Inspiring Excellence through Education</h1>
 
-                    {/* Row wrapper for columns */}
                     <div className="row d-flex justify-content-between gx-5 px-2">
                         <div className="left-column col-lg-6 d-flex flex-column justify-content-around align-items-center mx-auto ps-lg-0 pe-lg-5 mb-3 mb-lg-0">
                             <div className='introduction'>
@@ -95,7 +83,9 @@ const handleAppointmentsClick = async () => {
                                 <BasicButton onClick={() => {
                                     checkIfLoggedinBeforeCreatingAppointment();
                                 }}>Start Learning</BasicButton>
-                                <BasicButton onClick={handleAppointmentsClick} light={true}>
+                                
+                                {/* 5. This button is now connected to the instant handler */}
+                                <BasicButton onClick={() => handleAppointmentsClick()} light={true}>
                                     Appointments
                                 </BasicButton>
                             </div>
@@ -105,13 +95,13 @@ const handleAppointmentsClick = async () => {
                             <div className='tutor-sched d-flex flex-row' style={{ borderRadius: '15px' }}>
                                 <Carousel style={{ width: '' }}>
                                     <Carousel.Item>
-                                        <img className='img-fluid custom-carousel-img' src={tutorSchedulesImg} alt="Homepage Illustration" onClick={() => { }} />
+                                        <img className='img-fluid custom-carousel-img' src={tutorSchedulesImg} alt="Homepage Illustration" />
                                     </Carousel.Item>
                                     <Carousel.Item>
-                                        <img className='img-fluid custom-carousel-img' src={caro1} alt="Homepage Illustration" onClick={() => { }} />
+                                        <img className='img-fluid custom-carousel-img' src={caro1} alt="Homepage Illustration" />
                                     </Carousel.Item>
                                     <Carousel.Item>
-                                        <img className='img-fluid custom-carousel-img' src={caro2} alt="Homepage Illustration" onClick={() => { }} />
+                                        <img className='img-fluid custom-carousel-img' src={caro2} alt="Homepage Illustration" />
                                     </Carousel.Item>
                                 </Carousel>
 
@@ -133,19 +123,15 @@ const handleAppointmentsClick = async () => {
                     ' />
                 </div>
             </div>
-
         </>
     );
 }
 
 function Stat({ top_text = 'Top', bottom_text = 'Bottom' }) {
-
     return (
-        <>
-            <div className='stat'>
-                <p className='top-text'>{top_text}</p>
-                <p className='bottom-text'>{bottom_text}</p>
-            </div>
-        </>
+        <div className='stat'>
+            <p className='top-text'>{top_text}</p>
+            <p className='bottom-text'>{bottom_text}</p>
+        </div>
     );
 }
