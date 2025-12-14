@@ -70,6 +70,7 @@ def create_app():
     from controllers.adminDashboardController import admin_dashboard_bp
     from controllers.appealsController import bp_appeals
     from controllers.chatUserController.chatUserController import chat_bp
+    from controllers.NotificationController.NotificationController import bp_notifications
 
     # -- Auth & Users --
     app.register_blueprint(auth_bp, url_prefix="/api/auth") # URI: https://<domain>/api/auth/callback
@@ -86,6 +87,7 @@ def create_app():
     app.register_blueprint(bp_availability)
     app.register_blueprint(bp_create_pending)
     app.register_blueprint(chat_bp)
+    app.register_blueprint(bp_notifications)
 
     # -- Admin & System --
     app.register_blueprint(admin_dashboard_bp)

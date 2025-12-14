@@ -39,60 +39,57 @@ class Notification:
     @staticmethod
     def create_chat_notification(appointment_id, recipient_id, sender_id):
         """
-        Creates a notification for a new message.
-        Checks if an unread chat notification already exists to prevent spamming.
-        Also, updates the timestamp and emits a socket event if it exists.
+        Creates a notification for a new message or updates an existing one
+        to mark it as unread and update its timestamp.
         """
         conn = get_connection()
-        # Use RealDictCursor to access column names by key
         cur = conn.cursor(cursor_factory=RealDictCursor) 
         
-        # Optimization: Don't spam. If there is already an UNREAD notification 
-        # for this chat from this sender, just update the timestamp.
+        # 1. Check for ANY existing chat notification for this recipient and reference_id,
+        #    regardless of its is_read status.
         check_query = """
             SELECT notification_id FROM notifications 
-            WHERE recipient_id = %s AND reference_id = %s AND type = 'NEW_MESSAGE' AND is_read = FALSE
+            WHERE recipient_id = %s AND reference_id = %s AND type = 'NEW_MESSAGE'
         """
         cur.execute(check_query, (recipient_id, appointment_id))
         existing = cur.fetchone()
         
         if existing:
             try:
-                # 🟢 FIX: Update timestamp and return the full updated record for socket emission
+                # 2. If it exists, update timestamp AND set is_read back to FALSE
                 update_query = """
                     UPDATE notifications 
-                    SET created_at = now() 
+                    SET created_at = now(), is_read = FALSE 
                     WHERE notification_id = %s
                     RETURNING *
                 """
                 cur.execute(update_query, (existing['notification_id'],))
                 updated_row = cur.fetchone()
-                conn.commit() # Explicitly commit the update
-                
-                # 🟢 NEW: Emit socket event for the updated notification
+                conn.commit() 
+
+                # 3. Emit the socket event with the updated, unread notification
                 if updated_row:
-                    personal_room = str(recipient_id)
-                    # Prepare the data structure to match the _insert output for consistency
+                    # Get sender name
+                    cur.execute("SELECT first_name, last_name FROM tutee WHERE id_number = %s", (updated_row['sender_id'],))
+                    sender_name_row = cur.fetchone()
+                    sender_name = f"{sender_name_row['first_name']} {sender_name_row['last_name']}" if sender_name_row else "Someone"
+
                     updated_row_payload = {
                         **updated_row,
                         "created_at": updated_row['created_at'].isoformat(),
+                        "sender_name": sender_name
                     }
-                    # Fetch sender name for consistency (was only done in _insert before)
-                    # We need a separate query since the update only returned notification columns
-                    cur.execute("SELECT first_name, last_name FROM tutee WHERE id_number = %s", (updated_row['sender_id'],))
-                    sender_name_row = cur.fetchone()
-                    updated_row_payload['sender_name'] = f"{sender_name_row['first_name']} {sender_name_row['last_name']}" if sender_name_row else "Someone"
 
-
+                    personal_room = str(recipient_id)
                     socketio.emit("new_global_notification", updated_row_payload, room=personal_room)
-                    print(f"🔔 Emitted UPDATED new_global_notification to room: {personal_room}")
+                    print(f"🔔 Emitted UPDATED new_global_notification (marked unread) to room: {personal_room}")
 
             except Exception as e:
-                print(f"Error updating notification timestamp: {e}")
+                print(f"Error updating notification timestamp and unread status: {e}")
                 conn.rollback()
 
         else:
-            # Create new (This calls _insert which handles its own commit and socket emit)
+            # 4. If it does not exist (first message ever), insert a new one.
             Notification._insert(recipient_id, sender_id, 'NEW_MESSAGE', appointment_id, "sent you a message.")
             
         cur.close()
@@ -165,20 +162,39 @@ class Notification:
     def mark_chat_notifications_as_read(appointment_id, recipient_id):
         conn = get_connection()
         cur = conn.cursor()
+        rows_updated = 0
+        
         try:
+            # 1. Ensure IDs are clean and the correct type before query
+            appt_id_int = int(appointment_id)
+            # 💥 CRITICAL FIX: Ensure recipient_id is explicitly a stripped string
+            clean_recipient_id = str(recipient_id).strip() 
+        except (TypeError, ValueError) as e:
+            print(f"Error: Invalid ID passed to read marker: {e}")
+            return 0
+            
+        try:
+            # 2. Use TRIM() in SQL for robustness against database storage issues
             query = """
                 UPDATE notifications 
                 SET is_read = TRUE 
-                WHERE recipient_id = %s 
+                -- We use TRIM() on the column AND pass the cleaned ID
+                WHERE TRIM(recipient_id) = %s 
                 AND reference_id = %s
-                AND type = 'NEW_MESSAGE'
+                AND type = 'NEW_MESSAGE'; 
             """
-            cur.execute(query, (recipient_id, appointment_id))
+            # Arguments: (clean_recipient_id (str), appt_id_int (int))
+            cur.execute(query, (clean_recipient_id, appt_id_int))
+            rows_updated = cur.rowcount
             conn.commit()
-            return cur.rowcount 
+            
+            print(f"DB Action: Marked {rows_updated} chat notification(s) read for Appt: {appt_id_int}, Recipient: {clean_recipient_id}")
+            
+            return rows_updated 
         except Exception as e:
             print(f"Error marking chat notifications as read: {e}")
             conn.rollback()
+            return 0 
         finally:
             cur.close()
             conn.close()
