@@ -20,6 +20,7 @@ import TuteeList from "./pages/Tutee List/TuteeList";
 
 import Feedback from "./pages/profile/feedback"
 import TutorProfile from "./pages/Tutor/Tutorprofile";
+import AdminRoute from "./components/AdminRoute";
 
 
 function App() {
@@ -34,13 +35,16 @@ function App() {
           
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
-            <Route path="Report" element={<Report />} />
-            <Route path="admin" element={<AdminDashboard />} />  
+            <Route path="Report" element={<Report />} />  
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
             <Route path="tutor/:tutor_id" element={<TutorProfile />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="admin" element={<AdminDashboard />} />
+            </Route>
             
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
