@@ -15,6 +15,8 @@ const TutorApplicationForm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [studentNotFound, setStudentNotFound] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => { fetchCourses(); }, []);
 
@@ -65,6 +67,21 @@ const TutorApplicationForm = () => {
     setSelectedCourses(prev => prev.filter(c => c !== courseCode));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const handlePreviewClick = () => {
+    const fileInput = document.getElementById("corFile");
+    if (fileInput.files.length > 0) {
+      setShowPreview(true);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (studentNotFound) { setError('Please enter a valid Student ID'); return; }
@@ -82,6 +99,7 @@ const TutorApplicationForm = () => {
       if (response.ok) {
         setSuccess(data);
         setStudentId(""); setFirstName(""); setLastName(""); setSelectedCourses([]); fileInput.value = "";
+        setPreviewUrl(null);
       } else {
         setError(data.error || "Failed to submit");
       }
@@ -110,7 +128,6 @@ const TutorApplicationForm = () => {
           <Modal.Header closeButton><Modal.Title>Application Submitted Successfully!</Modal.Title></Modal.Header>
           <Modal.Body>
             <p><strong>Application ID:</strong> {success?.application_id}</p>
-            <p><strong>Message:</strong> {success?.message}</p>
             {success?.courses && success.courses.length > 0 && (
               <>
                 <p><strong>Courses:</strong></p>
@@ -133,6 +150,16 @@ const TutorApplicationForm = () => {
           <Modal.Body>{error}</Modal.Body>
           <Modal.Footer>
             <Button variant="danger" onClick={() => setError(null)}>Close</Button>
+          </Modal.Footer>
+        </Modal>
+
+        <Modal show={showPreview} onHide={() => setShowPreview(false)} size="lg" centered>
+          <Modal.Header closeButton><Modal.Title>Document Preview</Modal.Title></Modal.Header>
+          <Modal.Body className="text-center">
+            {previewUrl && <img src={previewUrl} alt="COR Preview" style={{maxWidth: '100%', maxHeight: '70vh'}} />}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowPreview(false)}>Close</Button>
           </Modal.Footer>
         </Modal>
 
@@ -199,7 +226,7 @@ const TutorApplicationForm = () => {
                         </option>
                       ))}
                     </select>
-                    <span className="tutor-app-dropdown-icon">▼</span>
+                    <span className="tutor-app-dropdown-icon"></span>
                   </div>
                 </div>
 
@@ -219,8 +246,13 @@ const TutorApplicationForm = () => {
 
                 <div className="tutor-app-group">
                   <label htmlFor="corFile" className="tutor-app-label">Certificate of Registration (COR) *</label>
-                  <input type="file" className="tutor-app-file-input" id="corFile" accept=".jpg,.jpeg,.png" required />
+                  <input type="file" className="tutor-app-file-input" id="corFile" accept=".jpg,.jpeg,.png" required onChange={handleFileChange} />
                   <small className="tutor-app-text-muted">Accepted formats: JPG, PNG (Max 5MB)</small>
+                  {previewUrl && (
+                    <Button variant="outline-primary" size="sm" className="mt-2" onClick={handlePreviewClick}>
+                      <i className="bi bi-eye"></i> Preview Document
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
