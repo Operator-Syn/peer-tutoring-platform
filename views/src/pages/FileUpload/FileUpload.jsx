@@ -18,11 +18,17 @@ export default function FileUpload() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [tutorId, setTutorId] = useState(null);
+    const [uploadProcess, setUploadProcess] = useState(false);
 
     const submitPost = async () => {
+        if (uploadProcess) {
+            return;
+        }
+        setUploadProcess(true);
         // Validation (optional)
         if (!title || !selectedCourse || files.length === 0 || !description) {
             alert("Please fill in all required fields.");
+            setUploadProcess(false);
             return;
         }
 
@@ -33,6 +39,7 @@ export default function FileUpload() {
             console.log("Uploaded file URL:", fileUrls);
             if (!uploadedUrl) {
                 alert("File upload failed. Please try again.");
+                setUploadProcess(false);
                 return;
             }
             fileUrls.push(uploadedUrl);
@@ -65,6 +72,9 @@ export default function FileUpload() {
             }
         } catch (err) {
             alert("An error occurred: " + err.message);
+            setUploadProcess(false);
+        } finally {
+            setUploadProcess(false);
         }
     };
 
@@ -162,7 +172,8 @@ export default function FileUpload() {
     }
     return (
         <>
-            <div className="file-upload-fu">
+            <div className="file-upload-fu" style={{position: "relative"}}>
+                {uploadProcess && <div style={{position: "absolute", backdropFilter: "blur(3px)", width: "100%", height: "100%", zIndex: "10", left: 0, top: 0}}>Uploading files, please wait...</div>}
                 <h1 style={{color: "#616DBE"}}>Share your notes to everyone!</h1>
                 <hr></hr>
 
