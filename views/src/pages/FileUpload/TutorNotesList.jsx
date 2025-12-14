@@ -4,14 +4,14 @@ import './TutorNotesList.css';
 export default function TutorNotesList({ tutorId }) {
 
     const [notesPosts, setNotesPosts] = useState([]);
-    const [visibleCount, setVisibleCount] = useState(3);
+    const [visibleCount, setVisibleCount] = useState(14);
     const listRef = useRef(null);
 
     const fetchNotesPosts = async () => {
         const response = await fetch(`/api/notes-sharing/get-notes/${tutorId}`);
         const data = await response.json();
         setNotesPosts(data);
-        setVisibleCount(3);
+        setVisibleCount(14);
     }
 
     useEffect(() => {
@@ -40,10 +40,10 @@ export default function TutorNotesList({ tutorId }) {
                 <div className='tutor-notes-container'>
                     <h1 style={{color: "#616DBE"}}>Tutor Notes</h1>
                     <hr style={{margin: "0"}} />
-                    <div className="notes-posts-list" ref={listRef}>
+                    {/* <div className="notes-posts-list" ref={listRef}>
                         {notesPosts.slice(0, visibleCount).map((note) => (
                             <NotePostCard 
-                                key={note.id}
+                                key={note.posted_note_id}
                                 title={note.title}
                                 courseCode={note.course_code}
                                 fileUrls={note.file_urls}
@@ -51,11 +51,28 @@ export default function TutorNotesList({ tutorId }) {
                                 dateUploaded={note.date_posted}
                             />
                         ))}
+                    </div> */}
+                    <div class='accordion' ref={listRef} style={{height: "100%", overflowY: "auto", width: "100%", marginTop: "10px"}}>
+                        {notesPosts.slice(0, visibleCount).map((note) => (
+                            <div class='accordion-item' key={note.posted_note_id}>
+                                <h2 class='accordion-header'>
+                                    <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target={`#collapse${note.posted_note_id}`} aria-expanded='false' aria-controls={`collapse${note.posted_note_id}`}>
+                                        {note.title} &nbsp; <span style={{fontSize: "12px", color: "#555"}}>({note.course_code})</span>
+                                    </button>
+                                </h2>
+                                <div id={`collapse${note.posted_note_id}`} class='accordion-collapse collapse' data-bs-parent='.accordion'>
+                                    <div class='accordion-body' style={{backgroundColor: "#f2f2f2"}}>
+                                        <NotePostCard title={note.title} courseCode={note.course_code} fileUrls={note.file_urls} description={note.description} dateUploaded={note.date_posted} />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    
+
+
                 </div>
             </div>
-            <div style={{height: "100px"}} />
+            <div style={{height: "30px"}} />
         </>
         
     );
@@ -63,9 +80,7 @@ export default function TutorNotesList({ tutorId }) {
 
 function NotePostCard({ title, courseCode, fileUrls, description, dateUploaded }) {
     return (
-        <div className="note-post-card">
-            <div style={{fontSize: "9px"}}>{courseCode}</div>
-            <h2 className="note-post-title" style={{wordBreak: "break-all"}}>{title}</h2>
+        <div className="" style={{}}>
             <p className="note-post-description" style={{whiteSpace: "pre-line", textAlign: "justify"}}>{description}</p>
             <div className='img-cards-tnl'>
                 {fileUrls.map((url, index) => (

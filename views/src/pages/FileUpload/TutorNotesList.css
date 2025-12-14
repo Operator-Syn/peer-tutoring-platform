@@ -5,6 +5,15 @@
     padding: 0px 100px;
 }
 
+.tutor-notes-section .accordion-button:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+.tutor-notes-section .accordion-button:not(.collapsed) {
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
 .tutor-notes-container {
     /* border: 1px solid blue; */
     max-width: 796px;
