@@ -1,9 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom"; // 1. Import useLocation
 import "./Report.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Report() {
+  // 2. Initialize location hook to access state passed from navigate()
+  const location = useLocation();
+
   const [selectedReasons, setSelectedReasons] = useState([]);
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
@@ -36,6 +40,23 @@ function Report() {
       opt.toLowerCase().includes(name.toLowerCase())
     );
   }, [nameOptions, name]);
+
+  // 3. NEW: Effect to handle pre-filled name from Navigation State
+  // We wait until nameToIdMap is populated (from fetchTutees) to ensure we can map the name to an ID
+  useEffect(() => {
+    if (location.state?.prefilledName && Object.keys(nameToIdMap).length > 0) {
+        const prefilledName = location.state.prefilledName;
+        
+        // Set the text input
+        setName(prefilledName);
+
+        // Auto-set the reported ID if it exists in our map
+        if (nameToIdMap[prefilledName]) {
+            setReportedId(nameToIdMap[prefilledName]);
+        }
+    }
+  }, [location.state, nameToIdMap]);
+
 
   // 1) Get all tutees → build name list & map fullName -> id_number
   // ✅ EXCLUDES self once tuteeId is known
