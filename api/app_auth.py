@@ -91,37 +91,61 @@ def auth():
 @auth_bp.route('/get_user')
 def get_user():
     """
-    An API endpoint to get the currently logged-in user's data.
+    An API endpoint to get the currently logged-in user's data,
+    including their ID, Role, and Tutor Status.
     """
     user = session.get('user')
     if not user:
         return jsonify({'error': 'User not logged in'}), 401
 
+    # Default values
     registered = False
-    status = "ACTIVE"
+    id_number = None
+    role = "GUEST"
+    tutor_status = None
+    account_status = "ACTIVE"
 
     try:
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
-                if cursor.fetchone():
+                # Optimized Query: Get ID, Role, Account Status, and Tutor Status at once
+                # Updated Query in get_user()
+                query = """
+                    SELECT 
+                        te.id_number AS tutee_id,  -- Get ID from the Tutee table, not User Account
+                        ua.role,
+                        ua.status AS account_status,
+                        t.status AS tutor_status
+                    FROM user_account ua
+                    -- 1. Join Tutee using Google ID (Reliable)
+                    LEFT JOIN tutee te ON ua.google_id = te.google_id
+                    -- 2. Join Tutor using the ID found in Tutee
+                    LEFT JOIN tutor t ON te.id_number = t.tutor_id
+                    WHERE ua.google_id = %s
+                """
+                cursor.execute(query, (user['sub'],))
+                result = cursor.fetchone()
+
+                if result:
                     registered = True
-                
-                cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user['sub'],))
-                account_data = cursor.fetchone()
-                if account_data and account_data.get('status'):
-                    status = account_data['status']
+                    id_number = result['tutee_id']
+                    role = result['role']
+                    account_status = result['account_status']
+                    tutor_status = result['tutor_status']  # Will be None if they aren't a tutor
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    
+    # Combine Google session data with DB data
     user_with_status = dict(user)
     user_with_status['registered_tutee'] = registered
-    user_with_status['status'] = status
+    user_with_status['id_number'] = id_number
+    user_with_status['role'] = role
+    user_with_status['status'] = account_status
+    user_with_status['tutor_status'] = tutor_status
 
-    # Return response with cache control to be safe
+    # Return response with cache control
     response = make_response(jsonify(user_with_status))
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
