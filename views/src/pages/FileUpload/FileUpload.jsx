@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
 import BasicButton from '../../components/BasicButton/BasicButton';
+import PopUpMessage from '../../components/PopUpMessage';
 import { useNavigate } from 'react-router-dom';
 
 export default function FileUpload() {
@@ -19,6 +20,13 @@ export default function FileUpload() {
     const [description, setDescription] = useState('');
     const [tutorId, setTutorId] = useState(null);
     const [uploadProcess, setUploadProcess] = useState(false);
+    const [showPopup, setShowPopup] = useState(false);
+    const [popupMessage, setPopupMessage] = useState('');
+
+    const showMessage = (message) => {
+        setPopupMessage(message);
+        setShowPopup(true);
+    }
 
     const submitPost = async () => {
         if (uploadProcess) {
@@ -27,7 +35,7 @@ export default function FileUpload() {
         setUploadProcess(true);
         // Validation (optional)
         if (!title || !selectedCourse || files.length === 0 || !description) {
-            alert("Please fill in all required fields.");
+            showMessage("Please fill in all required fields.");
             setUploadProcess(false);
             return;
         }
@@ -38,7 +46,7 @@ export default function FileUpload() {
             const uploadedUrl = await uploadFileToServer(file);
             console.log("Uploaded file URL:", fileUrls);
             if (!uploadedUrl) {
-                alert("File upload failed. Please try again.");
+                showMessage("File upload failed. Please try again.");
                 setUploadProcess(false);
                 return;
             }
@@ -65,14 +73,13 @@ export default function FileUpload() {
 
             const data = await response.json();
             if (response.ok) {
-                alert("Note shared successfully!");
+                showMessage("Note shared successfully!");
                 clearInputFields();
             } else {
-                alert(data.error || "Failed to share note.");
+                showMessage("Failed to share note: " + (data.error || "Unknown error"));
             }
         } catch (err) {
-            alert("An error occurred: " + err.message);
-            setUploadProcess(false);
+            showMessage("An error occurred: " + err.message);
         } finally {
             setUploadProcess(false);
         }
@@ -96,7 +103,6 @@ export default function FileUpload() {
             const tutorCheckData = await tutorCheck.json();
             console.log("Tutor check response:", tutorCheckData.is_tutor);
             if (!tutorCheckData.is_tutor) {
-                alert("You must be a tutor to share notes.");
                 navigate('/profile/apply');
                 return;
             }
@@ -124,7 +130,7 @@ export default function FileUpload() {
             const data = await response.json();
             return data.file_url;
         } catch (error) {
-            alert("Error uploading file: " + error.message);
+            showMessage("Error uploading file: " + error.message);
             return null;
         }
     };
@@ -172,6 +178,7 @@ export default function FileUpload() {
     }
     return (
         <>
+            <PopUpMessage message={popupMessage} isOpen={showPopup} onClose={() => setShowPopup(false)} />
             <div className="file-upload-fu" style={{position: "relative"}}>
                 {uploadProcess && <div style={{position: "absolute", backdropFilter: "blur(3px)", width: "100%", height: "100%", zIndex: "10", left: 0, top: 0}}>Uploading files, please wait...</div>}
                 <h1 style={{color: "#616DBE"}}>Share your notes to everyone!</h1>
