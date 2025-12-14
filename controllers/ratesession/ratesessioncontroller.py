@@ -4,17 +4,16 @@ from flask import Blueprint, jsonify, request
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 
-rate_session_bp = Blueprint(
-    "rate_session_bp", __name__, url_prefix="/api/rate-session"
-)
+rate_session_bp = Blueprint("rate_session_bp", __name__, url_prefix="/api/rate-session")
 
 
 @rate_session_bp.route("/pending/<tutee_id>", methods=["GET"])
 def get_pending_ratings(tutee_id):
     """
     Pending ratings for a tutee:
-      - rating = 0
-      - Uses snapshot fields stored in session_rating (so it works even if appointment is deleted)
+      - session_rating.rating = 0
+      - session details come from appointment + availability (no snapshots)
+      - appointment must be COMPLETED
     """
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -31,24 +30,30 @@ def get_pending_ratings(tutee_id):
                 sr.comment,
                 sr.created_at,
 
-                -- ✅ snapshot info saved in session_rating
-                sr.course_code,
-                sr.appointment_date,
-                sr.start_time,
-                sr.end_time,
+                a.course_code,
+                a.appointment_date,
+                av.start_time,
+                av.end_time,
 
-                -- tutor name
+                -- tutor name (tutor_id is also in tutee table)
                 tt.first_name  AS tutor_first_name,
                 tt.middle_name AS tutor_middle_name,
                 tt.last_name   AS tutor_last_name
+
             FROM session_rating sr
+            JOIN appointment a
+              ON a.appointment_id = sr.appointment_id
+            JOIN availability av
+              ON av.vacant_id = a.vacant_id
             JOIN tutor tu
               ON sr.tutor_id = tu.tutor_id
             JOIN tutee tt
               ON tu.tutor_id = tt.id_number
+
             WHERE sr.tutee_id = %s
               AND sr.rating = 0
-            ORDER BY sr.created_at DESC
+              AND a.status = 'COMPLETED'
+            ORDER BY a.appointment_date DESC, av.start_time DESC
             """,
             (tutee_id,),
         )
@@ -137,7 +142,7 @@ def submit_rating(appointment_id):
 def get_tutor_ratings(tutor_id):
     """
     Return all ratings for a tutor (rated sessions only).
-    Uses snapshot fields stored in session_rating (so it works even if appointment is deleted).
+    Session details come from appointment + availability (no snapshots).
     """
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -159,16 +164,22 @@ def get_tutor_ratings(tutor_id):
                 t.middle_name AS tutee_middle_name,
                 t.last_name   AS tutee_last_name,
 
-                -- ✅ snapshot info saved in session_rating
-                sr.course_code,
-                sr.appointment_date,
-                sr.start_time,
-                sr.end_time
+                a.course_code,
+                a.appointment_date,
+                av.start_time,
+                av.end_time
+
             FROM session_rating sr
             JOIN tutee t
               ON sr.tutee_id = t.id_number
+            JOIN appointment a
+              ON a.appointment_id = sr.appointment_id
+            JOIN availability av
+              ON av.vacant_id = a.vacant_id
+
             WHERE sr.tutor_id = %s
               AND sr.rating > 0
+              AND a.status = 'COMPLETED'
             ORDER BY sr.created_at DESC
             """,
             (tutor_id,),

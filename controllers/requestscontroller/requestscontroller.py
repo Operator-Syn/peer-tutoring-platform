@@ -476,48 +476,43 @@ def create_pending_appointment():
 @requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
 def finish_appointment(appointment_id):
     """
-    Save snapshot into session_rating first, then MARK appointment as COMPLETED
-    (do NOT delete it because messages reference appointment_id).
+    Create a session_rating row (rating=0) then mark appointment COMPLETED.
+    No snapshot columns because session_rating no longer has them.
     """
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        # Get all needed info
+        # Get needed info for session_rating row
         cur.execute(
             """
             SELECT
                 a.tutee_id,
-                av.tutor_id,
-                a.course_code,
-                a.appointment_date,
-                av.start_time,
-                av.end_time
+                av.tutor_id
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
             """,
             (appointment_id,),
         )
+
         row = cur.fetchone()
         if not row:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, tutor_id, course_code, appointment_date, start_time, end_time = row
+        tutee_id, tutor_id = row
 
-        # Insert snapshot into session_rating (rating=0)
+        # Insert session_rating row (rating=0) if not existing
         cur.execute(
             """
-            INSERT INTO session_rating
-                (appointment_id, tutee_id, tutor_id, rating, course_code, appointment_date, start_time, end_time)
-            VALUES
-                (%s, %s, %s, 0, %s, %s, %s, %s)
+            INSERT INTO session_rating (appointment_id, tutee_id, tutor_id, rating)
+            VALUES (%s, %s, %s, 0)
             ON CONFLICT (appointment_id, tutee_id) DO NOTHING
             """,
-            (appointment_id, tutee_id, tutor_id, course_code, appointment_date, start_time, end_time),
+            (appointment_id, tutee_id, tutor_id),
         )
 
-        # Mark appointment as COMPLETED
+        # Mark appointment COMPLETED
         cur.execute(
             """
             UPDATE appointment
