@@ -38,12 +38,15 @@ function Header() {
       let fullUserData = userData;
       if (userData?.id_number) {
           try {
-              const res = await fetch(`/api/user/details/${userData.id_number}`);
+              const res = await fetch(`/api/auth/get_user`); 
+              
               if (res.ok) {
                   fullUserData = await res.json();
+              } else {
+                  console.warn(`Failed to fetch full user details from /api/auth/get_user. Status: ${res.status}`);
               }
           } catch (e) {
-              console.error("Failed to fetch full user details:", e);
+              console.error("Error fetching full user details:", e);
           }
       }
       setUser(fullUserData);
