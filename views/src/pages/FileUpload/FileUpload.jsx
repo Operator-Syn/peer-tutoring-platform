@@ -193,7 +193,7 @@ export default function FileUpload() {
                                 </BasicButton>
                                 <input
                                     type="file"
-                                    accept='.png,.jpeg,.jpg'
+                                    accept='.png,.jpeg,.jpg,.pdf,.doc,.docx,.ppt,.pptx,.txt'
                                     multiple
                                     ref={fileInputRef}
                                     style={{ display: 'none' }}

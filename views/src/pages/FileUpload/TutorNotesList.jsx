@@ -135,7 +135,14 @@ function FileCard({ fileUrl }) {
             <div className='img-card-overlay-tnl'>
                 <p className="file-name-tnl" style={{color: "white", textOverflow: "ellipsis", width: "100%", fontSize: "10px"}}>{fileName}</p>
             </div>
-            <img src={fileUrl} alt="Image File" className="file-icon-tnl" />
+            <div style={{display: "flex", justifyContent: "center", alignItems: "center", width: "100%", height: "100%"}}>
+                {(fileUrl.endsWith('.png') || fileUrl.endsWith('.jpeg') || fileUrl.endsWith('.jpg')) && (
+                    <img src={fileUrl} alt="File" className="file-icon-tnl" style={{height: '100%'}} />
+                )}
+                {(fileUrl.endsWith('.pdf') || fileUrl.endsWith('.doc') || fileUrl.endsWith('.docx') || fileUrl.endsWith('.ppt') || fileUrl.endsWith('.pptx') || fileUrl.endsWith('.txt')) && (
+                    <img src="https://www.svgrepo.com/show/532791/file-question-alt.svg" alt="File" className="file-icon-tnl" style={{width: '70px', height: '70px'}} />
+                )}
+            </div>
         </div>
     );
 }

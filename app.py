@@ -60,6 +60,7 @@ def create_app():
     from api.getuser import tutee_bp, tutor_bp
     from api.tutor_list import tutor_list
     from api.tutee_list import tutee_list
+    from api.notes_sharing import notes_sharing
     
     from controllers.tuteeAppointmentsPageCardController.tuteeAppointmentsPageCardController import bp_appointments
     from controllers.createAppointmentFormController.createAppointmentFormController import bp_fillout
@@ -78,10 +79,11 @@ def create_app():
     app.register_blueprint(tutee_bp, url_prefix="/api/tutee")
     app.register_blueprint(tutor_bp, url_prefix="/api/tutor")
     app.register_blueprint(tutor_list, url_prefix="/api/tutor-list")
-    # app.register_blueprint(tutee_list, url_prefix="/api/tutee-list") # Uncomment if needed
+    app.register_blueprint(tutee_list, url_prefix="/api/tutee-list") # Uncomment if needed
 
     # -- Core Features --
     app.register_blueprint(tutor_application_bp, url_prefix="/api/tutor-applications")
+    app.register_blueprint(notes_sharing, url_prefix="/api/notes-sharing")
     app.register_blueprint(bp_appointments)
     app.register_blueprint(requests_bp)
     app.register_blueprint(bp_fillout)
@@ -90,7 +92,6 @@ def create_app():
     app.register_blueprint(chat_bp)
 
     # -- Admin & System --
-    app.register_blueprint(notes_sharing, url_prefix="/api/notes-sharing")
     app.register_blueprint(admin_dashboard_bp)
     app.register_blueprint(load_config_bp)
     app.register_blueprint(bp_appeals)
