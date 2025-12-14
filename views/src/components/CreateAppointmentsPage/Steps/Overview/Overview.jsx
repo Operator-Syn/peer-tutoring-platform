@@ -13,69 +13,187 @@ export default function Overview({ data }) {
         : "—";
 
     return (
-        <div className="container p-5 mt-4 overview-container rounded shadow-sm bg-light">
-            <h3 className="mb-3 h3-absolute">Overview</h3>
-            <h3 className="mb-4 text-center text-primary fw-bold">Appointment Overview</h3>
+        <div className="create-appointment-form-bg">
+            {/* Matches FillOut side label style */}
+            <h3 className="fillout-side-label h3-absolute">Overview</h3>
 
-            {/* --- Personal Information Section --- */}
-            <div className="mb-4">
-                <h5 className="border-bottom pb-2 mb-3 text-secondary">Tutee Information</h5>
+            {/* Matches FillOut inner container and gap */}
+            <div className="container d-flex flex-column fillout-content-gap">
+                
+                {/* Matches FillOut title style */}
+                <h1 className="text-center text-decoration-underline fillout-title">
+                    Pre-Flight Check
+                </h1>
+
+                {/* --- SECTION 1: The Owlet (Personal Info) --- */}
+                <h5 className="text-secondary mt-2 mb-0">The Owlet (That's You!)</h5>
+                
                 <div className="row g-3">
-                    <div className="col-md-6">
-                        <p><strong>First Name:</strong> {data.firstName || "—"}</p>
+                    {/* Left Column */}
+                    <div className="col-12 col-md-6 d-flex flex-column gap-3">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">First Name</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.firstName || "—"}
+                                readOnly
+                            />
+                        </div>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Middle Name</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.middleName || "—"}
+                                readOnly
+                            />
+                        </div>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">ID Number</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.idNumber || "—"}
+                                readOnly
+                            />
+                        </div>
                     </div>
-                    <div className="col-md-6">
-                        <p><strong>Last Name:</strong> {data.lastName || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Middle Name:</strong> {data.middleName || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>ID Number:</strong> {data.idNumber || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Year Level:</strong> {data.yearLevel || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Program Code:</strong> {data.programCode || "—"}</p>
+
+                    {/* Right Column */}
+                    <div className="col-12 col-md-6 d-flex flex-column gap-3">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Last Name</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.lastName || "—"}
+                                readOnly
+                            />
+                        </div>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Year Level</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.yearLevel || "—"}
+                                readOnly
+                            />
+                        </div>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Program Code</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.programCode || "—"}
+                                readOnly
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* --- Tutoring Request Section --- */}
-            <div className="mb-4">
-                <h5 className="border-bottom pb-2 mb-3 text-secondary">Tutoring Details</h5>
+                <hr className="text-secondary opacity-25 my-1" />
+
+                {/* --- SECTION 2: Flight Plan (Tutoring Details) --- */}
+                <h5 className="text-secondary mb-0">Flight Plan & Destination</h5>
+                
+                {/* Subject & Tutor */}
                 <div className="row g-3">
                     <div className="col-md-6">
-                        <p><strong>Subject Code:</strong> {data.courseCode || "—"}</p>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Target Subject</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.courseCode || "—"}
+                                readOnly
+                            />
+                        </div>
                     </div>
                     <div className="col-md-6">
-                        <p><strong>Vacant Slot ID:</strong> {data.vacant_id || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Tutor Name:</strong> {data.tutor_name || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Tutor ID:</strong> {data.tutor_id || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Preferred Date:</strong> {formattedDate}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Day:</strong> {data.day_of_week || "—"}</p>
-                    </div>
-                    <div className="col-md-6">
-                        <p><strong>Time:</strong> {data.formatted_time || "—"}</p>
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Assigned Wise Owl</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.tutor_name || "—"}
+                                readOnly
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* --- Summary Notice --- */}
-            <div className="alert alert-info mt-4">
-                <p className="mb-0">
-                    Please review the details above before submitting your appointment.
-                    If something looks incorrect, click <strong>Back</strong> to make changes.
-                </p>
+                {/* Date, Time, Day (3 Columns for visual balance) */}
+                <div className="row g-3">
+                    <div className="col-md-4">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Date</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={formattedDate}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Day</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.day_of_week || "—"}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Time</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.formatted_time || "—"}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Technical IDs */}
+                <div className="row g-3">
+                    <div className="col-md-6">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Tutor ID</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.tutor_id || "—"}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                    <div className="col-md-6">
+                        <div className="custom-border-label-group">
+                            <label className="form-label custom-border-label">Vacant Slot ID</label>
+                            <input
+                                type="text"
+                                className="form-control custom-input"
+                                value={data.vacant_id || "—"}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- Summary Notice --- */}
+                <div className="alert alert-info mt-2 shadow-sm">
+                    <p className="mb-0 small">
+                        <strong>Ready to lock it in?</strong> Give everything a final look.
+                        If a feather is out of place, click <strong>Back</strong> to fix it. 
+                        Otherwise, click <strong>Finish</strong> to confirm your appointment!
+                    </p>
+                </div>
             </div>
         </div>
     );
