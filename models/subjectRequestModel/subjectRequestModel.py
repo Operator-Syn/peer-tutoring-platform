@@ -6,6 +6,7 @@ class SubjectRequest(db.Model):
     request_id = db.Column(db.BigInteger, primary_key=True)
     requester_id = db.Column(db.String(32), db.ForeignKey("tutee.id_number"), nullable=False)
     subject_code = db.Column(db.String(32), nullable=False)
+    subject_name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="PENDING")
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())

@@ -230,6 +230,9 @@ def get_admin_statistics():
         cursor.execute("SELECT COUNT(*) FROM course")
         total_courses = cursor.fetchone()[0]
 
+        cursor.execute("SELECT COUNT(*) FROM appointment WHERE status IN ('PENDING', 'BOOKED')")
+        active_sessions = cursor.fetchone()[0]
+
         statistics = {
             "total_applications": total_applications,
             "pending": pending or 0,
@@ -238,7 +241,7 @@ def get_admin_statistics():
             "total_tutors": total_tutors,
             "total_tutees": total_tutees,
             "total_courses": total_courses,
-            "active_sessions": 0
+            "active_sessions": active_sessions
         }
 
         cursor.close()
@@ -325,7 +328,6 @@ def get_subject_requests():
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 5))
         status = request.args.get("status", "all")
-        
         offset = (page - 1) * limit
         params = []
         where_clause = ""
@@ -342,15 +344,9 @@ def get_subject_requests():
 
         query = f"""
             SELECT 
-                sr.request_id, 
-                sr.requester_id, 
-                sr.subject_code, 
-                sr.description, 
-                sr.status, 
-                sr.created_at,
-                t.first_name, 
-                t.last_name,
-                ua.role
+                sr.request_id, sr.requester_id, sr.subject_code, sr.subject_name,
+                sr.description, sr.status, sr.created_at,
+                t.first_name, t.last_name, ua.role
             FROM subject_request sr
             JOIN tutee t ON sr.requester_id = t.id_number
             JOIN user_account ua ON t.google_id = ua.google_id
@@ -375,14 +371,14 @@ def get_subject_requests():
         }), 200
 
     except Exception as e:
-        print("Error fetching subject requests:", e)
         return jsonify({"success": False, "error": str(e)}), 500
-    
+
 @admin_dashboard_bp.route("/api/admin/subject-requests/<int:request_id>/resolve", methods=["PUT"])
 def resolve_subject_request(request_id):
     data = request.get_json()
     action = data.get("action")
-    final_code_input = data.get("final_code", "").strip() 
+    final_code = data.get("final_code", "").strip()
+    final_name = data.get("final_name", "").strip()
     
     if action not in ['APPROVE', 'REJECT']:
         return jsonify({"success": False, "error": "Invalid action"}), 400
@@ -393,32 +389,24 @@ def resolve_subject_request(request_id):
         
         status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
         
-        if status == 'APPROVED' and final_code_input:
-             cur.execute("""
+        if status == 'APPROVED':
+            if not final_code or not final_name:
+                 return jsonify({"success": False, "error": "Code and Name are required for approval"}), 400
+
+            cur.execute("""
                 UPDATE subject_request 
-                SET status = %s, subject_code = %s 
+                SET status = %s, subject_code = %s, subject_name = %s 
                 WHERE request_id = %s
-            """, (status, final_code_input, request_id))
+            """, (status, final_code, final_name, request_id))
+            
+            cur.execute("""
+                INSERT INTO course (course_code, course_name) 
+                VALUES (%s, %s) 
+                ON CONFLICT (course_code) DO NOTHING
+            """, (final_code, final_name))
+            
         else:
             cur.execute("UPDATE subject_request SET status = %s WHERE request_id = %s", (status, request_id))
-        
-        if status == 'APPROVED':
-            subject_to_add = final_code_input
-            if not subject_to_add:
-                cur.execute("SELECT subject_code FROM subject_request WHERE request_id = %s", (request_id,))
-                row = cur.fetchone()
-                if row:
-                    subject_to_add = row[0]
-            
-            if subject_to_add:
-                subjects = [s.strip().upper() for s in subject_to_add.replace(';', ',').split(',') if s.strip()]
-                
-                for sub in subjects:
-                    cur.execute("""
-                        INSERT INTO course (course_code, course_name) 
-                        VALUES (%s, %s) 
-                        ON CONFLICT (course_code) DO NOTHING
-                    """, (sub, sub))
 
         conn.commit()
         cur.close()

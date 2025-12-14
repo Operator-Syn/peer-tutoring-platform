@@ -12,6 +12,7 @@ export default function FillOut({ data, update }) {
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [requestSubject, setRequestSubject] = useState('');
+    const [requestName, setRequestName] = useState('');
     const [requestReason, setRequestReason] = useState('');
     
     const [showToast, setShowToast] = useState(false);
@@ -85,8 +86,11 @@ export default function FillOut({ data, update }) {
     };
 
     const handleInitialSubmit = () => {
-        if (!requestSubject.trim()) {
-            triggerToast("Subject name is required", "danger");
+        const subjectTrimmed = requestSubject ? requestSubject.trim() : '';
+        const nameTrimmed = requestName ? requestName.trim() : '';
+        
+        if (!subjectTrimmed || !nameTrimmed) {
+            triggerToast("Course Code and Course Name are required", "danger");
             return;
         }
         setShowRequestModal(false);
@@ -100,6 +104,7 @@ export default function FillOut({ data, update }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     subject_code: requestSubject,
+                    subject_name: requestName,
                     description: requestReason
                 })
             });
@@ -109,6 +114,7 @@ export default function FillOut({ data, update }) {
                 triggerToast("Request submitted successfully!", "success");
                 setShowConfirmModal(false);
                 setRequestSubject('');
+                setRequestName('');
                 setRequestReason('');
             } else {
                 triggerToast(result.error || "Failed to submit request", "danger");
@@ -121,6 +127,17 @@ export default function FillOut({ data, update }) {
 
     const cancelConfirmation = () => {
         setShowConfirmModal(false);
+        setShowRequestModal(true);
+    };
+
+    const resetRequestForm = () => {
+        setRequestSubject('');
+        setRequestName('');
+        setRequestReason('');
+    };
+
+    const openRequestModal = () => {
+        resetRequestForm();
         setShowRequestModal(true);
     };
 
@@ -216,7 +233,7 @@ export default function FillOut({ data, update }) {
                         <label className="form-label custom-border-label static-label">Subject Code to Avail Tutoring</label>
                         <button 
                             className="cant-find-course-link"
-                            onClick={() => setShowRequestModal(true)}
+                            onClick={openRequestModal}
                         >
                             Can't find your course?
                         </button>
@@ -262,17 +279,30 @@ export default function FillOut({ data, update }) {
 
             <ModalComponent 
                 show={showRequestModal}
-                onHide={() => setShowRequestModal(false)}
+                onHide={() => {
+                    setShowRequestModal(false);
+                    resetRequestForm();
+                }}
                 title="Request a New Subject"
                 body={
                     <Form>
                         <Form.Group className="mb-3">
-                            <Form.Label className="custom-form-label">Subject Code / Name</Form.Label>
+                            <Form.Label className="custom-form-label">Course Code</Form.Label>
                             <Form.Control 
                                 type="text" 
                                 placeholder="e.g. CSC 101" 
                                 value={requestSubject} 
                                 onChange={(e) => setRequestSubject(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Course Name</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                placeholder="e.g. Introduction to Computing" 
+                                value={requestName} 
+                                onChange={(e) => setRequestName(e.target.value)}
                                 className="custom-form-input"
                             />
                         </Form.Group>
@@ -306,7 +336,8 @@ export default function FillOut({ data, update }) {
                     <div className="custom-confirm-body">
                         <p>Are you sure you want to submit this request?</p>
                         <div className="custom-summary-box p-3 bg-light rounded">
-                            <p><strong>Subject:</strong> {requestSubject}</p>
+                            <p><strong>Code:</strong> {requestSubject}</p>
+                            <p><strong>Name:</strong> {requestName}</p>
                             {requestReason && <p><strong>Reason:</strong> {requestReason}</p>}
                         </div>
                     </div>

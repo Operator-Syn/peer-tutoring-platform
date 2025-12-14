@@ -11,10 +11,11 @@ def request_subject():
 
     data = request.get_json()
     subject_code = data.get("subject_code", "").strip()
+    subject_name = data.get("subject_name", "").strip()
     description = data.get("description", "").strip()
 
-    if not subject_code:
-        return jsonify({"error": "Subject code is required"}), 400
+    if not subject_code or not subject_name:
+        return jsonify({"error": "Both Subject Code and Course Name are required."}), 400
 
     conn = get_connection()
     cur = conn.cursor()
@@ -29,9 +30,9 @@ def request_subject():
         requester_id = row[0]
 
         cur.execute("""
-            INSERT INTO subject_request (requester_id, subject_code, description, status)
-            VALUES (%s, %s, %s, 'PENDING')
-        """, (requester_id, subject_code, description))
+            INSERT INTO subject_request (requester_id, subject_code, subject_name, description, status)
+            VALUES (%s, %s, %s, %s, 'PENDING')
+        """, (requester_id, subject_code, subject_name, description))
         
         conn.commit()
         return jsonify({"message": "Request submitted successfully"}), 201

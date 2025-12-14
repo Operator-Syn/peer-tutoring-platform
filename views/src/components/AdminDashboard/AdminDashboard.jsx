@@ -13,7 +13,10 @@ const AdminDashboard = () => {
   } = useAdminDashboardData();
 
   const [showActionModal, setShowActionModal] = useState(false);
-  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [], finalCode: '', details: null });
+  const [actionData, setActionData] = useState({ 
+      type: '', id: null, title: '', noteRequired: false, targetStatus: '', 
+      files: [], finalCode: '', finalName: '', details: null 
+  });
   const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
@@ -40,7 +43,7 @@ const AdminDashboard = () => {
   };
 
   const openActionModal = (actionType, item, targetStatus) => {
-    let title = "", noteRequired = false, id = null, files = [], finalCode = "", details = null;
+    let title = "", noteRequired = false, id = null, files = [], finalCode = "", finalName = "", details = null;
     
     if (actionType === 'USER') {
         id = item.google_id;
@@ -62,10 +65,11 @@ const AdminDashboard = () => {
         } else {
             title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request`;
             finalCode = item.subject_code; 
+            finalName = item.subject_name;
         }
     }
     
-    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode, details });
+    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode, finalName, details });
     setActionNote('');
     setShowActionModal(true);
   };
@@ -90,7 +94,8 @@ const AdminDashboard = () => {
         apiAction = 'RESOLVE_REQUEST';
         payload = { 
             action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT',
-            final_code: actionData.finalCode 
+            final_code: actionData.finalCode,
+            final_name: actionData.finalName
         };
     }
     
@@ -315,7 +320,10 @@ const AdminDashboard = () => {
                                             <div className="admin-sub">{req.requester_id}</div>
                                         </td>
                                         <td><span className="admin-role-badge">{req.role}</span></td>
-                                        <td><div className="admin-bold">{req.subject_code}</div></td>
+                                        <td>
+                                            <div className="admin-bold">{req.subject_code}</div>
+                                            <div className="admin-text-muted small">{req.subject_name}</div>
+                                        </td>
                                         <td>
                                             <span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span>
                                             <div className="admin-text-muted admin-req-date-text mt-1">{req.created_at}</div>
@@ -349,6 +357,7 @@ const AdminDashboard = () => {
             {actionData.targetStatus === 'VIEW' && actionData.details && (
                 <div className="admin-details-view">
                     <p><strong>Subject Code:</strong> {actionData.details.subject_code}</p>
+                    <p><strong>Course Name:</strong> {actionData.details.subject_name}</p>
                     <p><strong>Reason/Description:</strong></p>
                     <div className="p-2 bg-light rounded mb-2">{actionData.details.description || "No description provided."}</div>
                     <p className="mb-0"><small className="text-muted">Requested by {actionData.details.first_name} {actionData.details.last_name} ({actionData.details.requester_id}) on {actionData.details.created_at}</small></p>
@@ -369,18 +378,22 @@ const AdminDashboard = () => {
             )}
             
             {actionData.type === 'REQUEST' && actionData.targetStatus === 'APPROVE' && (
-                <Form.Group className="mb-3">
-                    <Form.Label className="admin-fw-bold">Confirm Course Code:</Form.Label>
-                    <Form.Control 
-                        type="text" 
-                        value={actionData.finalCode} 
-                        onChange={(e) => setActionData({...actionData, finalCode: e.target.value})}
-                        placeholder="e.g. MATH 101"
-                    />
-                    <Form.Text className="text-muted">
-                        Edit this to correct the format before adding to the database. Separate multiple subjects with a comma.
-                    </Form.Text>
-                </Form.Group>
+                <>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="admin-fw-bold">Confirm Course Code:</Form.Label>
+                        <Form.Control 
+                            type="text" value={actionData.finalCode} 
+                            onChange={(e) => setActionData({...actionData, finalCode: e.target.value})}
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="admin-fw-bold">Confirm Course Name:</Form.Label>
+                        <Form.Control 
+                            type="text" value={actionData.finalName} 
+                            onChange={(e) => setActionData({...actionData, finalName: e.target.value})}
+                        />
+                    </Form.Group>
+                </>
             )}
 
             {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} /></Form.Group>}
