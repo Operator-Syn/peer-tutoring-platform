@@ -76,3 +76,18 @@ def get_notes(tutor_id):
         return jsonify(notes), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@notes_sharing.route("/courses/<tutor_id>")
+def get_courses(tutor_id):
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT course_code FROM teaches WHERE tutor_id = %s ORDER BY course_code",
+                    (tutor_id,)
+                )
+                courses = [row[0] for row in cursor.fetchall()]
+        return jsonify({"courses": courses})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -137,7 +137,7 @@ export default function UploadNotes() {
 
     const retrieveCourses = async (search='') => {
         // Fetch courses from API or database
-        const result = await fetch(`${API_URL}/api/tutor-list/courses?search=${encodeURIComponent(search)}`);
+        const result = await fetch(`${API_URL}/api/notes-sharing/courses/${tutorId}`);
         const data = await result.json();
         setCourses((data.courses || []).map(c => ({ value: c, label: c })));
     }
