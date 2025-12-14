@@ -5,6 +5,7 @@ export default function TutorNotesList({ tutorId }) {
 
     const [notesPosts, setNotesPosts] = useState([]);
     const [visibleCount, setVisibleCount] = useState(14);
+    const [isOwnProfile, setIsOwnProfile] = useState(false);
     const listRef = useRef(null);
 
     const fetchNotesPosts = async () => {
@@ -32,6 +33,17 @@ export default function TutorNotesList({ tutorId }) {
 
     useEffect(() => {
         fetchNotesPosts();
+
+        // Check if viewing own profile
+        const checkOwnProfile = async () => {
+            const resUser = await fetch(`/api/notes-sharing/isProfileOwner/${tutorId}`, { credentials: 'include' });
+            if (resUser.ok) {
+                const userData = await resUser.json();
+                setIsOwnProfile(userData.is_owner);
+                console.log("Is own profile:", userData.is_owner);
+            }
+        };
+        checkOwnProfile();
     }, []);
 
     return (

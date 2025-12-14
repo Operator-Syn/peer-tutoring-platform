@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from utils.db import get_connection
 from utils.supabase_client import upload_file
 from psycopg2.extras import RealDictCursor
@@ -91,3 +91,35 @@ def get_courses(tutor_id):
         return jsonify({"courses": courses})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@notes_sharing.route("/isProfileOwner/<tutor_id>", methods=['GET'])
+def is_profile_owner(tutor_id):
+    user_google_id = session.get('user', {}).get('sub')
+    if not user_google_id:
+        return jsonify({"is_owner": False}), 200
+
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                # Get the tutee's id_number using the google_id
+                cursor.execute("SELECT id_number FROM tutee WHERE google_id = %s", (user_google_id,))
+                result = cursor.fetchone()
+                is_owner = result is not None and str(result[0]) == str(tutor_id)
+        return jsonify({"is_owner": is_owner}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# @notes_sharing.route("/delete-note/<note_id>", methods=['DELETE'])
+# def delete_note(note_id):
+#     try:
+#         conn = get_connection()
+#         with conn:
+#             with conn.cursor() as cursor:
+#                 cursor.execute("DELETE FROM posted_notes WHERE posted_note_id = %s", (note_id,))
+#                 if cursor.rowcount == 0:
+#                     return jsonify({"error": "Note not found"}), 404
+#         return jsonify({"message": "Note deleted successfully."}), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
