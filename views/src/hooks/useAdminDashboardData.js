@@ -16,6 +16,7 @@ export const useAdminDashboardData = () => {
     const [collegeFilter, setCollegeFilter] = useState('all');
     const [yearFilter, setYearFilter] = useState('all');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [reportedFilter, setReportedFilter] = useState('all');
 
     const setStatusFilterWithReset = (value) => {
         setStatusFilter(value);
@@ -42,6 +43,11 @@ export const useAdminDashboardData = () => {
         setPage(1);
     };
 
+    const setReportedFilterWithReset = (value) => {
+        setReportedFilter(value);
+        setPage(1);
+    };
+
     const setActiveTab = (newTab) => {
         if (newTab === activeTab) return;
         setActiveTabState(newTab);
@@ -52,6 +58,7 @@ export const useAdminDashboardData = () => {
         setCollegeFilter('all');
         setYearFilter('all');
         setRoleFilter('all');
+        setReportedFilter('all');
         setPage(1);
         setLoading(true);
     };
@@ -87,6 +94,7 @@ export const useAdminDashboardData = () => {
             } else if (activeTab === 'users') {
                 endpoint = '/api/tutor-applications/admin/users';
                 params.append('role', roleFilter);
+                params.append('reported', reportedFilter);
             } else if (activeTab === 'appeals') {
                 endpoint = '/api/appeals/all';
             } else if (activeTab === 'requests') {
@@ -108,7 +116,7 @@ export const useAdminDashboardData = () => {
         } finally {
             setLoading(false);
         }
-    }, [activeTab, page, limit, search, statusFilter, sortBy, collegeFilter, yearFilter, roleFilter]);
+    }, [activeTab, page, limit, search, statusFilter, sortBy, collegeFilter, yearFilter, roleFilter, reportedFilter]);
 
     useEffect(() => {
         fetchData();
@@ -165,7 +173,8 @@ export const useAdminDashboardData = () => {
             sort: sortBy, setSort: setSortByWithReset,
             college: collegeFilter, setCollege: setCollegeFilter,
             year: yearFilter, setYear: setYearFilterWithReset,
-            role: roleFilter, setRole: setRoleFilterWithReset
+            role: roleFilter, setRole: setRoleFilterWithReset,
+            reported: reportedFilter, setReported: setReportedFilterWithReset
         },
         pagination,
         actions: { handleAction, refresh: fetchData }

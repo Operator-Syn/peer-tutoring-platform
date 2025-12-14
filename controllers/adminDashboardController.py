@@ -121,6 +121,7 @@ def get_all_users_for_admin():
         search = request.args.get("search", "").strip()
         role = request.args.get("role", "all")
         status = request.args.get("status", "all")
+        reported = request.args.get("reported", "all")
         sort_by = request.args.get("sort_by", "name_asc")
         
         offset = (page - 1) * limit
@@ -135,6 +136,11 @@ def get_all_users_for_admin():
         if status != "all":
             where_clauses.append("ua.status = %s")
             params.append(status)
+
+        if reported == "yes":
+            where_clauses.append("(SELECT COUNT(*) FROM report r WHERE r.reported_id = t.id_number AND r.status = 'PENDING') > 0")
+        elif reported == "no":
+            where_clauses.append("(SELECT COUNT(*) FROM report r WHERE r.reported_id = t.id_number AND r.status = 'PENDING') = 0")
 
         if search:
             where_clauses.append("(ua.email ILIKE %s OR t.first_name ILIKE %s OR t.last_name ILIKE %s)")

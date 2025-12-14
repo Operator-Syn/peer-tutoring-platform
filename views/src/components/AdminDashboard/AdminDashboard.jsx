@@ -181,9 +181,14 @@ const AdminDashboard = () => {
                 )}
 
                 {activeTab === 'users' && (
+                    <>
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
                         <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
                     </select>
+                    <select className="admin-form-select admin-filter-dropdown" value={filters.reported} onChange={(e) => filters.setReported(e.target.value)}>
+                        <option value="all">All Users</option><option value="yes">Reported Only</option><option value="no">No Reports</option>
+                    </select>
+                    </>
                 )}
             </div>
 
