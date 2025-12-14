@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-
+import { useLocation } from "react-router-dom";
 import "./Report.css";
 
 import { ToastContainer, toast } from "react-toastify";
@@ -8,10 +8,12 @@ import "react-toastify/dist/ReactToastify.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Report() {
+  const location = useLocation();
+
   const [selectedReasons, setSelectedReasons] = useState([]);
   const [description, setDescription] = useState("");
   const [name, setName] = useState("");
-const fileInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [showOptions, setShowOptions] = useState(false);
   const [nameOptions, setNameOptions] = useState([]);
@@ -37,7 +39,6 @@ const fileInputRef = useRef(null);
     "Other",
   ];
 
-  // ✅ one consistent toast config for this page
   const toastOpts = {
     position: "top-right",
     autoClose: 2500,
@@ -52,6 +53,27 @@ const fileInputRef = useRef(null);
     );
   }, [nameOptions, name]);
 
+  // ✅ Prefill name from navigation state: navigate("/report", { state: { prefilledName: "..." } })
+  // Wait for nameToIdMap to exist so we can auto-map name -> id
+  useEffect(() => {
+    if (location.state?.prefilledName && Object.keys(nameToIdMap).length > 0) {
+      const prefilledName = location.state.prefilledName;
+
+      setName(prefilledName);
+
+      if (nameToIdMap[prefilledName]) {
+        // prevent self-report
+        if (nameToIdMap[prefilledName] === tuteeId) {
+          setReportedId("");
+          toast.warning("You can’t report yourself.", toastOpts);
+        } else {
+          setReportedId(nameToIdMap[prefilledName]);
+        }
+      }
+    }
+  }, [location.state, nameToIdMap, tuteeId]);
+
+  // 1) Get all tutees → build name list & map fullName -> id_number (excluding self)
   useEffect(() => {
     const fetchTutees = async () => {
       try {
@@ -96,6 +118,7 @@ const fileInputRef = useRef(null);
     fetchTutees();
   }, [tuteeId]);
 
+  // 2) Get logged in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -124,14 +147,16 @@ const fileInputRef = useRef(null);
     fetchUser();
   }, []);
 
+  // 3) Get tuteeId from google id
   useEffect(() => {
     const fetchTuteeId = async () => {
       if (!userGoogleId || !API_BASE_URL) return;
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`, {
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/tutee/by_google/${userGoogleId}`,
+          { credentials: "include" }
+        );
 
         if (!res.ok) {
           console.error("by_google failed:", res.status, await res.text());
@@ -210,19 +235,17 @@ const fileInputRef = useRef(null);
       if (!res.ok) throw new Error(data.error || "Failed to submit report");
 
       toast.success(
-  `Report submitted successfully! Uploaded ${data?.file_urls?.length || 0} file(s).`,
-  toastOpts
-);
+        `Report submitted successfully! Uploaded ${data?.file_urls?.length || 0} file(s).`,
+        toastOpts
+      );
 
-setSelectedReasons([]);
-setDescription("");
-setName("");
-setReportedId("");
-setFiles([]);
+      setSelectedReasons([]);
+      setDescription("");
+      setName("");
+      setReportedId("");
+      setFiles([]);
 
-
-if (fileInputRef.current) fileInputRef.current.value = "";
-
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
       console.error("Report submission error:", err);
       toast.error(err.message || "Error submitting report. Please try again.", toastOpts);
@@ -241,7 +264,6 @@ if (fileInputRef.current) fileInputRef.current.value = "";
           <span className="ms-2">Loading report form...</span>
         </div>
 
-        {/* Toasts still mount even on loading screen */}
         <ToastContainer newestOnTop limit={2} theme="light" />
       </div>
     );
@@ -249,7 +271,6 @@ if (fileInputRef.current) fileInputRef.current.value = "";
 
   return (
     <div className="spacing">
-      {/* ✅ Global toast container for this page */}
       <ToastContainer newestOnTop limit={2} theme="light" />
 
       <div className="container my-5 mt-0 p-5">
@@ -285,7 +306,10 @@ if (fileInputRef.current) fileInputRef.current.value = "";
                   </div>
 
                   <div className="mt-4 w-100">
-                    <label htmlFor="description" className="form-label fw-semibold report-label">
+                    <label
+                      htmlFor="description"
+                      className="form-label fw-semibold report-label"
+                    >
                       Description
                     </label>
                     <textarea
@@ -299,18 +323,20 @@ if (fileInputRef.current) fileInputRef.current.value = "";
                   </div>
 
                   <div className="mt-3 w-100">
-                    <label htmlFor="reportFiles" className="form-label fw-semibold report-label">
+                    <label
+                      htmlFor="reportFiles"
+                      className="form-label fw-semibold report-label"
+                    >
                       Attach files (optional)
                     </label>
-                   <input
-  id="reportFiles"
-  type="file"
-  className="form-control"
-  multiple
-  ref={fileInputRef}
-  onChange={handleFileChange}
-/>
-
+                    <input
+                      id="reportFiles"
+                      type="file"
+                      className="form-control"
+                      multiple
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                    />
 
                     {files.length > 0 && (
                       <ul className="mt-2 small text-muted">
@@ -322,7 +348,10 @@ if (fileInputRef.current) fileInputRef.current.value = "";
                   </div>
 
                   <div className="mt-3 w-100 position-relative">
-                    <label htmlFor="fullName" className="form-label fw-semibold report-label">
+                    <label
+                      htmlFor="fullName"
+                      className="form-label fw-semibold report-label"
+                    >
                       Name of the reported person
                     </label>
 

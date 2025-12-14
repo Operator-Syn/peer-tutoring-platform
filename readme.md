@@ -82,3 +82,14 @@ FLASK_DEBUG=1
    ```bash
    flask run
    ```
+
+OR
+
+## ❓ How to get started?
+
+1. After setting your .env variables, config.py and client_secret.json at the project root.
+
+2. Run the python script:
+   ```bash
+   python3 setup.py
+   ```

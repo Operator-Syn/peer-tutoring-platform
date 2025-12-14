@@ -3,9 +3,6 @@ from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
-# 👉 import the model + custom error
-
-
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
@@ -43,9 +40,12 @@ def get_pending_requests(tutor_id):
     conn.close()
 
     for r in results:
-        r["appointment_date"] = r["appointment_date"].isoformat()
-        r["start_time"] = r["start_time"].strftime("%H:%M")
-        r["end_time"] = r["end_time"].strftime("%H:%M")
+        if r.get("appointment_date"):
+            r["appointment_date"] = r["appointment_date"].isoformat()
+        if r.get("start_time"):
+            r["start_time"] = r["start_time"].strftime("%H:%M")
+        if r.get("end_time"):
+            r["end_time"] = r["end_time"].strftime("%H:%M")
         if r.get("day_of_week"):
             r["day_of_week"] = r["day_of_week"].strip()
 
@@ -64,10 +64,18 @@ def update_appointment_status(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info
+        # ✅ Fetch appointment info INCLUDING appointment_date
+        # Needed so we only cancel competitors for this exact date (not other days)
         cur.execute(
             """
-            SELECT a.vacant_id, a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT 
+                a.vacant_id,
+                a.tutee_id,
+                a.course_code,
+                a.appointment_date,
+                av.tutor_id,
+                av.start_time,
+                av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -79,9 +87,9 @@ def update_appointment_status(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        vacant_id, tutee_id, course_code, tutor_id, start_time, end_time = appt
+        vacant_id, tutee_id, course_code, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update the appointment status
+        # ✅ Update the appointment status
         cur.execute(
             """
             UPDATE appointment
@@ -91,8 +99,22 @@ def update_appointment_status(appointment_id):
             (new_status, appointment_id),
         )
 
-        # If the status is BOOKED, log in history and send notification
+        # ✅ If BOOKED, cancel competitors + log + notify
         if new_status == "BOOKED":
+            # A) Auto-decline competitors on same slot + same date
+            cur.execute(
+                """
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+                """,
+                (vacant_id, appointment_date, appointment_id),
+            )
+
+            # B) Log history
             cur.execute(
                 """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
@@ -101,6 +123,7 @@ def update_appointment_status(appointment_id):
                 (tutor_id, tutee_id, start_time, end_time, course_code),
             )
 
+            # C) Notify
             cur.execute(
                 """
                 INSERT INTO notifications (tutor_id, tutee_id)
@@ -110,14 +133,7 @@ def update_appointment_status(appointment_id):
             )
 
         conn.commit()
-        return (
-            jsonify(
-                {
-                    "message": f"Appointment {appointment_id} updated to {new_status}!"
-                }
-            ),
-            200,
-        )
+        return jsonify({"message": f"Appointment {appointment_id} updated to {new_status}!"}), 200
 
     except Exception as e:
         conn.rollback()
@@ -187,17 +203,9 @@ def search_requests():
                     TO_CHAR(a.appointment_date, 'YYYY-MM-DD') ILIKE %s
                 )
             """
-
-            sql = (
-                base_select
-                + search_filter
-                + " ORDER BY a.appointment_date, av.start_time"
-            )
+            sql = base_select + search_filter + " ORDER BY a.appointment_date, av.start_time"
             like = f"%{query}%"
-            cur.execute(
-                sql, (tutor_id, like, like, like, like, like, like)
-            )
-
+            cur.execute(sql, (tutor_id, like, like, like, like, like, like))
         else:
             sql = base_select + " ORDER BY a.appointment_date, av.start_time"
             cur.execute(sql, (tutor_id,))
@@ -205,11 +213,11 @@ def search_requests():
         results = cur.fetchall()
 
         for r in results:
-            if r["appointment_date"]:
+            if r.get("appointment_date"):
                 r["appointment_date"] = r["appointment_date"].isoformat()
-            if r["start_time"]:
+            if r.get("start_time"):
                 r["start_time"] = r["start_time"].strftime("%H:%M")
-            if r["end_time"]:
+            if r.get("end_time"):
                 r["end_time"] = r["end_time"].strftime("%H:%M")
 
         return jsonify(results)
@@ -254,9 +262,12 @@ def get_appointments(tutor_id):
     conn.close()
 
     for row in results:
-        row["appointment_date"] = row["appointment_date"].isoformat()
-        row["start_time"] = row["start_time"].strftime("%H:%M")
-        row["end_time"] = row["end_time"].strftime("%H:%M")
+        if row.get("appointment_date"):
+            row["appointment_date"] = row["appointment_date"].isoformat()
+        if row.get("start_time"):
+            row["start_time"] = row["start_time"].strftime("%H:%M")
+        if row.get("end_time"):
+            row["end_time"] = row["end_time"].strftime("%H:%M")
 
     return jsonify(results)
 
@@ -271,15 +282,9 @@ def clear_appointment(appointment_id):
     cur = conn.cursor()
 
     try:
-        cur.execute(
-            "DELETE FROM appointment WHERE appointment_id = %s",
-            (appointment_id,),
-        )
+        cur.execute("DELETE FROM appointment WHERE appointment_id = %s", (appointment_id,))
         conn.commit()
-        return (
-            jsonify({"message": f"Appointment {appointment_id} cleared"}),
-            200,
-        )
+        return jsonify({"message": f"Appointment {appointment_id} cleared"}), 200
 
     except Exception as e:
         conn.rollback()
@@ -310,10 +315,17 @@ def update_appointment_status_and_log(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info first (including tutor_id from availability)
+        # ✅ Include vacant_id + appointment_date so we can auto-cancel competitors
         cur.execute(
             """
-            SELECT a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT 
+                a.tutee_id,
+                a.course_code,
+                a.vacant_id,
+                a.appointment_date,
+                av.tutor_id,
+                av.start_time,
+                av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -325,9 +337,9 @@ def update_appointment_status_and_log(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, course_code, tutor_id, start_time, end_time = appt
+        tutee_id, course_code, vacant_id, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update appointment status
+        # 2) Update target status
         cur.execute(
             """
             UPDATE appointment
@@ -337,8 +349,8 @@ def update_appointment_status_and_log(appointment_id):
             (new_status, appointment_id),
         )
 
-        # Log to history table if accepted
         if new_status == "BOOKED":
+            # A) Log history
             cur.execute(
                 """
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
@@ -347,20 +359,40 @@ def update_appointment_status_and_log(appointment_id):
                 (tutor_id, tutee_id, start_time, end_time, course_code),
             )
 
-        # Insert notification with action column
-        cur.execute(
-            """
-            INSERT INTO notifications (tutor_id, tutee_id, action)
-            VALUES (%s, %s, %s)
-            """,
-            (tutor_id, tutee_id, new_status),
-        )
+            # B) Notify winner
+            cur.execute(
+                """
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+                """,
+                (tutor_id, tutee_id, new_status),
+            )
+
+            # C) Auto-decline competitors
+            cur.execute(
+                """
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+                """,
+                (vacant_id, appointment_date, appointment_id),
+            )
+
+        elif new_status == "CANCELLED":
+            # Notify declined
+            cur.execute(
+                """
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+                """,
+                (tutor_id, tutee_id, new_status),
+            )
 
         conn.commit()
-        return (
-            jsonify({"message": f"Appointment {new_status} successfully!"}),
-            200,
-        )
+        return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
 
     except Exception as e:
         conn.rollback()
@@ -370,6 +402,8 @@ def update_appointment_status_and_log(appointment_id):
     finally:
         cur.close()
         conn.close()
+
+
 @requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
 def finish_appointment(appointment_id):
     """
@@ -379,7 +413,7 @@ def finish_appointment(appointment_id):
     cur = conn.cursor()
 
     try:
-        # 1) Get all needed info while appointment still exists
+        # 1) Get info while appointment still exists
         cur.execute(
             """
             SELECT
@@ -413,11 +447,8 @@ def finish_appointment(appointment_id):
             (appointment_id, tutee_id, tutor_id, course_code, appointment_date, start_time, end_time),
         )
 
-        # 3) Delete appointment after saving snapshot
-        cur.execute(
-            "DELETE FROM appointment WHERE appointment_id = %s",
-            (appointment_id,),
-        )
+        # 3) Delete appointment
+        cur.execute("DELETE FROM appointment WHERE appointment_id = %s", (appointment_id,))
 
         conn.commit()
         return jsonify({"message": "Finished: saved to session_rating then deleted appointment."}), 200

@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./appointments.css";
 import placeholderImage from "../../assets/images/placeholders/placeholderImage.jpeg";
-
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useRoleRedirect } from "../../hooks/useRoleRedirect";
 
 function Appointments() {
+  useRoleRedirect("TUTOR");
+
   const [rows, setRows] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [selectedApp, setSelectedApp] = useState(null);
+
   const [tutorId, setTutorId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +24,6 @@ function Appointments() {
   const [activePage, setActivePage] = useState("appointments");
   const [loading, setLoading] = useState(true);
 
-  // ✅ consistent toast config
   const toastOpts = {
     position: "top-right",
     autoClose: 2500,
@@ -30,14 +32,10 @@ function Appointments() {
     draggable: true,
   };
 
-  // helper: check if appointment date is in the past
   const isPastAppointment = (appointmentDate) => {
     if (!appointmentDate) return false;
-
     const today = new Date();
     const appt = new Date(appointmentDate);
-
-    // treat whole day as valid; mark past only when day is strictly before today
     appt.setHours(23, 59, 59, 999);
     return appt < today;
   };
@@ -50,7 +48,6 @@ function Appointments() {
           credentials: "include",
         });
         if (!resUser.ok) {
-          // no alert/confirm -> just redirect or toast
           toast.error("Session expired. Redirecting to login...", toastOpts);
           window.location.href = "/api/auth/login";
           return;
@@ -203,18 +200,20 @@ function Appointments() {
         toastOpts
       );
 
-      // remove from pending list
-      setRows((prev) => prev.filter((r) => r.appointment_id !== appointment_id));
-      setAllRows((prev) =>
-        prev.filter((r) => r.appointment_id !== appointment_id)
-      );
+      // ✅ BEST: re-fetch pending so competitor cancellations also disappear
+      const resPending = await fetch(`/api/requests/pending/${tutorId}`, {
+        credentials: "include",
+      });
+      const pendingData = await resPending.json().catch(() => []);
+      setRows(pendingData);
+      setAllRows(pendingData);
 
       // refresh appointments list
       const resAppointments = await fetch(
         `/api/requests/appointments/${tutorId}`,
         { credentials: "include" }
       );
-      const appointmentsData = await resAppointments.json();
+      const appointmentsData = await resAppointments.json().catch(() => []);
       setAppointments(appointmentsData);
     } catch (err) {
       console.error(err);
@@ -222,7 +221,6 @@ function Appointments() {
     }
   };
 
-  // ✅ finish appointment without window.confirm/alert
   const finishAppointmentConfirmed = async (appointmentId) => {
     if (!appointmentId) {
       toast.error("Missing appointment ID.", toastOpts);
@@ -245,7 +243,6 @@ function Appointments() {
         return;
       }
 
-      // remove from appointments list in UI
       setAppointments((prev) =>
         prev.filter((a) => a.appointment_id !== appointmentId)
       );
@@ -308,7 +305,6 @@ function Appointments() {
         <div className="appointments-panel">
           <div
             className="container d-flex flex-column align-items-start justify-content-start py-4"
-
             style={{
               minHeight: "700px",
               marginTop: "140px",
@@ -317,11 +313,8 @@ function Appointments() {
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
             }}
           >
-            <div className="w-80 px-3 px-md-5"
-           >
-              <div className="text-start fw-bold display-5 mb-4 request-title"
-               
-            >
+            <div className="w-80 px-3 px-md-5">
+              <div className="text-start fw-bold display-5 mb-4 request-title">
                 Appointments
               </div>
             </div>
@@ -331,14 +324,9 @@ function Appointments() {
               style={{ backgroundColor: "transparent" }}
             >
               {appointments.length === 0 ? (
-                <p className="no-appointments"
-                style={{
-        
-              marginTop: "140px",
-        
-            
-            }}
-            >No appointments available.</p>
+                <p className="no-appointments" style={{ marginTop: "140px" }}>
+                  No appointments available.
+                </p>
               ) : (
                 <div className="appointments-scroll d-flex flex-wrap justify-content-center">
                   {appointments.map((app) => {
@@ -418,6 +406,7 @@ function Appointments() {
               </div>
             </div>
 
+            {/* Search */}
             <div
               className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 mb-3 gap-3 w-100"
               style={{ marginBottom: "200px" }}
@@ -474,6 +463,7 @@ function Appointments() {
               </div>
             </div>
 
+            {/* Pending rows */}
             <div
               className="appointments-scroll"
               style={{
@@ -731,7 +721,10 @@ function Appointments() {
             </p>
 
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <button className="btn my-no-btn" onClick={() => setShowConfirm(false)}>
+              <button
+                className="btn my-no-btn"
+                onClick={() => setShowConfirm(false)}
+              >
                 No
               </button>
               <button className="btn my-yes-btn" onClick={handleConfirmYes}>
