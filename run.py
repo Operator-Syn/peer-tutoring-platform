@@ -1,3 +1,6 @@
+import eventlet 
+eventlet.monkey_patch()
+
 from app import create_app, socketio
 
 # Create the app (Configurations are now applied inside create_app)
