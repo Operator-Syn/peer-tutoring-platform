@@ -14,6 +14,7 @@ import bigger_responsive from "../../assets/images/placeholders/bigger_response.
 import bigger_handshake from "../../assets/images/placeholders/bigger_handshake.png";
 import bigger_panctual from "../../assets/images/placeholders/bigger_panctual.png";
 import bigger_proficiency from "../../assets/images/placeholders/bigger_proficiency.png";
+import TutorNotesList from "../UploadNotes/TutorNotesList";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -1211,7 +1212,7 @@ useEffect(() => {
     </div>
   </div>
 )}
-
+  <TutorNotesList tutorId={tutor?.tutor_id} />
     </>
   );
 }
