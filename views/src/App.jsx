@@ -18,6 +18,7 @@ import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointm
 import Banned from "./pages/Banned"
 import TuteeList from "./pages/TuteeList/TuteeList";
 import UploadNotes from "./pages/UploadNotes/UploadNotes";
+import Calendar from "./pages/Calendar/Calendar";
 
 import Feedback from "./pages/profile/feedback"
 import TutorProfile from "./pages/Tutor/Tutorprofile";
@@ -53,6 +54,7 @@ function App() {
             <Route path ="banned" element={<Banned />} />
             <Route path="TuteeList" element={<TuteeList />} />
             <Route path="UploadNotes" element={<UploadNotes />} />
+            <Route path="Calendar" element={<Calendar />} />
             <Route path= "Feedback" element = {<Feedback/>}/>
 
           </Route>
