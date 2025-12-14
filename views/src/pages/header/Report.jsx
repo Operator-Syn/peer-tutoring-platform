@@ -74,49 +74,55 @@ function Report() {
   }, [location.state, nameToIdMap, tuteeId]);
 
   // 1) Get all tutees → build name list & map fullName -> id_number (excluding self)
-  useEffect(() => {
-    const fetchTutees = async () => {
-      try {
-        if (!API_BASE_URL) return;
+useEffect(() => {
+  const fetchTutees = async () => {
+    try {
+      if (!API_BASE_URL) return;
 
-        const res = await fetch(`${API_BASE_URL}/api/tutee/all`, {
-          credentials: "include",
+      const res = await fetch(`${API_BASE_URL}/api/tutee/all`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        console.error("tutee/all failed:", res.status, await res.text());
+        toast.error("Failed to load names list.", toastOpts);
+        return;
+      }
+
+      const data = await res.json();
+
+      const nameMap = {};
+      const names = data
+        .filter((t) => {
+          // ✅ Exclude self by ID if we have it
+          if (tuteeId) return t.id_number !== tuteeId;
+
+          // ✅ Fallback: exclude self by google_id (works even for tutors)
+          if (userGoogleId) return t.google_id !== userGoogleId;
+
+          // If we don't know who user is yet, don't filter
+          return true;
+        })
+        .map((tutee) => {
+          const fullName = [tutee.first_name, tutee.middle_name, tutee.last_name]
+            .filter(Boolean)
+            .join(" ");
+
+          if (fullName) nameMap[fullName] = tutee.id_number;
+          return fullName;
         });
 
-        if (!res.ok) {
-          console.error("tutee/all failed:", res.status, await res.text());
-          toast.error("Failed to load names list.", toastOpts);
-          return;
-        }
+      setNameOptions([...new Set(names)].filter(Boolean));
+      setNameToIdMap(nameMap);
+    } catch (err) {
+      console.error("Error fetching tutees:", err);
+      toast.error("Something went wrong while loading names.", toastOpts);
+    }
+  };
 
-        const data = await res.json();
+  fetchTutees();
+}, [tuteeId, userGoogleId]); // ✅ include userGoogleId dependency
 
-        const nameMap = {};
-        const names = data
-          .filter((t) => {
-            if (!tuteeId) return true;
-            return t.id_number !== tuteeId;
-          })
-          .map((tutee) => {
-            const fullName = [tutee.first_name, tutee.middle_name, tutee.last_name]
-              .filter(Boolean)
-              .join(" ");
-
-            if (fullName) nameMap[fullName] = tutee.id_number;
-            return fullName;
-          });
-
-        const uniqueNames = [...new Set(names)].filter(Boolean);
-        setNameOptions(uniqueNames);
-        setNameToIdMap(nameMap);
-      } catch (err) {
-        console.error("Error fetching tutees:", err);
-        toast.error("Something went wrong while loading names.", toastOpts);
-      }
-    };
-
-    fetchTutees();
-  }, [tuteeId]);
 
   // 2) Get logged in user
   useEffect(() => {
@@ -420,7 +426,8 @@ function Report() {
                       type="button"
                       className="btn btn-primary btn-lg px-4 report-confirm-btn"
                       onClick={handleConfirmClick}
-                      disabled={isSubmitting || !tuteeId}
+                      disabled={isSubmitting}
+
                     >
                       {isSubmitting ? "Submitting..." : "Confirm"}
                     </button>

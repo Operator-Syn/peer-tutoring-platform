@@ -171,55 +171,66 @@ function Appointments() {
     setPendingAction(null);
   };
 
-  const handleAction = async (appointment_id, action) => {
-    if (!tutorId) return;
+  
+const handleAction = async (appointment_id, action) => {
+  if (!tutorId) return;
 
-    try {
-      const res = await fetch(
-        `/api/requests/update-status-and-log/${appointment_id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action }),
-          credentials: "include",
-        }
-      );
-
-      const body = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        toast.error(
-          body?.error || `Failed to ${action} appointment (${res.status})`,
-          toastOpts
-        );
-        return;
+  try {
+    const res = await fetch(
+      `/api/requests/update-status-and-log/${appointment_id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+        credentials: "include",
       }
+    );
 
-      toast.success(
-        action === "accept" ? "Request accepted!" : "Request declined.",
+    const body = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      toast.error(
+        body?.error || `Failed to ${action} appointment`,
         toastOpts
       );
-
-      // ✅ BEST: re-fetch pending so competitor cancellations also disappear
-      const resPending = await fetch(`/api/requests/pending/${tutorId}`, {
-        credentials: "include",
-      });
-      const pendingData = await resPending.json().catch(() => []);
-      setRows(pendingData);
-      setAllRows(pendingData);
-
-      // refresh appointments list
-      const resAppointments = await fetch(
-        `/api/requests/appointments/${tutorId}`,
-        { credentials: "include" }
-      );
-      const appointmentsData = await resAppointments.json().catch(() => []);
-      setAppointments(appointmentsData);
-    } catch (err) {
-      console.error(err);
-      toast.error("Network error. Please try again.", toastOpts);
+      return;
     }
-  };
+
+    if (action === "accept") {
+      toast.success("Request accepted!", toastOpts);
+
+      // 🔥 NEW: duplicate availability notice
+      if (body.auto_cancelled > 0) {
+        toast.info(
+          `⚠️ ${body.auto_cancelled} other request(s) with the same schedule were automatically cancelled.`,
+          toastOpts
+        );
+      }
+    } else {
+      toast.success("Request declined.", toastOpts);
+    }
+
+    // refresh pending
+    const resPending = await fetch(`/api/requests/pending/${tutorId}`, {
+      credentials: "include",
+    });
+    const pendingData = await resPending.json().catch(() => []);
+    setRows(pendingData);
+    setAllRows(pendingData);
+
+    // refresh appointments
+    const resAppointments = await fetch(
+      `/api/requests/appointments/${tutorId}`,
+      { credentials: "include" }
+    );
+    const appointmentsData = await resAppointments.json().catch(() => []);
+    setAppointments(appointmentsData);
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Network error. Please try again.", toastOpts);
+  }
+};
 
   const finishAppointmentConfirmed = async (appointmentId) => {
     if (!appointmentId) {

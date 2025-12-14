@@ -6,6 +6,7 @@ from datetime import datetime
 requests_bp = Blueprint("requests_bp", __name__, url_prefix="/api/requests")
 
 
+
 @requests_bp.route("/pending/<tutor_id>", methods=["GET"])
 def get_pending_requests(tutor_id):
     conn = get_connection()
@@ -348,7 +349,7 @@ def update_appointment_status_and_log(appointment_id):
             """,
             (new_status, appointment_id),
         )
-
+        auto_cancelled = 0
         if new_status == "BOOKED":
             # A) Log history
             cur.execute(
@@ -370,16 +371,20 @@ def update_appointment_status_and_log(appointment_id):
 
             # C) Auto-decline competitors
             cur.execute(
-                """
-                UPDATE appointment
-                SET status = 'CANCELLED'
-                WHERE vacant_id = %s
-                  AND appointment_date = %s
-                  AND status = 'PENDING'
-                  AND appointment_id != %s
-                """,
-                (vacant_id, appointment_date, appointment_id),
-            )
+    """
+    UPDATE appointment
+    SET status = 'CANCELLED'
+    WHERE vacant_id = %s
+      AND appointment_date = %s
+      AND status = 'PENDING'
+      AND appointment_id != %s
+    RETURNING appointment_id
+    """,
+    (vacant_id, appointment_date, appointment_id),
+)
+
+            auto_cancelled = cur.rowcount
+
 
         elif new_status == "CANCELLED":
             # Notify declined
@@ -392,7 +397,11 @@ def update_appointment_status_and_log(appointment_id):
             )
 
         conn.commit()
-        return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
+        return jsonify({
+    "message": f"Appointment {new_status} successfully!",
+    "auto_cancelled": auto_cancelled if new_status == "BOOKED" else 0
+}), 200
+
 
     except Exception as e:
         conn.rollback()
@@ -403,17 +412,17 @@ def update_appointment_status_and_log(appointment_id):
         cur.close()
         conn.close()
 
-
 @requests_bp.route("/appointments/finish/<int:appointment_id>", methods=["POST"])
 def finish_appointment(appointment_id):
     """
-    Save snapshot into session_rating first, then delete appointment.
+    Save snapshot into session_rating first, then MARK appointment as COMPLETED
+    (do NOT delete it because messages reference appointment_id).
     """
     conn = get_connection()
     cur = conn.cursor()
 
     try:
-        # 1) Get info while appointment still exists
+        # 1) Get all needed info
         cur.execute(
             """
             SELECT
@@ -447,11 +456,18 @@ def finish_appointment(appointment_id):
             (appointment_id, tutee_id, tutor_id, course_code, appointment_date, start_time, end_time),
         )
 
-        # 3) Delete appointment
-        cur.execute("DELETE FROM appointment WHERE appointment_id = %s", (appointment_id,))
+        # 3) Mark appointment as COMPLETED (instead of deleting)
+        cur.execute(
+            """
+            UPDATE appointment
+            SET status = 'COMPLETED'
+            WHERE appointment_id = %s
+            """,
+            (appointment_id,),
+        )
 
         conn.commit()
-        return jsonify({"message": "Finished: saved to session_rating then deleted appointment."}), 200
+        return jsonify({"message": "Appointment marked COMPLETED. Rating is now available."}), 200
 
     except Exception as e:
         conn.rollback()
