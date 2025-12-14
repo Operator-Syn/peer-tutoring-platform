@@ -14,6 +14,7 @@ import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
 import logoutIcon from "../assets/images/M_layouts/logout.png";
 import profile from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
+import uploadIcon from "../assets/images/M_layouts/upload.svg";
 
 function Header() {
 
@@ -222,6 +223,15 @@ function Header() {
                     navigate("/admin");
                   }}>
                     <img src={reportIcon} alt="Admin Page" /> Admin Page
+                  </p>
+                )}
+                {user && (
+                  <p onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate(`/uploadnotes`);
+                  }}>
+                    <img src={uploadIcon} width={30} height={30} alt="Upload Notes" /> Upload Notes
                   </p>
                 )}
                 {user && (
