@@ -16,6 +16,37 @@ export const useAdminDashboardData = () => {
     const [collegeFilter, setCollegeFilter] = useState('all');
     const [yearFilter, setYearFilter] = useState('all');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [reportedFilter, setReportedFilter] = useState('all');
+
+    const setStatusFilterWithReset = (value) => {
+        setStatusFilter(value);
+        setPage(1);
+    };
+
+    const setSearchWithReset = (value) => {
+        setSearch(value);
+        setPage(1);
+    };
+
+    const setSortByWithReset = (value) => {
+        setSortBy(value);
+        setPage(1);
+    };
+
+    const setYearFilterWithReset = (value) => {
+        setYearFilter(value);
+        setPage(1);
+    };
+
+    const setRoleFilterWithReset = (value) => {
+        setRoleFilter(value);
+        setPage(1);
+    };
+
+    const setReportedFilterWithReset = (value) => {
+        setReportedFilter(value);
+        setPage(1);
+    };
 
     const setActiveTab = (newTab) => {
         if (newTab === activeTab) return;
@@ -27,6 +58,7 @@ export const useAdminDashboardData = () => {
         setCollegeFilter('all');
         setYearFilter('all');
         setRoleFilter('all');
+        setReportedFilter('all');
         setPage(1);
         setLoading(true);
     };
@@ -62,8 +94,11 @@ export const useAdminDashboardData = () => {
             } else if (activeTab === 'users') {
                 endpoint = '/api/tutor-applications/admin/users';
                 params.append('role', roleFilter);
+                params.append('reported', reportedFilter);
             } else if (activeTab === 'appeals') {
                 endpoint = '/api/appeals/all';
+            } else if (activeTab === 'requests') {
+                endpoint = '/api/admin/subject-requests';
             }
 
             const response = await fetch(`${endpoint}?${params.toString()}`);
@@ -81,7 +116,7 @@ export const useAdminDashboardData = () => {
         } finally {
             setLoading(false);
         }
-    }, [activeTab, page, limit, search, statusFilter, sortBy, collegeFilter, yearFilter, roleFilter]);
+    }, [activeTab, page, limit, search, statusFilter, sortBy, collegeFilter, yearFilter, roleFilter, reportedFilter]);
 
     useEffect(() => {
         fetchData();
@@ -101,6 +136,10 @@ export const useAdminDashboardData = () => {
             }
             if (actionType === 'RESOLVE_APPEAL') {
                 url = `/api/appeals/resolve/${id}`;
+                method = 'PUT';
+            }
+            if (actionType === 'RESOLVE_REQUEST') {
+                url = `/api/admin/subject-requests/${id}/resolve`;
                 method = 'PUT';
             }
 
@@ -129,12 +168,13 @@ export const useAdminDashboardData = () => {
         filters: {
             page, setPage,
             limit, setLimit,
-            search, setSearch,
-            status: statusFilter, setStatus: setStatusFilter,
-            sort: sortBy, setSort: setSortBy,
+            search, setSearch: setSearchWithReset,
+            status: statusFilter, setStatus: setStatusFilterWithReset,
+            sort: sortBy, setSort: setSortByWithReset,
             college: collegeFilter, setCollege: setCollegeFilter,
-            year: yearFilter, setYear: setYearFilter,
-            role: roleFilter, setRole: setRoleFilter
+            year: yearFilter, setYear: setYearFilterWithReset,
+            role: roleFilter, setRole: setRoleFilterWithReset,
+            reported: reportedFilter, setReported: setReportedFilterWithReset
         },
         pagination,
         actions: { handleAction, refresh: fetchData }

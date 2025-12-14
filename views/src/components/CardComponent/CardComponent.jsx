@@ -19,6 +19,9 @@ export default function CardComponent({
     disableModal = false,
 }) {
     const [showModal, setShowModal] = useState(false);
+    
+    // NEW: State to track if the image has finished loading
+    const [imgLoaded, setImgLoaded] = useState(false);
 
     const handleClick = () => {
         if (!disableModal) setShowModal(true);
@@ -105,11 +108,29 @@ export default function CardComponent({
                 onClick={handleClick}
             >
                 {image && (
-                    <Card.Img
-                        variant="top"
-                        src={image}
-                        className={!disableModal ? "card-img-fixed" : ""}
-                    />
+                    <>
+                        {/* 1. Placeholder: Visible only while loading */}
+                        {!imgLoaded && (
+                            <div 
+                                // We apply 'card-img-fixed' here too so the placeholder 
+                                // takes the exact same dimensions as your CSS defines for the image.
+                                className={`bg-secondary-subtle placeholder-glow ${!disableModal ? "card-img-fixed" : ""}`}
+                                // Fallback height (200px) just in case your CSS class relies on the image's intrinsic height
+                                style={{ width: "100%", minHeight: !disableModal ? "200px" : "auto" }}
+                            >
+                                <span className="placeholder w-100 h-100"></span>
+                            </div>
+                        )}
+
+                        {/* 2. Actual Image: Hidden until loaded */}
+                        <Card.Img
+                            variant="top"
+                            src={image}
+                            // We combine your class with 'd-none' if not loaded
+                            className={`${!disableModal ? "card-img-fixed" : ""} ${!imgLoaded ? "d-none" : ""}`}
+                            onLoad={() => setImgLoaded(true)}
+                        />
+                    </>
                 )}
 
                 <Card.Body>

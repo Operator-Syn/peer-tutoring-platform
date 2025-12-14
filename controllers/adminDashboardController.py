@@ -121,6 +121,7 @@ def get_all_users_for_admin():
         search = request.args.get("search", "").strip()
         role = request.args.get("role", "all")
         status = request.args.get("status", "all")
+        reported = request.args.get("reported", "all")
         sort_by = request.args.get("sort_by", "name_asc")
         
         offset = (page - 1) * limit
@@ -135,6 +136,11 @@ def get_all_users_for_admin():
         if status != "all":
             where_clauses.append("ua.status = %s")
             params.append(status)
+
+        if reported == "yes":
+            where_clauses.append("(SELECT COUNT(*) FROM report r WHERE r.reported_id = t.id_number AND r.status = 'PENDING') > 0")
+        elif reported == "no":
+            where_clauses.append("(SELECT COUNT(*) FROM report r WHERE r.reported_id = t.id_number AND r.status = 'PENDING') = 0")
 
         if search:
             where_clauses.append("(ua.email ILIKE %s OR t.first_name ILIKE %s OR t.last_name ILIKE %s)")
@@ -224,6 +230,9 @@ def get_admin_statistics():
         cursor.execute("SELECT COUNT(*) FROM course")
         total_courses = cursor.fetchone()[0]
 
+        cursor.execute("SELECT COUNT(*) FROM appointment WHERE status IN ('PENDING', 'BOOKED')")
+        active_sessions = cursor.fetchone()[0]
+
         statistics = {
             "total_applications": total_applications,
             "pending": pending or 0,
@@ -232,7 +241,7 @@ def get_admin_statistics():
             "total_tutors": total_tutors,
             "total_tutees": total_tutees,
             "total_courses": total_courses,
-            "active_sessions": 0
+            "active_sessions": active_sessions
         }
 
         cursor.close()
@@ -248,7 +257,7 @@ def approve_tutor_application(application_id):
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-
+    
         cursor.execute("SELECT student_id FROM tutor_application WHERE application_id = %s", (application_id,))
         row = cursor.fetchone()
         if not row:
@@ -257,7 +266,16 @@ def approve_tutor_application(application_id):
         student_id = row['student_id']
 
         cursor.execute("UPDATE tutor_application SET status = 'APPROVED' WHERE application_id = %s", (application_id,))
+        
         cursor.execute("INSERT INTO tutor (tutor_id, status) VALUES (%s, 'ACTIVE') ON CONFLICT (tutor_id) DO UPDATE SET status = 'ACTIVE'", (student_id,))
+
+        cursor.execute("""
+            UPDATE user_account 
+            SET role = 'TUTOR' 
+            FROM tutee 
+            WHERE user_account.google_id = tutee.google_id 
+            AND tutee.id_number = %s
+        """, (student_id,))
 
         cursor.execute("SELECT course_code FROM application_courses WHERE application_id = %s", (application_id,))
         for course in cursor.fetchall():
@@ -301,5 +319,124 @@ def update_user_status():
         cur.close()
         conn.close()
         return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/subject-requests", methods=["GET"])
+def get_subject_requests():
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 5))
+        status = request.args.get("status", "all")
+        offset = (page - 1) * limit
+        params = []
+        where_clause = ""
+
+        if status != "all":
+            where_clause = "WHERE sr.status = %s"
+            params.append(status)
+
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        cur.execute(f"SELECT COUNT(*) FROM subject_request sr {where_clause}", params)
+        total_items = cur.fetchone()['count']
+
+        query = f"""
+            SELECT 
+                sr.request_id, sr.requester_id, sr.subject_code, sr.subject_name,
+                sr.description, sr.status, sr.created_at,
+                t.first_name, t.last_name, ua.role
+            FROM subject_request sr
+            JOIN tutee t ON sr.requester_id = t.id_number
+            JOIN user_account ua ON t.google_id = ua.google_id
+            {where_clause}
+            ORDER BY sr.created_at DESC
+            LIMIT %s OFFSET %s
+        """
+        cur.execute(query, params + [limit, offset])
+        requests = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        for r in requests:
+            if r['created_at']:
+                r['created_at'] = r['created_at'].strftime("%Y-%m-%d")
+
+        return jsonify({
+            "success": True,
+            "data": requests,
+            "pagination": build_pagination_metadata(total_items, page, limit)
+        }), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@admin_dashboard_bp.route("/api/admin/subject-requests/<int:request_id>/resolve", methods=["PUT"])
+def resolve_subject_request(request_id):
+    data = request.get_json()
+    action = data.get("action")
+    final_code = data.get("final_code", "").strip()
+    final_name = data.get("final_name", "").strip()
+    
+    if action not in ['APPROVE', 'REJECT']:
+        return jsonify({"success": False, "error": "Invalid action"}), 400
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
+        
+        if status == 'APPROVED':
+            if not final_code or not final_name:
+                 return jsonify({"success": False, "error": "Code and Name are required for approval"}), 400
+
+            cur.execute("""
+                UPDATE subject_request 
+                SET status = %s, subject_code = %s, subject_name = %s 
+                WHERE request_id = %s
+            """, (status, final_code, final_name, request_id))
+            
+            cur.execute("""
+                INSERT INTO course (course_code, course_name) 
+                VALUES (%s, %s) 
+                ON CONFLICT (course_code) DO NOTHING
+            """, (final_code, final_name))
+            
+        else:
+            cur.execute("UPDATE subject_request SET status = %s WHERE request_id = %s", (status, request_id))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/users/<user_id>/reports", methods=["GET"])
+def get_user_reports(user_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        query = """
+            SELECT r.report_id, r.reporter_id, r.type, r.description, r.reasons, r.date_submitted, r.status
+            FROM report r
+            JOIN tutee t ON r.reported_id = t.id_number
+            WHERE t.google_id = %s
+            ORDER BY r.date_submitted DESC
+        """
+        cur.execute(query, (user_id,))
+        reports = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        for r in reports:
+            r['date_submitted'] = r['date_submitted'].strftime("%Y-%m-%d")
+            
+        return jsonify({"success": True, "reports": reports}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

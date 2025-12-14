@@ -126,17 +126,17 @@ def update_appointment_status(appointment_id):
 
 
 
-@requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
-def delete_request(request_id):
-    conn = get_connection()
-    cur = conn.cursor()
+# @requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
+# def delete_request(request_id):
+#     conn = get_connection()
+#     cur = conn.cursor()
 
-    cur.execute("DELETE FROM request WHERE request_id = %s", (request_id,))
-    conn.commit()
+#     cur.execute("DELETE FROM request WHERE request_id = %s", (request_id,))
+#     conn.commit()
 
-    cur.close()
-    conn.close()
-    return jsonify({"message": f"Request {request_id} deleted"}), 200
+#     cur.close()
+#     conn.close()
+#     return jsonify({"message": f"Request {request_id} deleted"}), 200
 
 
 @requests_bp.route("/search", methods=["GET"])
@@ -338,6 +338,68 @@ def update_appointment_status_and_log(appointment_id):
         conn.rollback()
         print("❌ Error in update_appointment_status_and_log:", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+@requests_bp.route("/create-pending-appointment", methods=["POST"])
+def create_pending_appointment():
+    data = request.get_json()
+    
+    # Extract data from the frontend payload
+    vacant_id = data.get("vacant_id")
+    tutee_id = data.get("tutee_id")
+    course_code = data.get("course_code")
+    appointment_date = data.get("appointment_date")
+    # We default to PENDING, even if frontend sends something else, for security
+    status = "PENDING" 
+    
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # 1. First, find the tutor_id associated with this vacant slot
+        # We need this to send them the notification
+        cur.execute("SELECT tutor_id FROM availability WHERE vacant_id = %s", (vacant_id,))
+        tutor_row = cur.fetchone()
+        
+        if not tutor_row:
+            return jsonify({"error": "Availability slot not found"}), 404
+            
+        tutor_id = tutor_row[0] # Extract the string ID
+
+        # 2. Create the PENDING Appointment
+        # Note: Your partial index 'unique_request_per_student' will prevent spam here automatically
+        cur.execute("""
+            INSERT INTO appointment (vacant_id, tutee_id, course_code, appointment_date, status)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING appointment_id
+        """, (vacant_id, tutee_id, course_code, appointment_date, status))
+        
+        new_appt_id = cur.fetchone()[0]
+
+        # 3. Notify the Tutor
+        # We use 'REQUEST' as the action so the frontend knows this is a new incoming request
+        cur.execute("""
+            INSERT INTO notifications (tutor_id, tutee_id, action)
+            VALUES (%s, %s, 'REQUEST')
+        """, (tutor_id, tutee_id))
+
+        conn.commit()
+        return jsonify({"message": "Appointment requested successfully", "id": new_appt_id}), 201
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error creating appointment:", e)
+        
+        # Check for the unique constraint violation (Double booking spam)
+        if "unique_request_per_student" in str(e):
+            return jsonify({"error": "You already have a pending request for this slot."}), 409
+        if "unique_active_booking" in str(e):
+             return jsonify({"error": "This slot is currently locked by another student."}), 409
+
+        return jsonify({"error": "Failed to create appointment"}), 500
 
     finally:
         cur.close()

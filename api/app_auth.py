@@ -99,6 +99,7 @@ def get_user():
 
     registered = False
     status = "ACTIVE"
+    role = "TUTEE"
 
     try:
         conn = get_connection()
@@ -108,23 +109,26 @@ def get_user():
                 if cursor.fetchone():
                     registered = True
                 
-                cursor.execute("SELECT status FROM user_account WHERE google_id = %s", (user['sub'],))
+                # includes role in response
+                cursor.execute("SELECT status, role FROM user_account WHERE google_id = %s", (user['sub'],))
                 account_data = cursor.fetchone()
-                if account_data and account_data.get('status'):
-                    status = account_data['status']
+                if account_data:
+                    if account_data.get('status'):
+                        status = account_data['status']
+                    if account_data.get('role'):
+                        role = account_data['role']
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        if conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 50
     
     user_with_status = dict(user)
     user_with_status['registered_tutee'] = registered
     user_with_status['status'] = status
+    user_with_status['role'] = role 
 
-    # Return response with cache control to be safe
-    response = make_response(jsonify(user_with_status))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    return response
+    return jsonify(user_with_status)
 
 @auth_bp.route('/register_tutee', methods=['POST'])
 def register_tutee():

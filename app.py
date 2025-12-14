@@ -70,6 +70,8 @@ def create_app():
     from controllers.adminDashboardController import admin_dashboard_bp
     from controllers.appealsController import bp_appeals
     from controllers.chatUserController.chatUserController import chat_bp
+    from controllers.subjectRequestController.subjectRequestController import subject_request_bp
+
 
     # -- Auth & Users --
     app.register_blueprint(auth_bp, url_prefix="/api/auth") # URI: https://<domain>/api/auth/callback
@@ -90,7 +92,9 @@ def create_app():
     # -- Admin & System --
     app.register_blueprint(admin_dashboard_bp)
     app.register_blueprint(load_config_bp)
-    app.register_blueprint(bp_appeals) # Registered (was missing in original)
+    app.register_blueprint(bp_appeals)
+    app.register_blueprint(subject_request_bp)
+
 
     # ---------------------------------------------------------
     # 4. ROUTES
