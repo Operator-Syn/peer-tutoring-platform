@@ -8,7 +8,7 @@
 .tutor-notes-container {
     /* border: 1px solid blue; */
     max-width: 796px;
-    /* min-width: 800px; */
+    width: 100%;
     height: 800px;
     display: flex;
     flex-direction: column;
