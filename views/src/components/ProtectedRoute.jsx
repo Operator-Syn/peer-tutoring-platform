@@ -19,7 +19,7 @@ export default function ProtectedRoute() {
                 if (location.pathname !== '/banned') {
                     navigate("/banned");
                 }
-                return; // Do not trigger other redirects when banned
+                return;
             }
             if (user && user.registered_tutee === false) {
                 navigate("/AccountCreation");
