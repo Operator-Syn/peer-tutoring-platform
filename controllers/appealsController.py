@@ -148,11 +148,17 @@ def resolve_appeal(appeal_id):
         
         new_status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
         
-        cur.execute("UPDATE appeals SET status = %s WHERE appeal_id = %s RETURNING google_id", (new_status, appeal_id))
-        res = cur.fetchone()
+        if action == 'APPROVE':
+            cur.execute("UPDATE appeals SET status = 'APPROVED' WHERE appeal_id = %s", (appeal_id,))
         
-        if res and action == 'APPROVE':
-            cur.execute("UPDATE user_account SET status = 'ACTIVE' WHERE google_id = %s", (res[0],))
+        cur.execute("""
+            UPDATE user_account 
+            SET status = 'ACTIVE' 
+            WHERE google_id = (
+                SELECT google_id FROM tutee admindas
+                WHERE id_number = (SELECT id_number FROM appeals WHERE appeal_id = %s)
+            )
+        """, (appeal_id,))
             
         conn.commit()
         return jsonify({"success": True}), 200

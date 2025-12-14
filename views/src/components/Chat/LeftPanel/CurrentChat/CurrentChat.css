@@ -1,0 +1,43 @@
+/* Main Chat Container */
+.current-chat-container {
+    border-radius: 10px;
+    overflow: hidden;
+    height: 75vh;
+}
+
+/* Scrollable Messages Area */
+.chat-messages-area {
+    background-color: #f8f9fa;
+}
+
+/* Message Bubbles - Common Styles */
+.message-bubble {
+    max-width: 75%;
+    word-break: break-word;
+}
+
+/* My Messages (Blue) */
+.message-bubble.me {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+}
+
+/* Their Messages (White) */
+.message-bubble.them {
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #e0e0e0;
+}
+
+/* Timestamp Styling */
+.message-timestamp {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* Modal Overlay Background */
+.chat-modal-overlay {
+    display: block;
+    background-color: rgba(0, 0, 0, 0.5);
+}

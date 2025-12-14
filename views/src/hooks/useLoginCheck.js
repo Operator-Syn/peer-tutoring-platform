@@ -26,7 +26,7 @@ export function useLoginCheck({ login = true, route = null } = {}) {
     return async function loginCheck() {
         const backendUrl = await loadConfig();
 
-        const res = await fetch(`${backendUrl}/api/auth/get_user`, { credentials: 'include' });
+        const res = await fetch(`/api/auth/get_user`, { credentials: 'include' });
         const user = await res.json();
 
         if (res.ok) {
@@ -38,7 +38,7 @@ export function useLoginCheck({ login = true, route = null } = {}) {
             return user;
         } else {
             if (login) {
-                window.location.href = `${backendUrl}/api/auth/login`;
+                window.location.href = `/api/auth/login`;
             }
         }
     };

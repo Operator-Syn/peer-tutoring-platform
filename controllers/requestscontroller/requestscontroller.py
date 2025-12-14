@@ -65,9 +65,10 @@ def update_appointment_status(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info
+        # 1. Fetch appointment info INCLUDING appointment_date
+        # We need the date to ensure we only cancel requests for this specific day
         cur.execute("""
-            SELECT a.vacant_id, a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT a.vacant_id, a.tutee_id, a.course_code, a.appointment_date, av.tutor_id, av.start_time, av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -77,22 +78,35 @@ def update_appointment_status(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        vacant_id, tutee_id, course_code, tutor_id, start_time, end_time = appt
+        vacant_id, tutee_id, course_code, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update the appointment status
+        # 2. Update the status of the target appointment
         cur.execute("""
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
         """, (new_status, appointment_id))
 
-        # If the status is BOOKED, log in history and send notification
+        # 3. If BOOKED, handle logic
         if new_status == "BOOKED":
+            # A. Auto-Decline Competitors
+            # Cancel everyone else who is PENDING on this exact slot
+            cur.execute("""
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s 
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+            """, (vacant_id, appointment_date, appointment_id))
+
+            # B. Log in history
             cur.execute("""
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
             """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
+            # C. Send notification
             cur.execute("""
                 INSERT INTO notifications (tutor_id, tutee_id)
                 VALUES (%s, %s)
@@ -112,17 +126,17 @@ def update_appointment_status(appointment_id):
 
 
 
-@requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
-def delete_request(request_id):
-    conn = get_connection()
-    cur = conn.cursor()
+# @requests_bp.route("/delete/<int:request_id>", methods=["DELETE"])
+# def delete_request(request_id):
+#     conn = get_connection()
+#     cur = conn.cursor()
 
-    cur.execute("DELETE FROM request WHERE request_id = %s", (request_id,))
-    conn.commit()
+#     cur.execute("DELETE FROM request WHERE request_id = %s", (request_id,))
+#     conn.commit()
 
-    cur.close()
-    conn.close()
-    return jsonify({"message": f"Request {request_id} deleted"}), 200
+#     cur.close()
+#     conn.close()
+#     return jsonify({"message": f"Request {request_id} deleted"}), 200
 
 
 @requests_bp.route("/search", methods=["GET"])
@@ -256,9 +270,17 @@ def update_appointment_status_and_log(appointment_id):
     cur = conn.cursor()
 
     try:
-        # Fetch appointment info first (including tutor_id from availability)
+        # 1. UPDATED SELECT: We added 'vacant_id' and 'appointment_date' 
+        # so we can find the other students competing for this slot.
         cur.execute("""
-            SELECT a.tutee_id, a.course_code, av.tutor_id, av.start_time, av.end_time
+            SELECT 
+                a.tutee_id, 
+                a.course_code, 
+                a.vacant_id,         -- NEW
+                a.appointment_date,  -- NEW
+                av.tutor_id, 
+                av.start_time, 
+                av.end_time
             FROM appointment a
             JOIN availability av ON a.vacant_id = av.vacant_id
             WHERE a.appointment_id = %s
@@ -268,27 +290,46 @@ def update_appointment_status_and_log(appointment_id):
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, course_code, tutor_id, start_time, end_time = appt
+        tutee_id, course_code, vacant_id, appointment_date, tutor_id, start_time, end_time = appt
 
-        # Update appointment status
+        # 2. Update the target appointment status
         cur.execute("""
             UPDATE appointment
             SET status = %s
             WHERE appointment_id = %s
         """, (new_status, appointment_id))
 
-        # Log to history table if accepted
+        # 3. IF ACCEPTED (BOOKED): Handle logs and Auto-Decline
         if new_status == "BOOKED":
+            # A. Log to history
             cur.execute("""
                 INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
                 VALUES (%s, %s, %s, %s, %s)
             """, (tutor_id, tutee_id, start_time, end_time, course_code))
 
-        # Insert notification with action column
-        cur.execute("""
-            INSERT INTO notifications (tutor_id, tutee_id, action)
-            VALUES (%s, %s, %s)
-        """, (tutor_id, tutee_id, new_status))
+            # B. Notify the winner
+            cur.execute("""
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+            """, (tutor_id, tutee_id, new_status))
+
+            # C. AUTO-DECLINE COMPETITORS (This was missing!)
+            # Cancel everyone else pending for this exact slot
+            cur.execute("""
+                UPDATE appointment
+                SET status = 'CANCELLED'
+                WHERE vacant_id = %s 
+                  AND appointment_date = %s
+                  AND status = 'PENDING'
+                  AND appointment_id != %s
+            """, (vacant_id, appointment_date, appointment_id))
+
+        # 4. IF DECLINED (CANCELLED): Just notify
+        elif new_status == "CANCELLED":
+             cur.execute("""
+                INSERT INTO notifications (tutor_id, tutee_id, action)
+                VALUES (%s, %s, %s)
+            """, (tutor_id, tutee_id, new_status))
 
         conn.commit()
         return jsonify({"message": f"Appointment {new_status} successfully!"}), 200
@@ -297,6 +338,68 @@ def update_appointment_status_and_log(appointment_id):
         conn.rollback()
         print("❌ Error in update_appointment_status_and_log:", e)
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
+
+@requests_bp.route("/create-pending-appointment", methods=["POST"])
+def create_pending_appointment():
+    data = request.get_json()
+    
+    # Extract data from the frontend payload
+    vacant_id = data.get("vacant_id")
+    tutee_id = data.get("tutee_id")
+    course_code = data.get("course_code")
+    appointment_date = data.get("appointment_date")
+    # We default to PENDING, even if frontend sends something else, for security
+    status = "PENDING" 
+    
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # 1. First, find the tutor_id associated with this vacant slot
+        # We need this to send them the notification
+        cur.execute("SELECT tutor_id FROM availability WHERE vacant_id = %s", (vacant_id,))
+        tutor_row = cur.fetchone()
+        
+        if not tutor_row:
+            return jsonify({"error": "Availability slot not found"}), 404
+            
+        tutor_id = tutor_row[0] # Extract the string ID
+
+        # 2. Create the PENDING Appointment
+        # Note: Your partial index 'unique_request_per_student' will prevent spam here automatically
+        cur.execute("""
+            INSERT INTO appointment (vacant_id, tutee_id, course_code, appointment_date, status)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING appointment_id
+        """, (vacant_id, tutee_id, course_code, appointment_date, status))
+        
+        new_appt_id = cur.fetchone()[0]
+
+        # 3. Notify the Tutor
+        # We use 'REQUEST' as the action so the frontend knows this is a new incoming request
+        cur.execute("""
+            INSERT INTO notifications (tutor_id, tutee_id, action)
+            VALUES (%s, %s, 'REQUEST')
+        """, (tutor_id, tutee_id))
+
+        conn.commit()
+        return jsonify({"message": "Appointment requested successfully", "id": new_appt_id}), 201
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ Error creating appointment:", e)
+        
+        # Check for the unique constraint violation (Double booking spam)
+        if "unique_request_per_student" in str(e):
+            return jsonify({"error": "You already have a pending request for this slot."}), 409
+        if "unique_active_booking" in str(e):
+             return jsonify({"error": "This slot is currently locked by another student."}), 409
+
+        return jsonify({"error": "Failed to create appointment"}), 500
 
     finally:
         cur.close()

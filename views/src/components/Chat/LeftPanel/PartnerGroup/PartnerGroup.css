@@ -1,0 +1,15 @@
+.partner-group-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.partner-group-header:hover {
+    background-color: #f8f9fa; /* Slightly darker light-grey on hover */
+}
+
+.partner-group-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+}
