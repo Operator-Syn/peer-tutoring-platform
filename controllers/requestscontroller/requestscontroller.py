@@ -53,139 +53,89 @@ def get_pending_requests(tutor_id):
 
 @requests_bp.route("/update-status-and-log/<int:appointment_id>", methods=["PUT"])
 def update_appointment_status_and_log(appointment_id):
-    data = request.get_json(silent=True) or {}
-    action = data.get("action")  # "accept" or "decline"
-
-    if action not in ["accept", "decline"]:
-        return jsonify({"error": "Invalid action"}), 400
-
-    new_status = "BOOKED" if action == "accept" else "CANCELLED"
-
     conn = get_connection()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
-        cur.execute(
-            """
-            SELECT 
-                a.tutee_id,
-                a.course_code,
-                a.vacant_id,
-                a.appointment_date,
-                av.tutor_id,
-                av.start_time,
-                av.end_time
-            FROM appointment a
-            JOIN availability av ON a.vacant_id = av.vacant_id
-            WHERE a.appointment_id = %s
-            """,
-            (appointment_id,),
-        )
+        data = request.get_json(silent=True) or {}
+        action = (data.get("action") or "").lower()
 
+        if action not in ("accept", "decline"):
+            return jsonify({"error": "Invalid action"}), 400
+
+        # ✅ get appointment info first (we need vacant_id + appointment_date)
+        cur.execute("""
+            SELECT appointment_id, vacant_id, appointment_date, status
+            FROM appointment
+            WHERE appointment_id = %s
+        """, (appointment_id,))
         appt = cur.fetchone()
+
         if not appt:
             return jsonify({"error": "Appointment not found"}), 404
 
-        tutee_id, course_code, vacant_id, appointment_date, tutor_id, start_time, end_time = appt
-
-        # Update appointment status
-        cur.execute(
-            """
-            UPDATE appointment
-            SET status = %s
-            WHERE appointment_id = %s
-            """,
-            (new_status, appointment_id),
-        )
-
-        auto_cancelled = 0
-
-        if new_status == "BOOKED":
-            # Log history
-            cur.execute(
-                """
-                INSERT INTO history (tutor_id, tutee_id, start_time, end_time, subject_name)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (tutor_id, tutee_id, start_time, end_time, course_code),
-            )
-
-            # Notify winner (recipient = tutee, sender = tutor)
-            cur.execute(
-                """
-                INSERT INTO notifications (recipient_id, sender_id, type, reference_id, message_text)
-                VALUES (%s, %s, 'BOOKING_APPROVED', %s, %s)
-                """,
-                (
-                    tutee_id,
-                    tutor_id,
-                    appointment_id,
-                    f"Your booking for {course_code} on {appointment_date} ({start_time}-{end_time}) was approved.",
-                ),
-            )
-
-            # Auto-decline competitors (same slot + same date)
-            cur.execute(
-                """
-                UPDATE appointment
-                SET status = 'CANCELLED'
+        # ✅ if accepting, pre-check if slot already has a BOOKED appointment
+        if action == "accept":
+            cur.execute("""
+                SELECT 1
+                FROM appointment
                 WHERE vacant_id = %s
                   AND appointment_date = %s
-                  AND status = 'PENDING'
-                  AND appointment_id != %s
-                RETURNING appointment_id, tutee_id
-                """,
-                (vacant_id, appointment_date, appointment_id),
-            )
-            cancelled_rows = cur.fetchall()
-            auto_cancelled = len(cancelled_rows)
+                  AND status = 'BOOKED'
+                  AND appointment_id <> %s
+                LIMIT 1
+            """, (appt["vacant_id"], appt["appointment_date"], appointment_id))
 
-            # Notify rejected competitors
-            for cancelled_appt_id, cancelled_tutee_id in cancelled_rows:
-                cur.execute(
-                    """
-                    INSERT INTO notifications (recipient_id, sender_id, type, reference_id, message_text)
-                    VALUES (%s, %s, 'BOOKING_REJECTED', %s, %s)
-                    """,
-                    (
-                        cancelled_tutee_id,
-                        tutor_id,
-                        cancelled_appt_id,
-                        f"Your booking request for {course_code} on {appointment_date} was rejected (slot taken).",
-                    ),
-                )
+            already_taken = cur.fetchone()
+            if already_taken:
+                conn.rollback()
+                return jsonify({"error": "This schedule is already taken."}), 409
 
-        else:
-            # Declined: notify rejected (recipient = tutee, sender = tutor)
-            cur.execute(
-                """
-                INSERT INTO notifications (recipient_id, sender_id, type, reference_id, message_text)
-                VALUES (%s, %s, 'BOOKING_REJECTED', %s, %s)
-                """,
-                (
-                    tutee_id,
-                    tutor_id,
-                    appointment_id,
-                    f"Your booking request for {course_code} on {appointment_date} was rejected.",
-                ),
-            )
+            # set to BOOKED
+            cur.execute("""
+                UPDATE appointment
+                SET status = 'BOOKED'
+                WHERE appointment_id = %s
+            """, (appointment_id,))
+
+            # (optional) add your logging insert here if you have one
+
+            conn.commit()
+            return jsonify({"message": "Accepted"}), 200
+
+        # decline
+        cur.execute("""
+            UPDATE appointment
+            SET status = 'CANCELLED'
+            WHERE appointment_id = %s
+        """, (appointment_id,))
+
+        # (optional) add your logging insert here if you have one
 
         conn.commit()
-        return jsonify(
-            {
-                "message": f"Appointment {new_status} successfully!",
-                "auto_cancelled": auto_cancelled if new_status == "BOOKED" else 0,
-            }
-        ), 200
+        return jsonify({"message": "Declined"}), 200
+
+    except IntegrityError as e:
+        conn.rollback()
+
+        # ✅ Unique constraint violation (vacant_id, appointment_date) already booked
+        # Postgres unique violation code = 23505
+        if getattr(e, "pgcode", None) == "23505" and "unique_booked_slot" in str(e):
+           return jsonify({"error": "That schedule has already been taken."}), 409
+
+
+        print("❌ IntegrityError in update_appointment_status_and_log:", e)
+        return jsonify({"error": "Database integrity error"}), 500
 
     except Exception as e:
         conn.rollback()
         print("❌ Error in update_appointment_status_and_log:", e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
     finally:
         cur.close()
         conn.close()
+
 
 
 @requests_bp.route("/search", methods=["GET"])
