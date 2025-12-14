@@ -18,47 +18,55 @@ export default function HomePage() {
     const loginCheck = useLoginCheck({ route: "/Appointments" });
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
 
-    const handleAppointmentsClick = async () => {
-        const isLoggedIn = await loginCheck();
-        if (!isLoggedIn) return;
-
+const handleAppointmentsClick = async () => {
         try {
-            const resUser = await fetch("/api/auth/get_user", { credentials: "include" });
-            if (resUser.status === 401) {
-                window.location.href = "/api/auth/login";
+            // 1. Get the current logged-in user to find their ID
+            const userRes = await fetch("/api/auth/get_user");
+            
+            if (!userRes.ok) {
+                // Not logged in -> Redirect to standard appointments page (which handles login)
+                navigate("/Appointments");
                 return;
             }
-            const loggedInUser = await resUser.json();
+            
+            const userData = await userRes.json();
+            // We need the 'id_number' to compare with 'tutor_id'
+            // Usually in your app, userData from /get_user includes the linked tutee info
+            // If /get_user only returns google info, we might need to fetch /api/tutee/by_google first
+            // But assuming userData has the ID or we can derive it:
+            
+            // NOTE: If /get_user returns Google info only, we need to get the Tutee ID first.
+            // Let's assume we need to fetch the tutee profile to get the ID number.
+            const tuteeRes = await fetch(`/api/tutee/by_google/${userData.sub}`);
+            if (!tuteeRes.ok) {
+                navigate("/Appointments"); // Not a registered tutee yet
+                return;
+            }
+            const tuteeData = await tuteeRes.json();
+            const myId = tuteeData.id_number;
 
-            // Fetch all tutees
-            const tutees = await fetch("/api/tutee/all").then(r => r.json());
-            const userData = tutees.find(u => u.google_id === loggedInUser.sub);
+            // 2. Fetch the Tutor List
+            const tutorsRes = await fetch("/api/tutor/all");
+            const tutorsList = await tutorsRes.json();
 
-            // Fetch all tutors
-            const tutors = await fetch("/api/tutor/all").then(r => r.json());
-            const tutorData = tutors.find(t => t.tutor_id === userData?.id_number);
+            // 3. Find if "I" am in the tutor list and active
+            const myTutorProfile = tutorsList.find(t => t.tutor_id === myId);
 
-            // Build a JSON object that includes everything you need
-            const userJSON = {
-                id_number: userData?.id_number,
-                google_id: userData?.google_id,
-                name: userData?.name,
-                isTutor: !!tutorData,
-                tutor_id: tutorData?.tutor_id || null
-            };
+            if (myTutorProfile && myTutorProfile.status === "ACTIVE") {
+                // I am an Active Tutor!
+                navigate("/TutorAppointments");
+            } else {
+                // I am just a student (or inactive tutor)
+                navigate("/Appointments");
+            }
 
-            console.log("User JSON:", userJSON);
-
-            // You can also store this in localStorage, context, or pass it to the next page
-            localStorage.setItem("userInfo", JSON.stringify(userJSON));
-
-            // Then navigate
-            navigate(userJSON.isTutor ? "/TutorAppointments" : "/Appointments");
-
-        } catch (err) {
-            console.error(err);
+        } catch (error) {
+            console.error("Error checking tutor status:", error);
+            // Default to student view on error to be safe
+            navigate("/Appointments");
         }
     };
+
 
 
     return (
@@ -77,7 +85,7 @@ export default function HomePage() {
                                 </p>
                             </div>
 
-                            <div className='d-flex flex-row justify-content-evenly gap-5'>
+                            <div className='stats'>
                                 <Stat top_text='100%' bottom_text='Effective' />
                                 <Stat top_text='60+' bottom_text='Offered Subjects' />
                                 <Stat top_text='Peer' bottom_text='Tutoring' />

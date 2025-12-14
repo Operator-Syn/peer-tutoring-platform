@@ -18,6 +18,7 @@ export default ({ mode }) => {
   const apiTarget = env.VITE_API_BASE_URL || "http://localhost:5000";
 
   return defineConfig({
+    base: '/',
     plugins: [react()],
 
 
