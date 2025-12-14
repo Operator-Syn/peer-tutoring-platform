@@ -187,7 +187,7 @@ export default function UploadNotes() {
                 <div className='input-forms-container-fu'>
                     <div className='input-forms-left-fu'>
                         <InputFormFU label="Title">
-                            <Form.Control type="text" placeholder="Title" className='input-field-tt' value={title} onChange={e => setTitle(e.target.value)} />
+                            <Form.Control type="text" placeholder="Title" className='input-field-tt' value={title} onChange={e => setTitle(e.target.value)} maxLength={40} />
                         </InputFormFU> 
                         <InputFormFU label="Related Course">
                             <Select isClearable placeholder="Course Code" options={courses} value={selectedCourse} onInputChange={e => {retrieveCourses(e);}} onChange={e => setSelectedCourse(e)} />
@@ -228,7 +228,7 @@ export default function UploadNotes() {
                     </div>
                     <div className='input-forms-right-fu'>
                         <InputFormFU label="Note Description" customClass='note-description-form'>
-                            <Form.Control as="textarea" placeholder="Note Description" className='input-field-nd' style={{height: "100%"}} value={description} onChange={e => setDescription(e.target.value)} />
+                            <Form.Control as="textarea" placeholder="Note Description" className='input-field-nd' style={{height: "100%"}} value={description} onChange={e => setDescription(e.target.value)} maxLength={255} />
                         </InputFormFU>
                     </div>
                 </div>

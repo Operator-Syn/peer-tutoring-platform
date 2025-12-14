@@ -81,7 +81,7 @@ export default function TutorNotesList({ tutorId }) {
 function NotePostCard({ title, courseCode, fileUrls, description, dateUploaded }) {
     return (
         <div className="" style={{}}>
-            <p className="note-post-description" style={{whiteSpace: "pre-line", textAlign: "justify"}}>{description}</p>
+            <p className="note-post-description" style={{whiteSpace: "pre-line", textAlign: "justify", wordBreak: "break-word"}}>{description}</p>
             <div className='img-cards-tnl'>
                 {fileUrls.map((url, index) => (
                     <FileCard key={index} fileUrl={url} />
