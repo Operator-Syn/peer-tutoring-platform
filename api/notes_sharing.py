@@ -64,3 +64,15 @@ def upload_notes():
         return jsonify({"file_url": public_url}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@notes_sharing.route("/get-notes/<tutor_id>", methods=['GET'])
+def get_notes(tutor_id):
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT * FROM posted_notes WHERE tutor_id = %s ORDER BY date_posted DESC", (tutor_id,))
+                notes = cursor.fetchall()
+        return jsonify(notes), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
