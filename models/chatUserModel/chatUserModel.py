@@ -30,7 +30,7 @@ class UserModel:
             JOIN tutee student_info ON a.tutee_id = student_info.id_number
             JOIN course c ON a.course_code = c.course_code
 
-            WHERE a.status IN ('BOOKED', 'COMPLETED', 'CANCELLED') AND (a.tutee_id = %s OR av.tutor_id = %s)
+            WHERE a.status IN ('BOOKED', 'COMPLETED', 'CANCELLED', 'PENDING') AND (a.tutee_id = %s OR av.tutor_id = %s)
             
             ORDER BY 
                 (SELECT MAX(timestamp) FROM message WHERE message.appointment_id = a.appointment_id) DESC NULLS LAST, 
