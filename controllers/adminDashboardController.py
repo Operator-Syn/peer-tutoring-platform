@@ -420,3 +420,29 @@ def resolve_subject_request(request_id):
         return jsonify({"success": True}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/users/<user_id>/reports", methods=["GET"])
+def get_user_reports(user_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        query = """
+            SELECT r.report_id, r.reporter_id, r.type, r.description, r.reasons, r.date_submitted, r.status
+            FROM report r
+            JOIN tutee t ON r.reported_id = t.id_number
+            WHERE t.google_id = %s
+            ORDER BY r.date_submitted DESC
+        """
+        cur.execute(query, (user_id,))
+        reports = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        for r in reports:
+            r['date_submitted'] = r['date_submitted'].strftime("%Y-%m-%d")
+            
+        return jsonify({"success": True, "reports": reports}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
