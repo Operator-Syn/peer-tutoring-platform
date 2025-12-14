@@ -1,5 +1,5 @@
 
-import './FileUpload.css';
+import './UploadNotes.css';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import Select from 'react-select';
@@ -7,7 +7,7 @@ import BasicButton from '../../components/BasicButton/BasicButton';
 import PopUpMessage from '../../components/PopUpMessage';
 import { useNavigate } from 'react-router-dom';
 
-export default function FileUpload() {
+export default function UploadNotes() {
     const API_URL = import.meta.env.VITE_API_BASE_URL;
     const navigate = useNavigate();
 
