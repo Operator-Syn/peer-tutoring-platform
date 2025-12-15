@@ -18,7 +18,7 @@ import { useState, useEffect } from 'react';
 
 export default function HomePage() {
     const navigate = useNavigate();
-    const loginCheck = useLoginCheck({ route: "/Appointments" });
+    const loginCheck = useLoginCheck();
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
 
     // 2. State to hold user data
@@ -48,13 +48,13 @@ export default function HomePage() {
         const isActiveTutor = currentUser?.role === "TUTOR" && currentUser?.tutor_status === "ACTIVE";
 
         if (isActiveTutor) {
-            navigate("/TutorAppointments", { 
-                state: { highlightId: appointmentId } 
+            navigate("/TutorAppointments", {
+                state: { highlightId: appointmentId }
             });
         } else {
             // Default for students, guests, or if data hasn't loaded yet
-            navigate("/Appointments", { 
-                state: { highlightId: appointmentId } 
+            navigate("/Appointments", {
+                state: { highlightId: appointmentId }
             });
         }
     };
@@ -83,7 +83,7 @@ export default function HomePage() {
                                 <BasicButton onClick={() => {
                                     checkIfLoggedinBeforeCreatingAppointment();
                                 }}>Start Learning</BasicButton>
-                                
+
                                 {/* 5. This button is now connected to the instant handler */}
                                 <BasicButton onClick={() => handleAppointmentsClick()} light={true}>
                                     Appointments

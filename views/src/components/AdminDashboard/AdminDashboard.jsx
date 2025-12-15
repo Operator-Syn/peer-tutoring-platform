@@ -13,15 +13,28 @@ const AdminDashboard = () => {
   } = useAdminDashboardData();
 
   const [showActionModal, setShowActionModal] = useState(false);
-  const [actionData, setActionData] = useState({ type: '', id: null, title: '', noteRequired: false, targetStatus: '', files: [] });
+  const [actionData, setActionData] = useState({ 
+      type: '', id: null, title: '', noteRequired: false, targetStatus: '', 
+      files: [], finalCode: '', finalName: '', details: null 
+  });
   const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
+  const [reportList, setReportList] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+  const fetchAndShowReports = async (userId) => {
+    const res = await fetch(`/api/admin/users/${userId}/reports`);
+    const data = await res.json();
+    if (data.success) {
+        setReportList(data.reports);
+        setShowReportModal(true);
+    }
+};
 
   const handleShowCor = (url, isAppeal = false) => {
     const path = url.startsWith('http') ? url : (isAppeal || activeTab === 'appeals' ? `/uploads/appeals/${url}` : `/uploads/cor/${url}`);
@@ -30,7 +43,8 @@ const AdminDashboard = () => {
   };
 
   const openActionModal = (actionType, item, targetStatus) => {
-    let title = "", noteRequired = false, id = null, files = [];
+    let title = "", noteRequired = false, id = null, files = [], finalCode = "", finalName = "", details = null;
+    
     if (actionType === 'USER') {
         id = item.google_id;
         const name = item.first_name ? `${item.first_name} ${item.last_name}` : item.email;
@@ -43,8 +57,19 @@ const AdminDashboard = () => {
     } else if (actionType === 'APP') {
         id = item.application_id;
         title = `${targetStatus === 'APPROVED' ? 'Approve' : 'Reject'} Application`;
+    } else if (actionType === 'REQUEST') {
+        id = item.request_id;
+        if (targetStatus === 'VIEW') {
+            title = `Request Details: ${item.subject_code}`;
+            details = item; 
+        } else {
+            title = `${targetStatus === 'APPROVE' ? 'Approve' : 'Reject'} Subject Request`;
+            finalCode = item.subject_code; 
+            finalName = item.subject_name;
+        }
     }
-    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files });
+    
+    setActionData({ type: actionType, id, title, noteRequired, targetStatus, files, finalCode, finalName, details });
     setActionNote('');
     setShowActionModal(true);
   };
@@ -65,6 +90,13 @@ const AdminDashboard = () => {
         payload = { action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT' };
     } else if (actionData.type === 'APP') {
         apiAction = actionData.targetStatus === 'APPROVED' ? 'APPROVE_APP' : 'REJECT_APP';
+    } else if (actionData.type === 'REQUEST') {
+        apiAction = 'RESOLVE_REQUEST';
+        payload = { 
+            action: actionData.targetStatus === 'APPROVE' ? 'APPROVE' : 'REJECT',
+            final_code: actionData.finalCode,
+            final_name: actionData.finalName
+        };
     }
     
     const res = await actions.handleAction(apiAction, actionData.id, payload);
@@ -89,7 +121,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className={`admin-container ${showCorModal ? 'modal-open-custom' : ''}`}>
+    <div className="admin-container">
       <header className="admin-header">
         <div className="admin-header-content">
           <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
@@ -100,7 +132,7 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <ToastContainer position="top-end" className="p-3" style={{zIndex: 3000, position: 'fixed'}}>
+      <ToastContainer position="top-end" className="p-3 admin-toast-container">
         <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger">
             <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
@@ -111,7 +143,7 @@ const AdminDashboard = () => {
         {error && <div className="admin-alert-error">{error}</div>}
 
         <div className="admin-stats-grid">
-          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}, {k:"total_courses",t:stats.total_courses,d:"Courses"}, {k:"active_sessions",t:0,d:"Sessions"}].map(c => (
+          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}, {k:"total_courses",t:stats.total_courses,d:"Courses"}, {k:"active_sessions",t:stats.active_sessions,d:"Sessions"}].map(c => (
             <BasicCard key={c.k} title={String(c.t || 0)} description={c.d} />
           ))}
         </div>
@@ -120,6 +152,7 @@ const AdminDashboard = () => {
             <button className={`admin-tab-btn ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>Tutor Applications</button>
             <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>User Management</button>
             <button className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} onClick={() => setActiveTab('appeals')}>Appeals</button>
+            <button className={`admin-tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => setActiveTab('requests')}>Subject Requests</button>
         </div>
 
         <div className="admin-filters-row">
@@ -138,7 +171,7 @@ const AdminDashboard = () => {
                     <select className="admin-form-select admin-sort" value={filters.sort} onChange={(e) => filters.setSort(e.target.value)}>
                         <option value="date_desc">Newest First</option>
                         <option value="date_asc">Oldest First</option>
-                        {activeTab !== 'appeals' && <><option value="name_asc">Name (A-Z)</option><option value="name_desc">Name (Z-A)</option></>}
+                        {activeTab !== 'appeals' && activeTab !== 'requests' && <><option value="name_asc">Name (A-Z)</option><option value="name_desc">Name (Z-A)</option></>}
                         {activeTab === 'applications' && <><option value="college_asc">College (A-Z)</option><option value="college_desc">College (Z-A)</option><option value="year_asc">Year (Low-High)</option><option value="year_desc">Year (High-Low)</option></>}
                         {activeTab === 'users' && <><option value="role_asc">Role (A-Z)</option><option value="role_desc">Role (Z-A)</option></>}
                     </select>
@@ -153,9 +186,14 @@ const AdminDashboard = () => {
                 )}
 
                 {activeTab === 'users' && (
+                    <>
                     <select className="admin-form-select admin-filter-dropdown" value={filters.role} onChange={(e) => filters.setRole(e.target.value)}>
                         <option value="all">All Roles</option><option value="TUTEE">Tutee</option><option value="TUTOR">Tutor</option>
                     </select>
+                    <select className="admin-form-select admin-filter-dropdown" value={filters.reported} onChange={(e) => filters.setReported(e.target.value)}>
+                        <option value="all">All Users</option><option value="yes">Reported Only</option><option value="no">No Reports</option>
+                    </select>
+                    </>
                 )}
             </div>
 
@@ -180,14 +218,20 @@ const AdminDashboard = () => {
                                     <span>College</span><span>Name</span><span>Gender</span><span>School Year</span><span>Documents</span><span>Actions</span>
                                 </div>
                                 <div className="admin-card-row body">
-                                    <div className="admin-flex-align"><div className="admin-avatar"><i className="bi bi-person-fill"></i></div><span className="admin-bold">{app.program || 'CCS'}</span></div>
+                                    <span className="admin-bold">{app.program || 'CCS'}</span>
                                     <span className="admin-text-main">{app.student_name}</span>
                                     <span className="admin-text-sub">N/A</span>
                                     <span className="admin-text-sub">{app.school_year || 'N/A'}</span>
                                     <div>{app.cor_filename ? <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button> : <div className="admin-btn-icon disabled"><i className="bi bi-file-x"></i></div>}</div>
                                     <div className="admin-flex-align">
-                                        <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')} disabled={app.status !== 'PENDING'}>Accept</button>
-                                        <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECTED')} disabled={app.status !== 'PENDING'}>Decline</button>
+                                        {app.status === 'PENDING' ? (
+                                            <>
+                                                <button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')}>Accept</button>
+                                                <button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECT')}>Decline</button>
+                                            </>
+                                        ) : (
+                                            <span className="admin-text-muted">Processed</span>
+                                        )}
                                     </div>
                                 </div>
                                 {app.status !== 'PENDING' && <div className="admin-badge-absolute"><span className={`admin-status-badge ${app.status.toLowerCase()}`}>{app.status}</span></div>}
@@ -201,12 +245,21 @@ const AdminDashboard = () => {
                         <table className="admin-table">
                             <thead><tr><th className="col-user">User</th><th className="col-role">Role</th><th className="col-status">Status</th><th className="col-reports">Reports</th><th className="col-actions">Actions</th></tr></thead>
                             <tbody>
-                                {data.map(user => (
+                                {[...data].sort((a, b) => (b.pending_reports || 0) - (a.pending_reports || 0)).map(user => (
                                     <tr key={user.google_id}>
                                         <td><div className="admin-bold">{user.first_name} {user.last_name}</div><div className="admin-sub">{user.email}</div></td>
                                         <td><span className="admin-role-badge">{user.role}</span></td>
                                         <td><span className={`admin-status-badge ${user.status?.toLowerCase()}`}>{user.status}</span>{user.status_note && <div className="admin-note">"{user.status_note}"</div>}</td>
-                                        <td>{user.pending_reports > 0 ? <span className="admin-danger">{user.pending_reports}</span> : "0"}</td>
+                                        <td>
+                                            {user.pending_reports > 0 ? (
+                                                <button 
+                                                    className="btn btn-sm btn-outline-danger" 
+                                                    onClick={() => fetchAndShowReports(user.google_id)}
+                                                >
+                                                    {user.pending_reports} Pending
+                                                </button>
+                                            ) : "0"}
+                                        </td>
                                         <td><div className="admin-flex-end">
                                             {user.status !== 'ACTIVE' && <button className="admin-btn-green" onClick={() => openActionModal('USER', user, 'ACTIVE')}>Activate</button>}
                                             {user.status !== 'PROBATION' && <button className="admin-btn-orange" onClick={() => openActionModal('USER', user, 'PROBATION')}>Probation</button>}
@@ -246,6 +299,52 @@ const AdminDashboard = () => {
                         </table>
                     </div>
                 )}
+
+                {activeTab === 'requests' && (
+                    <div className="admin-table-box">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th className="col-req-user">Requester</th>
+                                    <th className="col-req-role">Role</th>
+                                    <th className="col-req-subj">Subject</th>
+                                    <th className="col-req-status-date">Status / Date</th>
+                                    <th className="col-req-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.map(req => (
+                                    <tr key={req.request_id}>
+                                        <td>
+                                            <div className="admin-bold">{req.first_name} {req.last_name}</div>
+                                            <div className="admin-sub">{req.requester_id}</div>
+                                        </td>
+                                        <td><span className="admin-role-badge">{req.role}</span></td>
+                                        <td>
+                                            <div className="admin-bold">{req.subject_code}</div>
+                                            <div className="admin-text-muted small">{req.subject_name}</div>
+                                        </td>
+                                        <td>
+                                            <span className={`admin-status-badge ${req.status.toLowerCase()}`}>{req.status}</span>
+                                            <div className="admin-text-muted admin-req-date-text mt-1">{req.created_at}</div>
+                                        </td>
+                                        <td>
+                                            <div className="admin-flex-end">
+                                                <button className="admin-btn-icon admin-btn-view-details" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')}><i className="bi bi-eye"></i></button>
+                                                {req.status === 'PENDING' && (
+                                                    <>
+                                                        <button className="admin-btn-accept" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Accept</button>
+                                                        <button className="admin-btn-decline" onClick={() => openActionModal('REQUEST', req, 'REJECT')}>Decline</button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
                 
                 {renderPagination()}
             </>
@@ -255,7 +354,18 @@ const AdminDashboard = () => {
       <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
         <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
-            <p>Are you sure you want to proceed?</p>
+            {actionData.targetStatus === 'VIEW' && actionData.details && (
+                <div className="admin-details-view">
+                    <p><strong>Subject Code:</strong> {actionData.details.subject_code}</p>
+                    <p><strong>Course Name:</strong> {actionData.details.subject_name}</p>
+                    <p><strong>Reason/Description:</strong></p>
+                    <div className="p-2 bg-light rounded mb-2">{actionData.details.description || "No description provided."}</div>
+                    <p className="mb-0"><small className="text-muted">Requested by {actionData.details.first_name} {actionData.details.last_name} ({actionData.details.requester_id}) on {actionData.details.created_at}</small></p>
+                </div>
+            )}
+
+            {actionData.targetStatus !== 'VIEW' && <p>Are you sure you want to proceed?</p>}
+            
             {actionData.type === 'APPEAL' && actionData.files && actionData.files.length > 0 && (
                 <div className="admin-modal-files">
                     <strong>Attached Evidence:</strong>
@@ -266,26 +376,79 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             )}
+            
+            {actionData.type === 'REQUEST' && actionData.targetStatus === 'APPROVE' && (
+                <>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="admin-fw-bold">Confirm Course Code:</Form.Label>
+                        <Form.Control 
+                            type="text" value={actionData.finalCode} 
+                            onChange={(e) => setActionData({...actionData, finalCode: e.target.value})}
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="admin-fw-bold">Confirm Course Name:</Form.Label>
+                        <Form.Control 
+                            type="text" value={actionData.finalName} 
+                            onChange={(e) => setActionData({...actionData, finalName: e.target.value})}
+                        />
+                    </Form.Group>
+                </>
+            )}
+
             {actionData.noteRequired && <Form.Group><Form.Label>Reason / Note:</Form.Label><Form.Control as="textarea" rows={3} value={actionNote} onChange={(e) => setActionNote(e.target.value)} /></Form.Group>}
         </Modal.Body>
         <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
-            <Button variant={actionData.targetStatus.includes('REJECT') || actionData.targetStatus.includes('BAN') ? 'danger' : 'success'} onClick={submitAction}>Confirm</Button>
+            {actionData.targetStatus === 'VIEW' ? (
+                 <Button variant="secondary" onClick={() => setShowActionModal(false)}>Close</Button>
+            ) : (
+                <>
+                    <Button variant="secondary" onClick={() => setShowActionModal(false)}>Cancel</Button>
+                    <Button variant={actionData.targetStatus.includes('REJECT') || actionData.targetStatus.includes('BAN') ? 'danger' : 'success'} onClick={submitAction}>Confirm</Button>
+                </>
+            )}
         </Modal.Footer>
       </Modal>
 
-      {showCorModal && (
-        <div className="modal fade show custom-dark-modal">
-            <div className="modal-dialog modal-dialog-centered custom-large-modal">
-                <div className="modal-content custom-dark-content">
-                    <div className="modal-body p-0 custom-dark-body">
-                        {selectedCorFile ? (selectedCorFile.toLowerCase().endsWith('.pdf') ? <iframe src={selectedCorFile} className="cor-frame" title="Doc"></iframe> : <img src={selectedCorFile} className="cor-image" alt="Doc" />) : <div className="text-white p-5">No File</div>}
+      <Modal show={showReportModal} onHide={() => setShowReportModal(false)} size="lg" centered>
+            <Modal.Header closeButton><Modal.Title>User Reports</Modal.Title></Modal.Header>
+            <Modal.Body>
+                {reportList.length === 0 ? <p>No reports found.</p> : (
+                    <div className="list-group">
+                        {reportList.map(r => (
+                            <div key={r.report_id} className="list-group-item">
+                                <div className="d-flex justify-content-between">
+                                    <h5 className="mb-1">{r.type}</h5>
+                                    <small>{r.date_submitted}</small>
+                                </div>
+                                <p className="mb-1">{r.description}</p>
+                                <small className="text-muted">Reporter: {r.reporter_id}</small>
+                            </div>
+                        ))}
                     </div>
-                    <div className="custom-dark-footer"><button className="btn btn-light" onClick={() => setShowCorModal(false)}>Close</button></div>
-                </div>
-            </div>
-        </div>
-      )}
+                )}
+            </Modal.Body>
+        </Modal>
+
+      <Modal show={showCorModal} onHide={() => setShowCorModal(false)} size="xl" centered>
+        <Modal.Header closeButton className="admin-doc-modal-header">
+          <Modal.Title>Document Viewer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="admin-doc-modal-body">
+          {selectedCorFile ? (
+            selectedCorFile.toLowerCase().endsWith('.pdf') ? (
+              <iframe src={selectedCorFile} className="admin-doc-iframe" title="Document"></iframe>
+            ) : (
+              <img src={selectedCorFile} className="admin-doc-image" alt="Document" />
+            )
+          ) : (
+            <div className="text-white p-5 text-center">No File Available</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="admin-doc-modal-footer">
+          <Button variant="light" onClick={() => setShowCorModal(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

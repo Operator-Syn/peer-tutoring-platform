@@ -15,8 +15,11 @@ export default function ProtectedRoute() {
             const user = await loginCheck();
             setUser(user);
             setAuthChecked(true);
-            if (user.status === 'BANNED' && location.pathname !== '/banned') {
-                navigate("/banned");
+            if (user?.status === 'BANNED') {
+                if (location.pathname !== '/banned') {
+                    navigate("/banned");
+                }
+                return;
             }
             if (user && user.registered_tutee === false) {
                 navigate("/AccountCreation");
@@ -25,7 +28,7 @@ export default function ProtectedRoute() {
         check();
     }, [location.pathname]);
 
-	if (!authChecked) return <div style={{padding: "15rem"}}>Loading...</div>;
+
 	if (!user) return null;
 
 	return <Outlet />;

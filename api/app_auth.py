@@ -1,6 +1,7 @@
 from authlib.integrations.flask_client import OAuth
 # Added make_response to handle headers manually
 from flask import url_for, session, redirect, request, Blueprint, jsonify, current_app, make_response
+from authlib.integrations.base_client.errors import OAuthError  # <--- IMPORT ADDED
 from config import Config
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
@@ -10,13 +11,11 @@ import requests
 oauth = OAuth()
 auth_bp = Blueprint('auth', __name__)
 
-
 @auth_bp.route('/login')
 def login():
     """
     Redirects the user to Google's authentication page.
     """
-  
     # Ideally, ensure ProxyFix is enabled in your main app.py so _external=True 
     # generates https:// links correctly behind Cloudflare.
     redirect_uri = url_for('auth.auth', _external=True)
@@ -27,12 +26,22 @@ def auth():
     """
     Handles the callback from Google after successful authentication.
     """
-    
-    token = oauth.google.authorize_access_token()
+    try:
+        # [CRITICAL FIX] 
+        # Wrap token retrieval in a try-block to catch "Access Denied" if user cancels.
+        token = oauth.google.authorize_access_token()
+    except OAuthError as e:
+        # Log the error for debugging (usually "access_denied")
+        print(f"OAuth Error (User likely canceled): {e}")
+        # Gracefully redirect back to the frontend instead of crashing
+        return redirect(Config.FRONTEND_URL)
+    except Exception as e:
+        print(f"Unexpected Error during token exchange: {e}")
+        return jsonify({'error': 'Authentication failed'}), 500
 
-  
     user_info = token.get('userinfo')
 
+    # --- Check Banned Status ---
     try:
         conn = get_connection()
         with conn:
@@ -41,26 +50,29 @@ def auth():
                 user_record = cursor.fetchone()
 
                 if user_record and user_record.get('status') == 'BANNED':
-                    pass
+                    # NOTE: Currently this is 'pass', meaning banned users proceed to login.
+                    # You likely want to return here, e.g.:
+                    # return "Account is banned", 403
+                    pass 
     except Exception as e:
         print("Auth Error:", e)
         return "Internal Server Error", 500
  
+    # Optional Domain Check (Commented out as in your original code)
     # if not user_info['email'].endswith('@g.msuiit.edu.ph'):
     #     return "Unauthorized: Please use your university email.", 403
-    # print("DEBUG USER_INFO:", user_info) 
    
+    # Set Session
     session.permanent = True
     session['user'] = user_info
 
- 
+    # --- Upsert User to Database ---
     try:
         conn = get_connection()
         # Use try-finally to ensure connection closes even if errors occur
         try:
             with conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-
                     # CONCURRENCY FIX: Use ON CONFLICT (Upsert) instead of Check-then-Insert
                     # This prevents race conditions if the user double-clicks login
                     cursor.execute("""
@@ -77,7 +89,6 @@ def auth():
     except Exception as e:
         # Connection is already closed in finally block if it existed
         return jsonify({'error': str(e)}), 500
-
 
     # CLOUDFLARE FIX: Prevent caching of the redirect response
     # This ensures User A's session cookie isn't cached and served to User B.
@@ -110,7 +121,6 @@ def get_user():
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 # Optimized Query: Get ID, Role, Account Status, and Tutor Status at once
-                # Updated Query in get_user()
                 query = """
                     SELECT 
                         te.id_number AS tutee_id,  -- Get ID from the Tutee table, not User Account
@@ -195,7 +205,6 @@ def logout():
     response = make_response(redirect(Config.FRONTEND_URL))
     
     # FIX: Use dynamic domain or None. 'localhost' is invalid for production domains.
-    # If SESSION_COOKIE_DOMAIN is not set in Config, it defaults to None (standard behavior)
     cookie_domain = current_app.config.get("SESSION_COOKIE_DOMAIN", None)
     
     response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"), path='/', domain=cookie_domain)

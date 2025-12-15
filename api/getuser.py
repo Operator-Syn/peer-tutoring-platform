@@ -6,6 +6,9 @@ import os
 import base64
 from psycopg2 import sql
 from werkzeug.utils import secure_filename
+from utils.supabase_client import upload_file
+from werkzeug.utils import secure_filename
+
 
 tutee_bp = Blueprint('tutee', __name__)
 tutor_bp = Blueprint('tutor', __name__)
@@ -25,38 +28,40 @@ def get_all_tutees():
 
 
 
+
 @tutor_bp.route("/all")
 def get_all_tutors():
     try:
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT * FROM tutor")  # fetch all tutors
+                cursor.execute("SELECT * FROM tutor")
                 tutors = cursor.fetchall()
 
-        # Convert profile_img BYTEA to base64 for each tutor
-        for tutor in tutors:
-            if "profile_img" in tutor and tutor["profile_img"]:
-                tutor["profile_img"] = base64.b64encode(tutor["profile_img"]).decode("utf-8")
-            else:
-                tutor["profile_img"] = None
+     
+        for row in tutors:
+            for k, v in list(row.items()):
+                if isinstance(v, memoryview):
+                    row[k] = base64.b64encode(v.tobytes()).decode("utf-8")
+                elif isinstance(v, (bytes, bytearray)):
+                    row[k] = base64.b64encode(v).decode("utf-8")
 
         return jsonify(tutors), 200
+
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
-    
 
+
+    
 @tutor_bp.route("/<tutor_id>")
 def get_tutor(tutor_id):
     try:
-        import base64
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Fetch tutor info
                 cursor.execute("""
                     SELECT 
                         t.tutor_id,
@@ -68,7 +73,7 @@ def get_tutor(tutor_id):
                         p.program_name,
                         t.status,
                         t.about,
-                        t.profile_img,
+                        t.profile_img_url,  
                         tt.google_id
                     FROM tutor t
                     JOIN tutee tt ON t.tutor_id = tt.id_number
@@ -80,13 +85,6 @@ def get_tutor(tutor_id):
                 if not tutor:
                     return jsonify({"error": "Tutor not found"}), 404
 
-                # Convert BYTEA to base64
-                tutor["profile_img"] = (
-                    base64.b64encode(tutor["profile_img"]).decode("utf-8")
-                    if tutor["profile_img"] else None
-                )
-
-                # Fetch availability only
                 cursor.execute("""
                     SELECT 
                         vacant_id,
@@ -99,12 +97,10 @@ def get_tutor(tutor_id):
                 """, (tutor_id,))
                 availability = cursor.fetchall()
 
-                # Format times as strings
                 for slot in availability:
                     slot["start_time"] = slot["start_time"].strftime("%H:%M:%S")
                     slot["end_time"] = slot["end_time"].strftime("%H:%M:%S")
 
-                # Teaches courses
                 cursor.execute("SELECT course_code FROM teaches WHERE tutor_id = %s", (tutor_id,))
                 courses = [row["course_code"] for row in cursor.fetchall()]
 
@@ -118,7 +114,7 @@ def get_tutor(tutor_id):
             "program_name": tutor["program_name"],
             "status": tutor["status"],
             "about": tutor["about"] or "",
-            "profile_img": tutor["profile_img"],
+            "profile_img_url": tutor.get("profile_img_url"),  # ✅ add this
             "google_id": tutor["google_id"],
             "availability": availability,
             "courses": courses
@@ -127,7 +123,6 @@ def get_tutor(tutor_id):
         return jsonify(response), 200
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
@@ -287,31 +282,20 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
-
 @tutee_bp.route("/report", methods=["POST"])
 def create_report():
     try:
         reporter_id = request.form.get("reporter_id")
         reported_id = request.form.get("reported_id")
-        description = request.form.get("description", "")  
+        description = request.form.get("description", "")
         report_type = request.form.get("type", "TUTOR_REPORT")
         reasons = request.form.getlist("reasons")
 
         if not reporter_id or not reported_id:
             return jsonify({"error": "Missing reporter_id or reported_id"}), 400
 
-      
         if reporter_id == reported_id:
             return jsonify({"error": "You cannot report yourself."}), 400
-
-        file_list = []
-        files = request.files.getlist("files")
-        for file in files:
-            if file and file.filename:
-                unique_filename = f"{reporter_id}_{reported_id}_{file.filename}"
-                save_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-                file.save(save_path)
-                file_list.append(unique_filename)
 
         conn = get_connection()
         with conn:
@@ -326,19 +310,45 @@ def create_report():
                     description,
                     report_type,
                     reasons or [],
-                    file_list or []
+                    []
                 ))
-
                 report_id = cursor.fetchone()["report_id"]
+
+        uploaded_urls = []
+        files = request.files.getlist("files")
+        folder_name = secure_filename(str(reported_id))
+
+        for file in files:
+            if file and file.filename:
+                out = upload_file(
+                    bucket_name="reports",
+                    file_obj=file,
+                    folder_name=folder_name,
+                    filename_prefix=f"{report_id}_",
+                )
+                # ✅ upload_file returns {"public_url": ..., "path": ...}
+                uploaded_urls.append(out["public_url"])
+
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    UPDATE report
+                    SET files = %s
+                    WHERE report_id = %s;
+                """, (uploaded_urls, report_id))
 
         return jsonify({
             "message": "Report submitted successfully",
-            "report_id": report_id
+            "report_id": report_id,
+            "file_urls": uploaded_urls
         }), 201
 
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
 
 
 
@@ -354,38 +364,61 @@ def get_report_file(filename):
 def update_profile_img():
     try:
         tutor_id = request.form.get("tutor_id")
+        file = request.files.get("profile_img")
+
         if not tutor_id:
             return jsonify({"error": "Missing tutor_id"}), 400
-
-        # Get uploaded file
-        file = request.files.get("profile_img")
-        if not file or file.filename == "":
+        if not file or not file.filename:
             return jsonify({"error": "No file uploaded"}), 400
 
-        # Read file as bytes
-        profile_img_bytes = file.read()
+        try:
+            out = upload_file(
+                bucket_name="tutor-profiles",
+                file_obj=file,
+                folder_name=secure_filename(str(tutor_id)),
+                filename_prefix="avatar_",
+            )
+        except RuntimeError as e:
+            # ✅ DNS / network error
+            return jsonify({"error": str(e)}), 503
 
-        # Convert to base64 for immediate frontend use
-        profile_img_base64 = base64.b64encode(profile_img_bytes).decode("utf-8")
-
-        # Update DB
         conn = get_connection()
         with conn:
             with conn.cursor() as cursor:
                 cursor.execute("""
                     UPDATE tutor
-                    SET profile_img = %s
+                    SET profile_img_url = %s
                     WHERE tutor_id = %s
-                """, (profile_img_bytes, tutor_id))
+                """, (out["public_url"], tutor_id))
 
-        
         return jsonify({
             "message": "Profile image updated successfully",
-            "profile_img": profile_img_base64
+            "profile_img_url": out["public_url"],
         }), 200
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+
+
+@tutor_bp.route("/profile_img_url/by_google/<google_id>", methods=["GET"])
+def get_profile_img_url_by_google(google_id):
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT t.profile_img_url
+                    FROM tutor t
+                    JOIN tutee tt ON t.tutor_id = tt.id_number
+                    WHERE tt.google_id = %s
+                    LIMIT 1;
+                """, (google_id,))
+                row = cursor.fetchone()
+
+        return jsonify({"profile_img_url": (row["profile_img_url"] if row else None)}), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500

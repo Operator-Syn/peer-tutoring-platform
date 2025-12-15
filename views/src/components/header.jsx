@@ -4,136 +4,190 @@ import { useLoginCheck } from "../hooks/useLoginCheck";
 import { io } from "socket.io-client";
 import "../assets/css/header.css";
 import NotificationPanel from "./NotificationPanel/NotificationPanel";
+
+// Import all assets
 import logo from "../assets/images/M_layouts/LAV_logo.png";
 import notifIcon from "../assets/images/M_layouts/Notifications.png";
-import histIcon from "../assets/images/M_layouts/History.png";
 import feedIcon from "../assets/images/M_layouts/Feedback.png";
 import reportIcon from "../assets/images/M_layouts/Report.png";
 import applyIcon from "../assets/images/M_layouts/Apply.png";
 import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
 import logoutIcon from "../assets/images/M_layouts/logout.png";
-import profile from "../assets/images/M_layouts/profile.png";
+import profilePlaceholder from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
+import uploadIcon from "../assets/images/M_layouts/upload.svg";
+import histIcon from "../assets/images/M_layouts/History.png"; 
 
-// Define your socket URL (matches your ChatInterface logic)
+// Define your socket URL
 const SOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || "http://localhost:5000";
 
 function Header() {
-
   const [user, setUser] = useState(null);
-  const [socket, setSocket] = useState(null); // 2. State for Socket
+  const [socket, setSocket] = useState(null); 
+  const [profileUrl, setProfileUrl] = useState(null); 
+
+  // Keep hook, but ignore result to prevent re-renders
   const loginCheck = useLoginCheck({ login: false });
 
   // State for Notification Panel Visibility and Count
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // --- 1. Fetch User ---
-  useEffect(() => {
-    async function fetchUser() {
-      const userData = await loginCheck();
-      
-      // Attempt to fetch full user details (including role/status) for navigation logic
-      let fullUserData = userData;
-      if (userData?.id_number) {
-          try {
-              const res = await fetch(`/api/auth/get_user`); 
-              
-              if (res.ok) {
-                  fullUserData = await res.json();
-              } else {
-                  console.warn(`Failed to fetch full user details from /api/auth/get_user. Status: ${res.status}`);
-              }
-          } catch (e) {
-              console.error("Error fetching full user details:", e);
-          }
-      }
-      setUser(fullUserData);
+  const [popup, setPopup] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAnimating, setMenuAnimating] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // --- 1. STABILIZED USER DATA FETCHER ---
+  const fetchUserData = useCallback(async () => {
+    let fullUserData = null;
+    
+    try {
+        const res = await fetch(`/api/auth/get_user`); 
+        if (res.ok) {
+            fullUserData = await res.json();
+        } else {
+            console.warn(`User not logged in. Status: ${res.status}`);
+            setUser(null);
+            setProfileUrl(null);
+            return; 
+        }
+    } catch (e) {
+        console.error("Error fetching user:", e);
+        setUser(null);
+        return;
     }
-    fetchUser();
-  }, []);
+    
+    // Log this to ensure we actually have an ID for the socket
+    // console.log("User Data Fetched:", fullUserData); 
+    
+    setUser(fullUserData);
+    
+    // Fetch Profile Image
+    const googleId = fullUserData?.sub || fullUserData?.google_id;
+    if (!googleId) {
+        setProfileUrl(null);
+        return;
+    }
 
-  // --- 2. Initialize Socket Connection (Global) ---
+    try {
+        const res = await fetch(
+            `/api/tutor/profile_img_url/by_google/${googleId}`,
+            { credentials: "include" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.profile_img_url) {
+            setProfileUrl(`${data.profile_img_url}?v=${Date.now()}`);
+        } else {
+            setProfileUrl(null);
+        }
+    } catch (err) {
+        setProfileUrl(null);
+    }
+  }, []); 
+
+  // --- Initial Fetch ---
   useEffect(() => {
-    // Only connect if we have a user and they have an ID number
-    if (!user || !user.id_number) return;
+    fetchUserData();
+  }, [fetchUserData]); 
 
-    console.log("Header connecting to socket for user:", user.id_number);
+  // --- 2. FIXED SOCKET CONNECTION LOGIC ---
+  useEffect(() => {
+    // We check for id_number, but fallback to google_id or id if necessary
+    const userId = user?.id_number || user?.google_id || user?.id;
 
-    // Initialize connection
+    // If no user ID, ensure we disconnect any existing socket and stop.
+    if (!userId) {
+      if (socket) {
+        console.log("User logged out, disconnecting socket.");
+        socket.disconnect();
+        setSocket(null);
+      }
+      return;
+    }
+    
+    // If we already have a socket connected for this EXACT user, do nothing.
+    // We convert to String to avoid mismatches (e.g. 123 vs "123")
+    if (socket && String(socket.io.opts.query.user_id) === String(userId)) {
+        return;
+    }
+
+    console.log("🔌 Connecting Socket for User:", userId);
+
     const newSocket = io(SOCKET_URL, {
       transports: ["websocket"],
       secure: SOCKET_URL.includes("https"),
-      // This query param allows the backend (sockets.py) to add the user 
-      // to their personal notification room immediately upon connection.
-      query: { user_id: user.id_number }
+      query: { user_id: userId }
     });
 
     setSocket(newSocket);
 
-    // Cleanup on unmount or logout
+    // CLEANUP: This runs automatically when the component unmounts 
+    // OR when the `userId` changes.
     return () => {
+      console.log("Cleaning up socket connection...");
       newSocket.disconnect();
     };
-  }, [user]); // Re-run if user changes (e.g. login/logout)
+    
+    // Dependency: Only re-run if the user ID specifically changes.
+    // We do NOT include 'socket' in the dependency array to avoid loops.
+  }, [user?.id_number, user?.google_id, user?.id]); 
 
-  const [popup, setPopup] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuAnimating, setMenuAnimating] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  // --- 3. Profile Image Update Listener ---
+  useEffect(() => {
+    const onUpdated = () => fetchUserData();
+    const onStorage = (e) => {
+      if (e.key === "PROFILE_IMG_UPDATED_AT") fetchUserData();
+    };
 
+    window.addEventListener("profile-img-updated", onUpdated);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("profile-img-updated", onUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [fetchUserData]); 
+
+  // --- UI/Navigation Logic ---
 
   useEffect(() => {
     setPopup(false);
-    setShowNotificationPanel(false);
+    setShowNotificationPanel(false); 
   }, [location]);
 
-  // Handler to update the unread count from the NotificationPanel
   const handleUnreadCountChange = useCallback((newCount) => {
     setUnreadCount(prev => typeof newCount === 'function' ? newCount(prev) : newCount);
   }, []);
 
-  // Handler to close the notification panel
   const handleCloseNotifications = () => setShowNotificationPanel(false);
 
-  // Handler to open the notification panel
   const handleShowNotifications = () => {
     setPopup(false);
     setShowNotificationPanel(true);
     handleNavClick();
   };
 
-  // Handler for NEW_MESSAGE notifications (redirect to /Messages)
   const handleNotificationAction = (appointmentId) => {
-    // This part sends the user to the /Messages route with the specific chat ID in the state
     navigate('/Messages', { state: { deepLinkAppointmentId: appointmentId } });
     handleCloseNotifications();
   };
 
-  // 🎯 NEW HANDLER: For BOOKING_... notifications (redirect to /Appointments)
   const handleAppointmentAction = (appointmentId = null) => {
     const isActiveTutor = user?.role === "TUTOR" && user?.tutor_status === "ACTIVE";
-
     if (isActiveTutor) {
-        navigate("/TutorAppointments", { 
-            state: { highlightId: appointmentId } 
-        });
+        navigate("/TutorAppointments", { state: { highlightId: appointmentId } });
     } else {
-        // Default for students or if not an active tutor
-        navigate("/Appointments", { 
-            state: { highlightId: appointmentId } 
-        });
+        navigate("/Appointments", { state: { highlightId: appointmentId } });
     }
     handleCloseNotifications();
   };
 
-
   const toggleMenu = () => {
-    if (window.innerWidth < 992) {
-      setMenuOpen(!menuOpen);
-    }
+    if (window.innerWidth < 992) setMenuOpen(!menuOpen);
   };
 
   useEffect(() => {
@@ -161,10 +215,8 @@ function Header() {
     };
   }, []);
 
-
   useEffect(() => {
     const collapseEl = document.getElementById("navbarNav");
-
     const handleResize = () => {
       if (window.innerWidth >= 992) {
         setMenuOpen(false);
@@ -172,7 +224,6 @@ function Header() {
         collapseEl?.classList.remove("show");
       }
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -180,10 +231,12 @@ function Header() {
   const handleNavClick = () => {
     const collapseEl = document.getElementById("navbarNav");
     if (collapseEl && collapseEl.classList.contains("show")) {
-      collapseEl.classList.remove('show');
+      collapseEl.classList.remove('show'); 
     }
     setMenuOpen(false);
   };
+
+  const profileSrc = profileUrl || profilePlaceholder;
 
   return (
     <>
@@ -253,19 +306,30 @@ function Header() {
               <div
                 className="prof"
                 onClick={() => setPopup(!popup)}
-                style={{ position: 'relative' }} // Ensure relative positioning for the badge to work
+                style={{ display: "flex", alignItems: "center", gap: "8px", position: 'relative' }} 
               >
-                <img src={profile} className="profileimg" alt="profile" />
+                <img 
+                    src={profileSrc} 
+                    alt="profile" 
+                    onError={(e) => (e.currentTarget.src = profilePlaceholder)}
+                    style={{
+                        width: "48px",
+                        height: "48px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                        display: "block",
+                    }}
+                />
                 <div className="circle">
                   <img src={arrow} className="arrowimg" alt="dropdown arrow" />
                 </div>
-                {/* Badge with corrected positioning */}
                 {unreadCount > 0 && (
                   <span
                     className="position-absolute translate-middle badge rounded-circle bg-danger"
                     style={{
                       top: '5px',    
-                      right: '-2px', 
+                      right: '15px', 
                       padding: '0.4em 0.6em',
                       fontSize: '0.7em',
                       border: '2px solid white',
@@ -279,17 +343,17 @@ function Header() {
 
               {popup && (
                 <div className="profilepopup">
-                  {/* Trigger Notification Panel on Click */}
                   <p onClick={handleShowNotifications} style={{ cursor: "pointer", position: 'relative' }}>
                     <img src={notifIcon} alt="Notifications" /> Notifications
-                    {/* Render inner badge */}
                     {unreadCount > 0 && (
                       <span className="badge bg-danger ms-2">{unreadCount}</span>
                     )}
                   </p>
+                  
                   <p>
                     <img src={histIcon} alt="History" /> History
                   </p>
+                  
                   <p
                     style={{ cursor: "pointer" }}
                     onClick={() => {
@@ -300,7 +364,7 @@ function Header() {
                   >
                     <img src={applyIcon} alt="Apply" /> Apply as tutor
                   </p>
-
+                  
                   <p onClick={() => {
                     setPopup(false);
                     handleNavClick();
@@ -308,9 +372,15 @@ function Header() {
                   }}>
                     < img src={feedIcon} alt="Feedback" /> Rate Session
                   </p>
-                  <p>
+                  
+                  <p onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    window.location.href = "https://myiit.msuiit.edu.ph";
+                  }}>
                     <img src={webIcon} alt="Website" /> Myiit
                   </p>
+                  
                   <p onClick={() => {
                     setPopup(false);
                     handleNavClick();
@@ -318,9 +388,31 @@ function Header() {
                   }}>
                     <img src={tutorsIcon} alt="Tutors" /> Tutors
                   </p>
+                  
+                  <p onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate(`/uploadnotes`);
+                  }}>
+                    <img src={uploadIcon} width={30} height={30} alt="Upload Notes" /> Upload Notes
+                  </p>
+
+                  {user && user.role === "ADMIN" && (
+                    <p
+                      onClick={() => {
+                        setPopup(false);
+                        handleNavClick();
+                        navigate("/admin");
+                      }}
+                    >
+                      <img src={reportIcon} alt="Admin Page" /> Admin Page
+                    </p>
+                  )}
+                  
                   <p>
                     <img src={reportIcon} alt="Report a bug" /> Report a bug
                   </p>
+
                   {user && (
                     <p onClick={() => {
                       setPopup(false);
@@ -337,8 +429,8 @@ function Header() {
         </div>
       </nav>
 
-      {/* Render Notification Panel with the Active Socket */}
-      {user && (
+      {/* Render Notification Panel - Ensure we pass the socket and user ID */}
+      {user && socket && ( 
         <NotificationPanel
           user={user}
           socket={socket}

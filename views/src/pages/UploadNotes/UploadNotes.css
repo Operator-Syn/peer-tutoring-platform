@@ -1,0 +1,119 @@
+.file-upload-fu {
+    /* height: 620px; */
+    min-height: 480px;
+    /* min-width: 800px; */
+    width: 70%;
+    max-width: 53rem;
+    
+    display: flex;
+    flex-direction: column;
+    padding: 20px 30px;
+    /* display: block; */
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 160px;
+    /* margin-bottom: 50px; */
+
+    /* border: 1px solid #ccc; */
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.input-forms-container-fu {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .file-upload-fu {
+        width: 90%;
+        padding: 15px 20px;
+        margin-top: 100px;
+    }
+
+    .input-forms-container-fu {
+        flex-direction: column;
+    }
+
+    .file-upload-fu {
+        min-height: 800px;
+    }
+
+    .input-field-nd {
+        flex: 1;
+    }
+
+    .input-forms-right-fu {
+        flex: 1;
+    }
+}
+
+
+.input-forms-left-fu, .input-forms-right-fu {
+    /* height: 100%; */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    /* border: 1px solid red; */
+}
+
+
+.input-field-nd {
+    resize: none;
+    text-align: justify;
+    /* flex: 1; */
+}
+
+.upload-file-container {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    /* border: 1px solid #ccc; */
+}
+
+.upload-file-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.note-description-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+
+
+/* ------------------- FILE ITEM -------------------- */
+
+.file-list {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    height: 200px;
+    /* max-width: 265.76px; */
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 30px;
+    border-bottom: 1px solid #ccc;
+    transition: background-color 0.3s;
+}
+
+.file-item:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+    /* transition-duration: 0.3s; */
+}
+

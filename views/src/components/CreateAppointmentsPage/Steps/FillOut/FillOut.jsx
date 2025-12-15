@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./FillOut.css";
+import ModalComponent from "../../../../components/modalComponent/ModalComponent"; 
+import { Form, Button, Toast, ToastContainer } from "react-bootstrap"; 
 
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
     const [courses, setCourses] = useState([]);
     const [displayDate, setDisplayDate] = useState("");
 
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [requestSubject, setRequestSubject] = useState('');
+    const [requestName, setRequestName] = useState('');
+    const [requestReason, setRequestReason] = useState('');
+    
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastVariant, setToastVariant] = useState('success');
+
     // Fetch programs and courses
     useEffect(() => {
-        // Replace with your actual API endpoint
         fetch("/api/fillout", { credentials: "include" })
             .then((res) => res.json())
             .then((data) => {
@@ -68,9 +79,76 @@ export default function FillOut({ data, update }) {
         return `${year}-${month}-${day}`;
     };
 
+    const triggerToast = (message, variant = 'success') => {
+        setToastMessage(message);
+        setToastVariant(variant);
+        setShowToast(true);
+    };
+
+    const handleInitialSubmit = () => {
+        const subjectTrimmed = requestSubject ? requestSubject.trim() : '';
+        const nameTrimmed = requestName ? requestName.trim() : '';
+        
+        if (!subjectTrimmed || !nameTrimmed) {
+            triggerToast("Course Code and Course Name are required", "danger");
+            return;
+        }
+        setShowRequestModal(false);
+        setShowConfirmModal(true);
+    };
+
+    const confirmSubmitRequest = async () => {
+        try {
+            const res = await fetch('/api/request/subject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject_code: requestSubject,
+                    subject_name: requestName,
+                    description: requestReason
+                })
+            });
+            const result = await res.json();
+            
+            if (res.ok) {
+                triggerToast("Request submitted successfully!", "success");
+                setShowConfirmModal(false);
+                setRequestSubject('');
+                setRequestName('');
+                setRequestReason('');
+            } else {
+                triggerToast(result.error || "Failed to submit request", "danger");
+            }
+        } catch (error) {
+            console.error(error);
+            triggerToast("An error occurred. Please try again.", "danger");
+        }
+    };
+
+    const cancelConfirmation = () => {
+        setShowConfirmModal(false);
+        setShowRequestModal(true);
+    };
+
+    const resetRequestForm = () => {
+        setRequestSubject('');
+        setRequestName('');
+        setRequestReason('');
+    };
+
+    const openRequestModal = () => {
+        resetRequestForm();
+        setShowRequestModal(true);
+    };
+
     return (
         <div className="create-appointment-form-bg">
-            {/* Custom Class: fillout-side-label */}
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 3000, position: 'fixed' }}>
+                <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={toastVariant}>
+                    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+                </Toast>
+            </ToastContainer>
+
             <h3 className="fillout-side-label h3-absolute">Fill Out</h3>
 
             {/* Custom Class: fillout-content-gap (Replaces gap-4) */}
@@ -151,7 +229,15 @@ export default function FillOut({ data, update }) {
 
                 {/* Course Subject */}
                 <div className="custom-border-label-group">
-                    <label className="form-label custom-border-label">Subject Code to Avail Tutoring</label>
+                    <div className="subject-header-row">
+                        <label className="form-label custom-border-label static-label">Subject Code to Avail Tutoring</label>
+                        <button 
+                            className="cant-find-course-link"
+                            onClick={openRequestModal}
+                        >
+                            Can't find your course?
+                        </button>
+                    </div>
                     <select
                         className="form-select custom-select"
                         value={data.courseCode || ""}
@@ -166,7 +252,6 @@ export default function FillOut({ data, update }) {
                     </select>
                 </div>
 
-                {/* Date Picker Field */}
                 <div className="custom-border-label-group">
                     <label className="form-label custom-border-label">Preferred Date</label>
                     <input
@@ -191,6 +276,80 @@ export default function FillOut({ data, update }) {
                     />
                 </div>
             </div>
+
+            <ModalComponent 
+                show={showRequestModal}
+                onHide={() => {
+                    setShowRequestModal(false);
+                    resetRequestForm();
+                }}
+                title="Request a New Subject"
+                body={
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Course Code</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                placeholder="e.g. CSC 101" 
+                                value={requestSubject} 
+                                onChange={(e) => setRequestSubject(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Course Name</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                placeholder="e.g. Introduction to Computing" 
+                                value={requestName} 
+                                onChange={(e) => setRequestName(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Reason (Optional)</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={3} 
+                                placeholder="Why do you need this subject?" 
+                                value={requestReason} 
+                                onChange={(e) => setRequestReason(e.target.value)}
+                                className="custom-form-input"
+                            />
+                        </Form.Group>
+                    </Form>
+                }
+                rightButtons={[
+                    { text: "Next", onClick: handleInitialSubmit, className: "custom-btn-primary" }
+                ]}
+                leftButtons={[
+                    { text: "Cancel", variant: "secondary", onClick: () => setShowRequestModal(false), className: "custom-btn-secondary" }
+                ]}
+                spaceBetweenGroups={true}
+            />
+
+            <ModalComponent 
+                show={showConfirmModal}
+                onHide={cancelConfirmation}
+                title="Confirm Request"
+                body={
+                    <div className="custom-confirm-body">
+                        <p>Are you sure you want to submit this request?</p>
+                        <div className="custom-summary-box p-3 bg-light rounded">
+                            <p><strong>Code:</strong> {requestSubject}</p>
+                            <p><strong>Name:</strong> {requestName}</p>
+                            {requestReason && <p><strong>Reason:</strong> {requestReason}</p>}
+                        </div>
+                    </div>
+                }
+                rightButtons={[
+                    { text: "Confirm Submit", onClick: confirmSubmitRequest, className: "custom-btn-success" }
+                ]}
+                leftButtons={[
+                    { text: "Back", variant: "secondary", onClick: cancelConfirmation, className: "custom-btn-secondary" }
+                ]}
+                spaceBetweenGroups={true}
+            />
         </div>
     );
 }

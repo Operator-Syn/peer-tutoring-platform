@@ -16,10 +16,13 @@ import AccountCreation from "./pages/AccountCreation";
 import TutorList from "./pages/TutorList/TutorList";
 import CreateAppointment from "./components/CreateAppointmentsPage/CreateApointment";
 import Banned from "./pages/Banned"
-import TuteeList from "./pages/Tutee List/TuteeList";
+import TuteeList from "./pages/TuteeList/TuteeList";
+import UploadNotes from "./pages/UploadNotes/UploadNotes";
+import Calendar from "./pages/Calendar/Calendar";
 
 import Feedback from "./pages/profile/feedback"
 import TutorProfile from "./pages/Tutor/Tutorprofile";
+import AdminRoute from "./components/AdminRoute";
 
 
 function App() {
@@ -34,19 +37,24 @@ function App() {
           
           <Route element={<ProtectedRoute />}>
             <Route path="Messages" element={<Messages />} />
-            <Route path="Report" element={<Report />} />
-            <Route path="admin" element={<AdminDashboard />} />  
+            <Route path="Report" element={<Report />} />  
             <Route path="profile/apply" element={<Apply />} />
             <Route path="Appointments" element={<TuteeAppointmentsPage />} />
             <Route path="AccountCreation" element={<AccountCreation />} />
             <Route path="tutorappointments" element={<TutorAppointmentsPage />} />
             <Route path="tutor/:tutor_id" element={<TutorProfile />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="admin" element={<AdminDashboard />} />
+            </Route>
             
             <Route path="CreateAppointment" element={<CreateAppointment />} />
             <Route path="TutorAppointments" element={<TutorAppointmentsPage />} />
             <Route path="TutorList" element={<TutorList />} />
-            <Route path ="Banned" element={<Banned />} />
+            <Route path ="banned" element={<Banned />} />
             <Route path="TuteeList" element={<TuteeList />} />
+            <Route path="UploadNotes" element={<UploadNotes />} />
+            <Route path="Calendar" element={<Calendar />} />
             <Route path= "Feedback" element = {<Feedback/>}/>
 
           </Route>
