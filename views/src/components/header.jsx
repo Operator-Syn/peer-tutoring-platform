@@ -5,45 +5,82 @@ import "../assets/css/header.css";
 
 import logo from "../assets/images/M_layouts/LAV_logo.png";
 import notifIcon from "../assets/images/M_layouts/Notifications.png";
-import histIcon from "../assets/images/M_layouts/History.png";
 import feedIcon from "../assets/images/M_layouts/Feedback.png";
 import reportIcon from "../assets/images/M_layouts/Report.png";
 import applyIcon from "../assets/images/M_layouts/Apply.png";
 import webIcon from "../assets/images/M_layouts/Website.png";
 import tutorsIcon from "../assets/images/M_layouts/Tutors.png";
 import logoutIcon from "../assets/images/M_layouts/logout.png";
-import profile from "../assets/images/M_layouts/profile.png";
+import profilePlaceholder from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
 import uploadIcon from "../assets/images/M_layouts/upload.svg";
 
 function Header() {
-
   const [user, setUser] = useState(null);
-  const loginCheck = useLoginCheck({login: false});
+  const loginCheck = useLoginCheck({ login: false });
 
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await loginCheck();
-      setUser(user);
-    }
-    fetchUser();
-  }, []);
+  const [profileUrl, setProfileUrl] = useState(null);
 
   const [popup, setPopup] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuAnimating, setMenuAnimating] = useState(false);
+
   const location = useLocation();
   const navigate = useNavigate();
 
+  const fetchUserAndProfile = async () => {
+    const u = await loginCheck();
+    setUser(u);
 
+    const googleId = u?.sub || u?.google_id;
+    if (!googleId) {
+      setProfileUrl(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/tutor/profile_img_url/by_google/${googleId}`,
+        { credentials: "include" }
+      );
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.profile_img_url) {
+        setProfileUrl(`${data.profile_img_url}?v=${Date.now()}`);
+      } else {
+        setProfileUrl(null);
+      }
+    } catch (err) {
+      setProfileUrl(null);
+    }
+  };
+
+  // ✅ fetch on mount + refresh when upload notifies
+  useEffect(() => {
+    fetchUserAndProfile();
+
+    const onUpdated = () => fetchUserAndProfile();
+    const onStorage = (e) => {
+      if (e.key === "PROFILE_IMG_UPDATED_AT") fetchUserAndProfile();
+    };
+
+    window.addEventListener("profile-img-updated", onUpdated);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("profile-img-updated", onUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // close popup when route changes
   useEffect(() => {
     setPopup(false);
   }, [location]);
 
   const toggleMenu = () => {
-    if (window.innerWidth < 992) {
-      setMenuOpen(!menuOpen);
-    }
+    if (window.innerWidth < 992) setMenuOpen(!menuOpen);
   };
 
   useEffect(() => {
@@ -71,10 +108,8 @@ function Header() {
     };
   }, []);
 
-
   useEffect(() => {
     const collapseEl = document.getElementById("navbarNav");
-
     const handleResize = () => {
       if (window.innerWidth >= 992) {
         setMenuOpen(false);
@@ -82,7 +117,6 @@ function Header() {
         collapseEl?.classList.remove("show");
       }
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -95,6 +129,8 @@ function Header() {
     }
     setMenuOpen(false);
   };
+
+  const profileSrc = profileUrl || profilePlaceholder;
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
@@ -110,7 +146,6 @@ function Header() {
           flexWrap: "wrap",
           transition: "all 0.3s ease",
           minHeight: menuOpen ? "0rem" : "0rem",
-         
         }}
       >
         <a
@@ -152,17 +187,22 @@ function Header() {
                 Events
               </Link>
             </li>
+
             {user && (
               <>
                 <li className="nav-item">
-                  <Link to="/Messages" className="nav-link" onClick={handleNavClick}>
+                  <Link
+                    to="/Messages"
+                    className="nav-link"
+                    onClick={handleNavClick}
+                  >
                     Messages
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link to="/Report" className="nav-link" onClick={handleNavClick}>
                     Report
-                  </Link>              
+                  </Link>
                 </li>
               </>
             )}
@@ -171,8 +211,25 @@ function Header() {
 
         {!menuOpen && !menuAnimating && (
           <div className="position-relative ms-3">
-            <div className="prof" onClick={() => setPopup(!popup)}>
-              <img src={profile} className="profileimg" alt="profile" />
+            <div
+              className="prof"
+              onClick={() => setPopup(!popup)}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <img
+                src={profileSrc}
+                alt="profile"
+                onError={(e) => (e.currentTarget.src = profilePlaceholder)}
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  display: "block",
+                }}
+              />
+
               <div className="circle">
                 <img src={arrow} className="arrowimg" alt="dropdown arrow" />
               </div>
@@ -183,6 +240,7 @@ function Header() {
                 <p>
                   <img src={notifIcon} alt="Notifications" /> Notifications
                 </p>
+
                 <p
                   style={{ cursor: "pointer" }}
                   onClick={() => {
@@ -194,53 +252,69 @@ function Header() {
                   <img src={applyIcon} alt="Apply" /> Apply as tutor
                 </p>
 
-                <p   onClick = {()=>{
-                  setPopup(false);
-                  handleNavClick();
-                  navigate("/Feedback");
-                }}>
-                 
-                    < img src={feedIcon} alt="Feedback" /> Rate Session
-                </p>
-                <p onClick = {()=>{
-                  setPopup(false);
-                  handleNavClick();
-                  window.location.href = "https://myiit.msuiit.edu.ph";
-                  }}>
-                  <img src={webIcon} alt="Website" /> Myiit
-                </p>
-                <p onClick={() => {
-                  setPopup(false);
-                  handleNavClick();
-                  navigate('/tutorlist');
-                }}>
-                  <img src={tutorsIcon} alt="Tutors" /> Tutors
-                </p>
-                {user && user.role === 'ADMIN' && (
-                  <p onClick={() => {
+                <p
+                  onClick={() => {
                     setPopup(false);
                     handleNavClick();
-                    navigate("/admin");
-                  }}>
-                    <img src={reportIcon} alt="Admin Page" /> Admin Page
-                  </p>
-                )}
-                {user && (
-                  <p onClick={() => {
+                    navigate("/Feedback");
+                  }}
+                >
+                  <img src={feedIcon} alt="Feedback" /> Rate Session
+                </p>
+
+                <p
+                  onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    window.location.href = "https://myiit.msuiit.edu.ph";
+                  }}
+                >
+                  <img src={webIcon} alt="Website" /> Myiit
+                </p>
+
+                <p
+                  onClick={() => {
+                    setPopup(false);
+                    handleNavClick();
+                    navigate("/tutorlist");
+                  }}
+                >
+                  <img src={tutorsIcon} alt="Tutors" /> Tutors
+                </p>
+
+                <p
+                  onClick={() => {
                     setPopup(false);
                     handleNavClick();
                     navigate(`/uploadnotes`);
-                  }}>
-                    <img src={uploadIcon} width={30} height={30} alt="Upload Notes" /> Upload Notes
+                  }}
+                >
+                  <img src={uploadIcon} width={30} height={30} alt="Upload Notes" />{" "}
+                  Upload Notes
+                </p>
+
+                {user && user.role === "ADMIN" && (
+                  <p
+                    onClick={() => {
+                      setPopup(false);
+                      handleNavClick();
+                      navigate("/admin");
+                    }}
+                  >
+                    <img src={reportIcon} alt="Admin Page" /> Admin Page
                   </p>
                 )}
+
                 {user && (
-                  <p onClick={() => {
-                    setPopup(false);
-                    handleNavClick();
-                    window.location.href = `/api/auth/logout`;
-                  }}>
-                    <img src={logoutIcon} width={30} height={30} alt="Logout" /> Logout
+                  <p
+                    onClick={() => {
+                      setPopup(false);
+                      handleNavClick();
+                      window.location.href = `/api/auth/logout`;
+                    }}
+                  >
+                    <img src={logoutIcon} width={30} height={30} alt="Logout" />{" "}
+                    Logout
                   </p>
                 )}
               </div>
