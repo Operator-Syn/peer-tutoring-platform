@@ -143,7 +143,7 @@ const AdminDashboard = () => {
         {error && <div className="admin-alert-error">{error}</div>}
 
         <div className="admin-stats-grid">
-          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}, {k:"total_courses",t:stats.total_courses,d:"Courses"}, {k:"active_sessions",t:0,d:"Sessions"}].map(c => (
+          {[{k:"total_tutors",t:stats.total_tutors,d:"Tutors"}, {k:"total_applications",t:stats.total_applications,d:"Applications"}, {k:"total_tutees",t:stats.total_tutees,d:"Tutees"}, {k:"total_courses",t:stats.total_courses,d:"Courses"}, {k:"active_sessions",t:stats.active_sessions,d:"Sessions"}].map(c => (
             <BasicCard key={c.k} title={String(c.t || 0)} description={c.d} />
           ))}
         </div>
