@@ -2,7 +2,8 @@ import React from "react";
 
 import { Outlet, Link } from "react-router-dom";
 
- import Head from "../components/header";
+import Head from "../components/header";
+import CalendarOverlay from "../components/CalendarOverlay";
 
 
 function MasterLayout() {
@@ -15,7 +16,7 @@ function MasterLayout() {
 
         <Head />
         <Outlet />
-     
+        <CalendarOverlay />
 
      
       
