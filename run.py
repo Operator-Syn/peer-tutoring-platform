@@ -1,9 +1,20 @@
-from app import create_app, socketio
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-# Create the app (Configurations are now applied inside create_app)
+# ✅ always load .env from the same folder as this run.py
+ENV_PATH = Path(__file__).resolve().with_name(".env")
+load_dotenv(dotenv_path=ENV_PATH, override=True)
+
+from app import create_app, socketio
 import sockets.sockets  # Ensure sockets are registered
+
 app = create_app()
 
 if __name__ == "__main__":
-    # use_reloader=True is fine for dev, but careful in production with Eventlet
-    socketio.run(app, use_reloader=True, host='0.0.0.0', port=5000)
+    socketio.run(
+        app,
+        use_reloader=True,
+        host=os.getenv("FLASK_RUN_HOST", "0.0.0.0"),
+        port=int(os.getenv("FLASK_RUN_PORT", "5000")),
+    )

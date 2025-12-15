@@ -38,7 +38,7 @@ def get_all_tutors():
                 cursor.execute("SELECT * FROM tutor")
                 tutors = cursor.fetchall()
 
-        # ✅ convert any memoryview/bytes fields to base64
+     
         for row in tutors:
             for k, v in list(row.items()):
                 if isinstance(v, memoryview):
@@ -73,7 +73,7 @@ def get_tutor(tutor_id):
                         p.program_name,
                         t.status,
                         t.about,
-                        t.profile_img_url,  -- ✅ use url instead of BYTEA
+                        t.profile_img_url,  
                         tt.google_id
                     FROM tutor t
                     JOIN tutee tt ON t.tutor_id = tt.id_number
@@ -371,13 +371,16 @@ def update_profile_img():
         if not file or not file.filename:
             return jsonify({"error": "No file uploaded"}), 400
 
-        out = upload_file(
-    bucket_name="tutor-profiles",  
-    file_obj=file,
-    folder_name=secure_filename(str(tutor_id)),
-    filename_prefix="avatar_",
-)
-
+        try:
+            out = upload_file(
+                bucket_name="tutor-profiles",
+                file_obj=file,
+                folder_name=secure_filename(str(tutor_id)),
+                filename_prefix="avatar_",
+            )
+        except RuntimeError as e:
+            # ✅ DNS / network error
+            return jsonify({"error": str(e)}), 503
 
         conn = get_connection()
         with conn:
@@ -396,6 +399,7 @@ def update_profile_img():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 
 @tutor_bp.route("/profile_img_url/by_google/<google_id>", methods=["GET"])
