@@ -6,15 +6,8 @@ from psycopg2.extras import RealDictCursor
 
 rate_session_bp = Blueprint("rate_session_bp", __name__, url_prefix="/api/rate-session")
 
-
 @rate_session_bp.route("/pending/<tutee_id>", methods=["GET"])
 def get_pending_ratings(tutee_id):
-    """
-    Pending ratings for a tutee:
-      - session_rating.rating = 0
-      - session details come from appointment + availability (no snapshots)
-      - appointment must be COMPLETED
-    """
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
@@ -26,7 +19,7 @@ def get_pending_ratings(tutee_id):
                 sr.appointment_id,
                 sr.tutee_id,
                 sr.tutor_id,
-                sr.rating,
+                COALESCE(sr.rating, 0) AS rating,
                 sr.comment,
                 sr.created_at,
 
@@ -35,7 +28,6 @@ def get_pending_ratings(tutee_id):
                 av.start_time,
                 av.end_time,
 
-                -- tutor name (tutor_id is also in tutee table)
                 tt.first_name  AS tutor_first_name,
                 tt.middle_name AS tutor_middle_name,
                 tt.last_name   AS tutor_last_name
@@ -43,15 +35,18 @@ def get_pending_ratings(tutee_id):
             FROM session_rating sr
             JOIN appointment a
               ON a.appointment_id = sr.appointment_id
-            JOIN availability av
+
+            -- ✅ left join so you still see the pending rating even if availability row is missing
+            LEFT JOIN availability av
               ON av.vacant_id = a.vacant_id
+
             JOIN tutor tu
               ON sr.tutor_id = tu.tutor_id
             JOIN tutee tt
               ON tu.tutor_id = tt.id_number
 
             WHERE sr.tutee_id = %s
-              AND sr.rating = 0
+              AND COALESCE(sr.rating, 0) = 0
               AND a.status = 'COMPLETED'
             ORDER BY a.appointment_date DESC, av.start_time DESC
             """,
@@ -79,6 +74,7 @@ def get_pending_ratings(tutee_id):
     finally:
         cur.close()
         conn.close()
+
 
 
 @rate_session_bp.route("/rate/<int:appointment_id>", methods=["PUT"])

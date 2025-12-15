@@ -1,42 +1,66 @@
+# utils/supabase_client.py
 import os
+import uuid
+from pathlib import Path
+from dotenv import load_dotenv
 from supabase import create_client, Client
-from werkzeug.utils import secure_filename
-from datetime import datetime
 
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
+# ✅ Load .env from project root (peertutoring/.env)
+ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-supabase: Client = create_client(url, key)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # ✅ must match .env key exactly
 
-def upload_file(bucket_name, file_obj, folder_name="", filename_prefix=""):
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Missing SUPABASE_URL or SUPABASE_KEY in environment variables.")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def upload_file(
+    bucket_name: str,
+    file_obj,
+    folder_name: str = "",
+    filename_prefix: str = "",
+    upsert: bool = True,
+):
     """
-    Uploads a file to Supabase and returns the public URL.
-
-    bucket_name: e.g. "reports"
-    file_obj: Werkzeug FileStorage from request.files
-    folder_name: folder inside bucket (e.g. "2023-3984")
-    filename_prefix: prefix for filename (e.g. "1_")
+    Upload a file to Supabase storage and return:
+      { "public_url": "...", "path": "bucket/folder/file.ext" }
     """
+    ext = ""
+    if getattr(file_obj, "filename", None):
+        _, ext = os.path.splitext(file_obj.filename)
+
+    filename = f"{filename_prefix}{uuid.uuid4().hex}{ext}"
+    folder = (folder_name or "").strip("/")
+
+    # storage path inside bucket
+    storage_path = f"{folder}/{filename}" if folder else filename
+
+    file_bytes = file_obj.read()
+    # important: reset stream so Flask/werkzeug doesn't break if reused
     try:
-        ts = int(datetime.now().timestamp())
+        file_obj.stream.seek(0)
+    except Exception:
+        pass
 
-        original_name = secure_filename(file_obj.filename or "file")
-        # ✅ must start with report_id (example: "1_")
-        filename = secure_filename(f"{filename_prefix}{ts}_{original_name}")
+    # upload
+    supabase.storage.from_(bucket_name).upload(
+        storage_path,
+        file_bytes,
+        {
+            "content-type": getattr(file_obj, "mimetype", None)
+            or getattr(file_obj, "content_type", None)
+            or "application/octet-stream",
+            "upsert": "true" if upsert else "false",
+        },
+    )
 
-        path = f"{folder_name}/{filename}" if folder_name else filename
+    public_url = supabase.storage.from_(bucket_name).get_public_url(storage_path)
 
-        file_content = file_obj.read()
-
-        supabase.storage.from_(bucket_name).upload(
-            path=path,
-            file=file_content,
-            file_options={"content-type": file_obj.content_type},
-        )
-
-        public_url = supabase.storage.from_(bucket_name).get_public_url(path)
-        return public_url
-
-    except Exception as e:
-        print(f"Supabase Upload Error: {str(e)}")
-        raise
+    return {
+        "public_url": public_url,
+        "path": storage_path,
+    }

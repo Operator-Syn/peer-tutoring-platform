@@ -75,35 +75,41 @@ function TutorProfile() {
     );
   };
 
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+const handleFileChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    // preview locally
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewImg(reader.result);
-    };
-    reader.readAsDataURL(file);
+  const formData = new FormData();
+  formData.append("tutor_id", tutor.tutor_id);
+  formData.append("profile_img", file);
 
-    const formData = new FormData();
-    formData.append("tutor_id", tutor.tutor_id);
-    formData.append("profile_img", file);
+  try {
+    const res = await fetch("/api/tutor/update_profile_img", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
 
-    try {
-      const res = await fetch("/api/tutor/update_profile_img", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      toast.success("Profile image updated!", toastOpts);
-    } catch (err) {
-      console.error(err.message);
-      toast.error(err.message || "Failed to upload profile image.", toastOpts);
+    // ✅ update profile image in this page
+    if (data.profile_img_url) {
+      setTutor((prev) => ({ ...prev, profile_img_url: data.profile_img_url }));
+      setPreviewImg(null);
     }
-  };
+
+    // ✅ THIS IS WHERE YOU PUT IT (after success)
+    localStorage.setItem("PROFILE_IMG_UPDATED_AT", String(Date.now()));
+    window.dispatchEvent(new Event("profile-img-updated"));
+
+    toast.success("Profile image updated!", toastOpts);
+  } catch (err) {
+    toast.error(err.message || "Failed to upload profile image.", toastOpts);
+  }
+};
+
+
 
   const fetchExistingBadges = async () => {
     try {
@@ -247,12 +253,7 @@ useEffect(() => {
               >
                 <div className="tutor-header text-center" style={{ position: "relative" }}>
                   <img
-                    src={
-                      previewImg ||
-                      (tutor.profile_img
-                        ? `data:image/png;base64,${tutor.profile_img}`
-                        : profile)
-                    }
+                     src={previewImg || tutor.profile_img_url || profile}
                     alt="Tutor Profile"
                     onClick={() => {
                       if (isCurrentUserTutor) fileInputRef.current?.click();
