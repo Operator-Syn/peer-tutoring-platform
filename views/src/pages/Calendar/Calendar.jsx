@@ -4,6 +4,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useLoginCheck } from '../../hooks/useLoginCheck';
+import BasicButton from '../../components/BasicButton/BasicButton';
 
 // Setup the localizer for date-fns
 const locales = {
@@ -103,19 +104,19 @@ export default function Calendar() {
     };
 
     return (
-        <div style={{padding: "0px 40px", marginTop: "90px"}}>
-            <div style={{ height: '500px', padding: '20px' }}>
+        <div style={{padding: "0px 40px", marginTop: "90px", display: 'flex', justifyContent: 'center', height: '700px'}}>
+            <div style={{ height: '500px', padding: '20px', maxWidth: '1000px', width: '100%'}}>
                 <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
-                    <h2>My Appointments</h2>
+                    <h1 style={{color: "#616DBE"}}>My Appointments</h1>
                     {isTutor && (
                         <div>
                             View as: 
-                            <button
+                            <BasicButton
                                 onClick={() => { setViewAsTutor(v => !v); setButtonText(t => t === 'Tutee' ? 'Tutor' : 'Tutee'); }}
-                                style={{ marginRight: '10px', backgroundColor: viewAsTutor ? 'lightblue' : 'lightgray', minWidth: '80px', marginLeft: '10px' }}
+                                style={{marginLeft: '10px', width: '100px', height: '30px', fontSize: '14px', padding: '0px'}}
                             >
                                 {buttonText}
-                            </button>    
+                            </BasicButton>    
                         </div>
                         
                     )}
