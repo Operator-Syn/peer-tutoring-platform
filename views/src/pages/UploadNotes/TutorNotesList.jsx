@@ -79,6 +79,12 @@ export default function TutorNotesList({ tutorId }) {
                                 </div>
                             </div>
                         ))}
+                        {notesPosts.length === 0 && (
+                            <div>
+                                <img src="https://www.svgrepo.com/show/427101/empty-inbox.svg" alt="No Notes" style={{width: "150px", height: "150px", display: "block", marginLeft: "auto", marginRight: "auto", marginTop: "20px"}} />
+                                <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>No notes uploaded yet.</p>
+                            </div>
+                        )}
                     </div>
 
 
