@@ -18,7 +18,8 @@
     /* border: 1px solid blue; */
     max-width: 796px;
     width: 100%;
-    height: 800px;
+    max-height: 800px;
+    min-height: 300px;
     display: flex;
     flex-direction: column;
     /* gap: 10px; */
