@@ -40,7 +40,6 @@ export default function Settled({ data }) {
             body: JSON.stringify(payload),
         })
             .then(async (res) => {
-                // 1. Check for server errors and extract the JSON message
                 if (!res.ok) {
                     const errorData = await res.json().catch(() => ({}));
                     throw new Error(errorData.error || "Failed to create appointment");
@@ -54,8 +53,6 @@ export default function Settled({ data }) {
             .catch((err) => {
                 console.error("❌ Submission Error:", err);
                 setStatusType("error");
-                
-                // 2. Set the error message for BOTH the modal and the UI card
                 setErrorModal({ 
                     show: true, 
                     message: err.message || "We encountered some turbulence. Please try again." 
@@ -67,27 +64,27 @@ export default function Settled({ data }) {
 
     const handleCloseError = () => setErrorModal({ ...errorModal, show: false });
 
-return (
+    return (
         <div className="create-appointment-form-bg">
             <h3 className="fillout-side-label h3-absolute d-none d-lg-block">Settled</h3>
 
-            {/* ✅ FIXED: Removed 'min-vh-100' and 'justify-content-center' */}
-            {/* Added 'py-5' and 'mt-4' to position it nicely at the top instead */}
-            <div className="container d-flex flex-column fillout-content-gap align-items-center py-5 mt-3">
+            {/* ✅ FIXED: Reduced py-5 to py-3 and mt-3 to mt-1 for a tighter layout */}
+            <div className="container d-flex flex-column align-items-center py-3 mt-1">
                 
-                <h1 className="text-center text-decoration-underline fillout-title mb-3 mb-md-5 text-dark">
+                {/* Reduced margin-bottom significantly (mb-md-5 -> mb-md-3) */}
+                <h1 className="text-center text-decoration-underline fillout-title mb-2 mb-md-3 text-dark">
                     Mission Status
                 </h1>
 
                 <div 
-                    className="card shadow-lg border-0 rounded-5 p-3 p-md-4 text-center w-100 fade-in-up"
-                    style={{ maxWidth: "550px", backgroundColor: "#ffffff" }}
+                    className="card shadow-lg border-0 rounded-5 p-3 text-center w-100 fade-in-up"
+                    style={{ maxWidth: "500px", backgroundColor: "#ffffff" }} 
                 >
-                    <div className="card-body d-flex flex-column align-items-center justify-content-center pt-2 pt-md-4">
+                    <div className="card-body d-flex flex-column align-items-center justify-content-center pt-2">
                         
                         {/* 1. LOADING STATE */}
                         {statusType === 'loading' && (
-                            <div className="w-100 py-2 py-md-4">
+                            <div className="w-100 py-3">
                                 <h2 className="fw-bold text-primary mb-3">In Flight...</h2>
                                 <p className="text-muted mb-4">Dispatching your request via Owl Post...</p>
                                 
@@ -105,10 +102,11 @@ return (
                         {/* 2. SUCCESS STATE */}
                         {statusType === 'success' && (
                             <div className="fade-in-up w-100">
-                                <h2 className="fw-bold text-success mb-2 fs-2 fs-md-1">Touchdown!</h2>
-                                <p className="text-muted mb-3">Request delivered successfully.</p>
+                                <h2 className="fw-bold text-success mb-1 fs-2">Touchdown!</h2>
+                                <p className="text-muted mb-2 small">Request delivered successfully.</p>
                                 
-                                <div className="mb-3 position-relative d-flex justify-content-center" style={{ minHeight: "160px" }}>
+                                {/* Reduced minHeight and image maxHeight to make card smaller */}
+                                <div className="mb-2 position-relative d-flex justify-content-center" style={{ minHeight: "140px" }}>
                                     {!imageLoaded && (
                                         <div className="d-flex align-items-center justify-content-center w-100 h-100">
                                             <div className="spinner-border text-success" role="status"></div>
@@ -121,7 +119,7 @@ return (
                                         className={`img-fluid sticker-img ${!imageLoaded ? 'd-none' : ''}`}
                                         style={{ 
                                             maxWidth: "100%", 
-                                            maxHeight: "220px",
+                                            maxHeight: "180px", // Reduced from 220px
                                             borderRadius: "24px", 
                                             boxShadow: "0 8px 20px rgba(0,0,0,0.1)", 
                                             imageRendering: "-webkit-optimize-contrast" 
@@ -129,11 +127,11 @@ return (
                                     />
                                 </div>
                                 
-                                <div className="ticket-box p-3 mt-1 mx-0 mx-md-2">
+                                <div className="ticket-box p-2 mt-2 mx-1">
                                     <p className="mb-0 text-secondary small fw-medium">
                                         <i className="bi bi-info-circle me-2"></i>
                                         Your Wise Owl is currently reviewing the flight plan. 
-                                        Keep an eye on your dashboard!
+                                        Check your dashboard!
                                     </p>
                                 </div>
                             </div>

@@ -7,7 +7,8 @@ export default function PartnerGroup({
     isExpanded, 
     onToggle, 
     selectedUser, 
-    onSelectUser 
+    onSelectUser,
+    getStatusBadge
 }) {
     const isActiveGroup = selectedUser?.partner_id === group.partnerId;
 
@@ -52,6 +53,7 @@ export default function PartnerGroup({
                             unreadCount={appt.unread_count || 0}
                             isActive={selectedUser?.appointment_id === appt.appointment_id}
                             onClick={() => onSelectUser(appt)}
+                            statusBadge={getStatusBadge(appt.status)}
                         />
                     ))}
                 </div>

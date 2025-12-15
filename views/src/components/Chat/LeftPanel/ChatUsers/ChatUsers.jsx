@@ -7,7 +7,8 @@ export default function ChatUser({
     timestamp, 
     isActive, 
     onClick,
-    unreadCount = 0 
+    unreadCount = 0,
+    statusBadge
 }) {
     return (
         <button 
@@ -29,9 +30,11 @@ export default function ChatUser({
 
             {/* Text Content */}
             <div className="d-flex flex-column text-start flex-grow-1 overflow-hidden chat-text-container">
-                {/* Bold name if unread */}
-                <div className={`text-truncate ${unreadCount > 0 && !isActive ? "fw-bold text-dark" : "fw-semibold"}`}>
-                    {name}
+                <div className="d-flex align-items-center gap-2"> 
+                    <div className={`text-truncate ${unreadCount > 0 && !isActive ? "fw-bold text-dark" : "fw-semibold"}`}>
+                        {name}
+                    </div>
+                    {statusBadge}
                 </div>
                 <div 
                     className={`text-truncate chat-last-message ${isActive ? 'text-white-50' : 'text-muted'}`} 

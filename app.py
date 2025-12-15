@@ -75,6 +75,7 @@ def create_app():
     from controllers.adminDashboardController import admin_dashboard_bp
     from controllers.appealsController import bp_appeals
     from controllers.chatUserController.chatUserController import chat_bp
+    from controllers.NotificationController.NotificationController import bp_notifications
     from controllers.subjectRequestController.subjectRequestController import subject_request_bp
     from controllers.calendar import calendar_bp
 
@@ -97,6 +98,7 @@ def create_app():
     app.register_blueprint(bp_availability)
     app.register_blueprint(bp_create_pending)
     app.register_blueprint(chat_bp)
+    app.register_blueprint(bp_notifications)
     app.register_blueprint(calendar_bp, url_prefix="/api/calendar")
 
     # -- Admin & System --

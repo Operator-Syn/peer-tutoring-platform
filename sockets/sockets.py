@@ -1,7 +1,25 @@
+# sockets.py (FIXED handle_message)
+
 from app import socketio
 from flask_socketio import join_room, leave_room, emit
 from flask import request
 from models.messageModel.messageModel import MessageModel
+from models.NotificationModel.NotificationModel import Notification 
+
+# 🟢 NEW: Connect Handler for Personal Notifications (Necessary for Real-Time Booking)
+@socketio.on('connect')
+def handle_connect():
+    """
+    On connect, join a personal room named after the user's ID_NUMBER.
+    This room is used by the booking controller to send real-time notifications.
+    """
+    user_id = request.args.get('user_id') 
+
+    if user_id:
+        personal_room = str(user_id) 
+        join_room(personal_room) 
+        print(f"🔌 User {user_id} connected and joined personal notification room: {personal_room}")
+# -------------------------------------------------------------
 
 # 1. NEW: Monitor Logic (Silent Join)
 @socketio.on("monitor_appointments")
@@ -10,7 +28,6 @@ def handle_monitor(data):
     for appt_id in appointment_ids:
         room = f"appointment_{appt_id}"
         join_room(room)
-    # Don't mark as read here!
 
 # 2. UPDATED: Join Logic (Active Chat)
 @socketio.on("join_appointment")
@@ -20,11 +37,17 @@ def handle_join(data):
     if not appointment_id or not user_id:
         return
 
+    try:
+        appt_id_int = int(appointment_id)
+    except ValueError:
+        print(f"Error: Could not convert appointment_id '{appointment_id}' to integer.")
+        return
+
     room = f"appointment_{appointment_id}"
     join_room(room)
 
-    # Mark as read because user actually opened the chat
-    MessageModel.mark_messages_as_read(appointment_id, user_id)
+    MessageModel.mark_messages_as_read(appt_id_int, user_id)
+    Notification.mark_chat_notifications_as_read(appt_id_int, user_id)
 
     messages = MessageModel.get_messages_by_appointment(appointment_id)
     emit("load_messages", messages, room=request.sid)
@@ -34,12 +57,16 @@ def handle_message(data):
     appointment_id = data.get("appointment_id")
     sender_id = data.get("sender_id")
     message_text = data.get("message_text")
+    
     if not appointment_id or not sender_id or not message_text:
         return
 
     room = f"appointment_{appointment_id}"
+    
+    # A. Save Message (existing logic)
     timestamp = MessageModel.save_message(appointment_id, sender_id, message_text)
 
+    # B. Emit to Chat Room (existing logic for real-time display)
     emit("receive_message", {
         "appointment_id": appointment_id,
         "sender_id": sender_id,
@@ -47,9 +74,79 @@ def handle_message(data):
         "timestamp": timestamp.isoformat()
     }, room=room)
     
+    # -----------------------------------------------------------
+    # C. NOTIFICATION LOGIC (Refined for robustness)
+    # -----------------------------------------------------------
+    try:
+        # 🟢 FIX: Convert ID to integer for database operations (reference_id is BIGINT)
+        appt_id_int = int(appointment_id) 
+
+        # 1. Find who is in this appointment (pass the integer ID)
+        participants = MessageModel.get_appointment_participants(appt_id_int) 
+        
+        if not participants:
+            print(f"❌ Error sending chat notification: Could not find participants for appt {appt_id_int}")
+            return
+            
+        student_id, tutor_id = participants
+        
+        # 2. Determine Recipient (The one who is NOT the sender)
+        if str(sender_id) == str(student_id):
+            recipient_id = tutor_id
+        else:
+            recipient_id = student_id
+        
+        # 3. Validation: Ensure recipient_id is valid
+        if not recipient_id:
+            print(f"❌ Error sending chat notification: Recipient ID is None for appt {appt_id_int}")
+            return
+
+        # 4. Create Notification in DB
+        Notification.create_chat_notification(
+            appointment_id=appt_id_int, # Pass integer ID
+            recipient_id=recipient_id,
+            sender_id=sender_id
+        )
+        print(f"🔔 Chat Notification created/reset for {recipient_id}")
+        
+        # 🟢 CRITICAL ADDITION: Emit a global notification event to the recipient's personal room
+        new_notification = Notification.get_latest_notification_by_recipient(recipient_id)
+
+        if new_notification:
+            # Emit to the recipient's personal room
+            personal_room = str(recipient_id)
+            # The client-side logic will format this notification object
+            emit("new_global_notification", new_notification, room=personal_room)
+            print(f"🔔 Emitted new_global_notification to room: {personal_room}")
+            
+    except ValueError:
+         print(f"❌ Error sending chat notification: Appointment ID '{appointment_id}' is not a valid integer.")
+    except Exception as e:
+        # The database error will be caught here if the INSERT/FK fails
+        print(f"❌ Error sending chat notification: {e}")
+    # -----------------------------------------------------------
+    
 @socketio.on("mark_read")
 def handle_mark_read(data):
     appointment_id = data.get("appointment_id")
     user_id = data.get("user_id")
     if appointment_id and user_id:
         MessageModel.mark_messages_as_read(appointment_id, user_id)
+
+# 🟢 NEW HANDLER: Synchronize read status across all user's clients
+@socketio.on("notification_read_sync")
+def handle_read_sync(data):
+    """
+    Receives an event when a notification (chat or general) is marked read on one client.
+    Re-emits it to the user's personal room to update all other clients instantly.
+    """
+    user_id = data.get("user_id")
+    
+    if user_id:
+        personal_room = str(user_id)
+        # Re-emit the entire data payload to the user's personal room.
+        # skip_sid=request.sid prevents the event from being sent back to the client that sent it.
+        emit("notification_read_sync", data, room=personal_room, skip_sid=request.sid)
+        print(f"🔄 Emitted notification_read_sync for user {user_id} to room {personal_room}")
+    else:
+        print("❌ Received notification_read_sync without a user_id.")

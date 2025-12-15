@@ -1,6 +1,7 @@
 from authlib.integrations.flask_client import OAuth
 # Added make_response to handle headers manually
 from flask import url_for, session, redirect, request, Blueprint, jsonify, current_app, make_response
+from authlib.integrations.base_client.errors import OAuthError  # <--- IMPORT ADDED
 from config import Config
 from utils.db import get_connection
 from psycopg2.extras import RealDictCursor
@@ -10,13 +11,11 @@ import requests
 oauth = OAuth()
 auth_bp = Blueprint('auth', __name__)
 
-
 @auth_bp.route('/login')
 def login():
     """
     Redirects the user to Google's authentication page.
     """
-  
     # Ideally, ensure ProxyFix is enabled in your main app.py so _external=True 
     # generates https:// links correctly behind Cloudflare.
     redirect_uri = url_for('auth.auth', _external=True)
@@ -27,12 +26,22 @@ def auth():
     """
     Handles the callback from Google after successful authentication.
     """
-    
-    token = oauth.google.authorize_access_token()
+    try:
+        # [CRITICAL FIX] 
+        # Wrap token retrieval in a try-block to catch "Access Denied" if user cancels.
+        token = oauth.google.authorize_access_token()
+    except OAuthError as e:
+        # Log the error for debugging (usually "access_denied")
+        print(f"OAuth Error (User likely canceled): {e}")
+        # Gracefully redirect back to the frontend instead of crashing
+        return redirect(Config.FRONTEND_URL)
+    except Exception as e:
+        print(f"Unexpected Error during token exchange: {e}")
+        return jsonify({'error': 'Authentication failed'}), 500
 
-  
     user_info = token.get('userinfo')
 
+    # --- Check Banned Status ---
     try:
         conn = get_connection()
         with conn:
@@ -41,26 +50,29 @@ def auth():
                 user_record = cursor.fetchone()
 
                 if user_record and user_record.get('status') == 'BANNED':
-                    pass
+                    # NOTE: Currently this is 'pass', meaning banned users proceed to login.
+                    # You likely want to return here, e.g.:
+                    # return "Account is banned", 403
+                    pass 
     except Exception as e:
         print("Auth Error:", e)
         return "Internal Server Error", 500
  
+    # Optional Domain Check (Commented out as in your original code)
     # if not user_info['email'].endswith('@g.msuiit.edu.ph'):
     #     return "Unauthorized: Please use your university email.", 403
-    # print("DEBUG USER_INFO:", user_info) 
    
+    # Set Session
     session.permanent = True
     session['user'] = user_info
 
- 
+    # --- Upsert User to Database ---
     try:
         conn = get_connection()
         # Use try-finally to ensure connection closes even if errors occur
         try:
             with conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-
                     # CONCURRENCY FIX: Use ON CONFLICT (Upsert) instead of Check-then-Insert
                     # This prevents race conditions if the user double-clicks login
                     cursor.execute("""
@@ -78,7 +90,6 @@ def auth():
         # Connection is already closed in finally block if it existed
         return jsonify({'error': str(e)}), 500
 
-
     # CLOUDFLARE FIX: Prevent caching of the redirect response
     # This ensures User A's session cookie isn't cached and served to User B.
     response = make_response(redirect(Config.FRONTEND_URL))
@@ -91,44 +102,63 @@ def auth():
 @auth_bp.route('/get_user')
 def get_user():
     """
-    An API endpoint to get the currently logged-in user's data.
+    An API endpoint to get the currently logged-in user's data,
+    including their ID, Role, and Tutor Status.
     """
     user = session.get('user')
     if not user:
         return jsonify({'error': 'User not logged in'}), 401
 
+    # Default values
     registered = False
-    status = "ACTIVE"
-    role = "TUTEE"
+    id_number = None
+    role = "GUEST"
+    tutor_status = None
+    account_status = "ACTIVE"
 
     try:
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT 1 FROM tutee WHERE google_id = %s", (user['sub'],))
-                if cursor.fetchone():
+                # Optimized Query: Get ID, Role, Account Status, and Tutor Status at once
+                query = """
+                    SELECT 
+                        te.id_number AS tutee_id,  -- Get ID from the Tutee table, not User Account
+                        ua.role,
+                        ua.status AS account_status,
+                        t.status AS tutor_status
+                    FROM user_account ua
+                    -- 1. Join Tutee using Google ID (Reliable)
+                    LEFT JOIN tutee te ON ua.google_id = te.google_id
+                    -- 2. Join Tutor using the ID found in Tutee
+                    LEFT JOIN tutor t ON te.id_number = t.tutor_id
+                    WHERE ua.google_id = %s
+                """
+                cursor.execute(query, (user['sub'],))
+                result = cursor.fetchone()
+
+                if result:
                     registered = True
-                
-                # includes role in response
-                cursor.execute("SELECT status, role FROM user_account WHERE google_id = %s", (user['sub'],))
-                account_data = cursor.fetchone()
-                if account_data:
-                    if account_data.get('status'):
-                        status = account_data['status']
-                    if account_data.get('role'):
-                        role = account_data['role']
+                    id_number = result['tutee_id']
+                    role = result['role']
+                    account_status = result['account_status']
+                    tutor_status = result['tutor_status']  # Will be None if they aren't a tutor
 
     except Exception as e:
-        if conn:
-            conn.close()
-        return jsonify({'error': str(e)}), 50
-    
+        return jsonify({'error': str(e)}), 500
+
+    # Combine Google session data with DB data
     user_with_status = dict(user)
     user_with_status['registered_tutee'] = registered
-    user_with_status['status'] = status
-    user_with_status['role'] = role 
+    user_with_status['id_number'] = id_number
+    user_with_status['role'] = role
+    user_with_status['status'] = account_status
+    user_with_status['tutor_status'] = tutor_status
 
-    return jsonify(user_with_status)
+    # Return response with cache control
+    response = make_response(jsonify(user_with_status))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
 
 @auth_bp.route('/register_tutee', methods=['POST'])
 def register_tutee():
@@ -175,7 +205,6 @@ def logout():
     response = make_response(redirect(Config.FRONTEND_URL))
     
     # FIX: Use dynamic domain or None. 'localhost' is invalid for production domains.
-    # If SESSION_COOKIE_DOMAIN is not set in Config, it defaults to None (standard behavior)
     cookie_domain = current_app.config.get("SESSION_COOKIE_DOMAIN", None)
     
     response.delete_cookie(current_app.config.get("SESSION_COOKIE_NAME", "session"), path='/', domain=cookie_domain)

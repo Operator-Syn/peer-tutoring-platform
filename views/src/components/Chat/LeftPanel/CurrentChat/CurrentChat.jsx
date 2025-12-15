@@ -16,6 +16,8 @@ export default function CurrentChat({ user, messages, onSendMessage, currentUser
 
     // 2. Handle sending
     const handleSend = () => {
+        if (user.status !== 'BOOKED') return;
+        
         if (!inputText.trim()) return;
         onSendMessage(inputText);
         setInputText("");
@@ -23,10 +25,11 @@ export default function CurrentChat({ user, messages, onSendMessage, currentUser
 
     // 3. Enter key
     const handleKeyDown = (e) => {
+        if (user.status !== 'BOOKED') return;
         if (e.key === "Enter") handleSend();
     };
 
-    // 4. Time Helper
+    // 4. Time Helper (Not used in the final JSX, but retained)
     const formatTime = (timeStr) => {
         if (!timeStr) return "";
         const [hourStr, minuteStr] = timeStr.split(":");
@@ -49,6 +52,47 @@ export default function CurrentChat({ user, messages, onSendMessage, currentUser
     };
 
     if (!user) return <div className="p-4">Select a chat to begin.</div>;
+    const isChatDisabled = user.status !== 'BOOKED';
+    
+    let disabledPlaceholder = `Chat disabled. Status: ${user.status}.`;
+    if (user.status === 'PENDING') {
+        disabledPlaceholder = "Chat is disabled until the appointment is approved.";
+    }
+
+    // 🟢 ATOMIC FIX: Logic to determine badge color and text
+    const getStatusBadge = () => {
+        const status = user.status || 'UNKNOWN';
+        let color = 'bg-secondary'; // Default
+        let text = status;
+
+        switch (status) {
+            case 'BOOKED':
+                color = 'bg-success';
+                text = 'Active';
+                break;
+            case 'COMPLETED':
+                color = 'bg-success';
+                text = 'Completed';
+                break;
+            case 'CANCELLED':
+                color = 'bg-danger';
+                text = 'Cancelled';
+                break;
+            case 'PENDING':
+                color = 'bg-primary';
+                text = 'Pending';
+                break;
+            default:
+                break;
+        }
+
+        return (
+            <span className={`badge ${color} text-uppercase me-2`}>
+                {text}
+            </span>
+        );
+    };
+
 
     return (
         <>
@@ -81,6 +125,8 @@ export default function CurrentChat({ user, messages, onSendMessage, currentUser
                     </div>
 
                     <div className="d-flex align-items-center gap-2">
+                        {getStatusBadge()}
+                        
                         <div className="badge bg-primary d-none d-md-block">ID: {user.appointment_id}</div>
 
                         <button
@@ -123,12 +169,17 @@ export default function CurrentChat({ user, messages, onSendMessage, currentUser
                     <input
                         type="text"
                         className="form-control"
-                        placeholder="Type a message..."
+                        disabled={isChatDisabled}
+                        placeholder={isChatDisabled ? disabledPlaceholder : "Type a message..."}
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
                         onKeyDown={handleKeyDown}
                     />
-                    <button className="btn btn-primary" onClick={handleSend}>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={handleSend}
+                        disabled={isChatDisabled}
+                    >
                         Send
                     </button>
                 </div>

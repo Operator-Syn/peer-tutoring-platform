@@ -1,4 +1,28 @@
+/* Ensure the container for the profile image and badge is relative */
+.prof {
+    /* Critical: This makes the badge's position-absolute work relative to this container */
+    position: relative; 
+    cursor: pointer;
+    /* Other existing styles for the profile container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px; /* Example height */
+    width: auto; /* Example width */
+}
 
+/* Style for the profile image itself */
+.profileimg {
+    height: 35px; /* Adjust size as needed */
+    width: 35px; /* Adjust size as needed */
+    border-radius: 50%;
+    /* Ensure the image doesn't interfere with the badge placement */
+    position: relative;
+    z-index: 1; /* Keep the image above the arrow, below the badge */
+}
+
+/* The badge is handled by Bootstrap's position-absolute, 
+   but ensuring the parent (.prof) is relative is the main fix. */
 
 .navbar-toggler {
   background-color: #4956AD;  
