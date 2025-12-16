@@ -361,3 +361,20 @@
   max-height: 100%;
   object-fit: contain;
 }
+
+.admin-subjects-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.admin-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    border-left: 4px solid #5865f2;
+    padding-left: 10px;
+}
+
+.mb-5 { margin-bottom: 2rem; }
