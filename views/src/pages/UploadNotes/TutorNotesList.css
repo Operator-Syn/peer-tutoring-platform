@@ -19,7 +19,7 @@
     max-width: 1400px;
     width: 100%;
     max-height: 800px;
-    min-height: 300px;
+    min-height: 397.26px;
     display: flex;
     flex-direction: row;
     /* gap: 10px; */
@@ -38,11 +38,16 @@
     flex: 1;
     padding-top: 10px;
     height: fit-content;
+    scrollbar-width: thin;           /* Firefox: thin scrollbar */
+    scrollbar-color: #bbb #f5f5f5;   /* Firefox: thumb and track color */
 }
 
+/* Chrome, Edge, Safari */
 .notes-posts-list::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    height: 2px;                     /* Very thin scrollbar */
+    background: transparent;         /* Hide track background */
 }
+
 
 .notes-posts-list:first-child {
     margin-top: 10px;
@@ -135,4 +140,26 @@
 
 .note-overlay-card p {
     white-space: pre-line;
+}
+
+.availability-slot-card-tnl {
+    width: fit-content;
+    height: fit-content;
+    max-height: 250px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.slot-list-tnl {
+    height: 250px;
+    max-height: 400px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 10px;
 }

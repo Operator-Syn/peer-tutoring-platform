@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Nav } from 'react-bootstrap';
 import './TutorNotesList.css';
 
-export default function TutorNotesList({ tutorId }) {
+export default function TutorNotesList({ tutorId, tutorAvailability }) {
 
     const [notesPosts, setNotesPosts] = useState([]);
-    const [visibleCount, setVisibleCount] = useState(14);
+    const [visibleCount, setVisibleCount] = useState(6);
     const [isOwnProfile, setIsOwnProfile] = useState(false);
     const [overlayNote, setOverlayNote] = useState(null);
     const listRef = useRef(null);
@@ -14,7 +14,7 @@ export default function TutorNotesList({ tutorId }) {
         const response = await fetch(`/api/notes-sharing/get-notes/${tutorId}`);
         const data = await response.json();
         setNotesPosts(data);
-        setVisibleCount(14);
+        setVisibleCount(6);
     }
 
     useEffect(() => {
@@ -22,7 +22,7 @@ export default function TutorNotesList({ tutorId }) {
             const el = listRef.current;
             if (!el) return;
             // 3. When scrolled to the bottom, show 2 more cards
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) {
+            if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 1) {
                 setVisibleCount((prev) => Math.min(prev + 2, notesPosts.length));
             }
         };
@@ -48,6 +48,13 @@ export default function TutorNotesList({ tutorId }) {
         checkOwnProfile();
     }, []);
 
+    // Group slots by day_of_week
+    const groupedSlots = tutorAvailability.reduce((acc, slot) => {
+    if (!acc[slot.day_of_week]) acc[slot.day_of_week] = [];
+    acc[slot.day_of_week].push(slot);
+    return acc;
+    }, {});    
+
     return (
         <>
             <div className="tutor-notes-section">
@@ -66,7 +73,7 @@ export default function TutorNotesList({ tutorId }) {
                             />
                         ))}
                     </div> */}
-                    <div className='' ref={listRef} style={{height: "100%", width: "100%", marginTop: "10px"}}>
+                    <div className='' style={{height: "100%", width: "100%", marginTop: "10px"}}>
 
                         <Nav className='pills' variant="tabs" defaultActiveKey="notes" style={{borderBottom: "2px solid #ddd"}}>
                             <Nav.Item>
@@ -95,7 +102,19 @@ export default function TutorNotesList({ tutorId }) {
                             </div>
 
                             <div className='tab-pane fade' id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-                                Test
+                                <div className='slot-list-tnl'>
+                                {Object.entries(groupedSlots).map(([day, slots], index) => (
+                                    <div key={index} className='availability-slot-card-tnl'>
+                                    <h3>{day}</h3>
+                                    {slots.map((slot, idx) => (
+                                        <p key={idx} style={{ margin: "0" }}>
+                                        <span style={{ fontWeight: "bold" }}>{slot.day}</span>
+                                        {" "}{slot.start_time} - {slot.end_time}
+                                        </p>
+                                    ))}
+                                    </div>
+                                ))}
+                                </div>
                             </div>
                         </div>
 

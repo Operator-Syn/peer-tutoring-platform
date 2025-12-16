@@ -868,16 +868,12 @@ useEffect(() => {
               </div>
             </div>
 
-<div className="container py-5"> 
-  {/* Schedules / Badge count aligned under profile */}
+{/* <div className="container py-5"> 
   <div className="container py-5">
     <div className="column justify-content-start">
-      {/* Match left column width (col-md-4 like the profile card) */}
       <div className="col-12 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
-
-      {/* Dynamic Schedule Cards (from tutor.availability) */}
       <div
         className="d-flex flex-wrap gap-4 mt-5"
         style={{
@@ -926,7 +922,7 @@ useEffect(() => {
       </div>
     </div>
   </div>
-</div>
+</div> */}
             {/* BADGE MODAL */}
             {isModalOpen && (
               <div
@@ -1213,7 +1209,7 @@ useEffect(() => {
     </div>
   </div>
 )}
-  <TutorNotesList tutorId={tutor?.tutor_id} />
+  <TutorNotesList tutorId={tutor?.tutor_id} tutorAvailability={tutor?.availability} />
     </>
   );
 }
