@@ -12,6 +12,9 @@ export default function Schedule({ data, update }) {
     const [availabilities, setAvailabilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(data.vacant_id || null);
+    
+    // --- NEW: Store fetched ratings ---
+    const [tutorRatings, setTutorRatings] = useState({});
 
     // Responsive State
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -45,6 +48,9 @@ export default function Schedule({ data, update }) {
         setLoading(true);
         setEmptyStateImgLoaded(false);
         setCurrentPage(1); // Reset page on new fetch
+        
+        // Reset ratings when search changes
+        setTutorRatings({});
 
         // 🚨 FIXED: Added credentials: 'include' so backend gets the session cookie
         fetch(`/api/availability/by-subject?course_code=${data.courseCode}&appointment_date=${data.preferredDate}`, {
@@ -77,6 +83,37 @@ export default function Schedule({ data, update }) {
             }, 100);
         }
     }, [currentPage]);
+
+    // --- NEW: Fetch Ratings for Visible Tutors ---
+    useEffect(() => {
+        if (availabilities.length === 0) return;
+
+        // 1. Calculate current items indices
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentItems = availabilities.slice(indexOfFirstItem, indexOfLastItem);
+
+        // 2. Get unique tutor IDs
+        const uniqueTutorIds = [...new Set(currentItems.map(a => a.tutor_id))];
+        
+        uniqueTutorIds.forEach(tutorId => {
+            if (tutorRatings[tutorId] !== undefined) return; // Already fetched
+
+            fetch(`/api/rate-session/tutor/${tutorId}`)
+                .then(res => res.json())
+                .then(ratings => {
+                    // Calculate Average
+                    if (Array.isArray(ratings) && ratings.length > 0) {
+                        const sum = ratings.reduce((acc, curr) => acc + (curr.rating || 0), 0);
+                        const avg = sum / ratings.length;
+                        setTutorRatings(prev => ({ ...prev, [tutorId]: avg }));
+                    } else {
+                        setTutorRatings(prev => ({ ...prev, [tutorId]: 0 })); // 0 for New Tutor
+                    }
+                })
+                .catch(err => console.error("Error fetching rating for", tutorId, err));
+        });
+    }, [availabilities, currentPage, itemsPerPage]);
 
     const handleSelect = (vacant_id) => {
         if (selected === vacant_id) {
@@ -171,6 +208,9 @@ export default function Schedule({ data, update }) {
                     {currentItems.map(a => {
                         const isSelected = selected === a.vacant_id;
                         const isDisabled = selected && !isSelected;
+                        
+                        // --- Get Rating (Default to null if loading) ---
+                        const rating = tutorRatings[a.tutor_id] !== undefined ? tutorRatings[a.tutor_id] : null;
 
                         const selectButton = {
                             text: isSelected ? "Unselect" : "Select",
@@ -186,6 +226,10 @@ export default function Schedule({ data, update }) {
                             <CardComponent
                                 key={a.vacant_id}
                                 title={{ label: "Tutor:", value: a.tutor_name }}
+                                
+                                // --- Pass Rating ---
+                                rating={rating}
+                                
                                 modalTitle="Availability Details"
                                 leftAlignText={`Day: ${a.day_of_week}`}
                                 rightAlignTop={`Course: ${a.course_code}`}
@@ -199,7 +243,7 @@ export default function Schedule({ data, update }) {
                                         url: `/tutor/${a.tutor_id}`
                                     },
                                     { role: "Tutor ID", text: a.tutor_id },
-                                    { text: `Vacant Slot ID: ${a.vacant_id}` },
+                                    // Removed Vacant Slot ID as requested
                                 ]}
                                 modalButtonsRight={[selectButton]}
                                 modalButtonsLeft={[]}
