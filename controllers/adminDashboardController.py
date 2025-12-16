@@ -440,3 +440,79 @@ def get_user_reports(user_id):
         return jsonify({"success": True, "reports": reports}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/courses", methods=["GET"])
+def get_all_courses():
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 10))
+        search = request.args.get("search", "").strip()
+        filter_type = request.args.get("filter", "all")
+        
+        offset = (page - 1) * limit
+        params = []
+        
+        sql = """
+            SELECT 
+                c.course_code, 
+                c.course_name, 
+                c.college, 
+                COUNT(t.tutor_id) as tutor_count
+            FROM course c
+            LEFT JOIN teaches te ON c.course_code = te.course_code
+            LEFT JOIN tutor t ON te.tutor_id = t.tutor_id AND t.status = 'ACTIVE'
+        """
+        
+        wheres = []
+        if search:
+            wheres.append("(c.course_code ILIKE %s OR c.course_name ILIKE %s)")
+            params.extend([f"%{search}%", f"%{search}%"])
+            
+        if wheres:
+            sql += " WHERE " + " AND ".join(wheres)
+            
+        sql += " GROUP BY c.course_code, c.course_name, c.college"
+        
+        if filter_type == 'no_tutors':
+            sql += " HAVING COUNT(t.tutor_id) = 0"
+        elif filter_type == 'with_tutors':
+            sql += " HAVING COUNT(t.tutor_id) > 0"
+            
+        count_sql = f"SELECT COUNT(*) FROM ({sql}) as subquery"
+        
+        sql += " ORDER BY tutor_count ASC, c.course_code ASC LIMIT %s OFFSET %s"
+        
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        cur.execute(count_sql, params)
+        total_items = cur.fetchone()['count']
+        
+        cur.execute(sql, params + [limit, offset])
+        courses = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "success": True, 
+            "data": courses, 
+            "pagination": build_pagination_metadata(total_items, page, limit)
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@admin_dashboard_bp.route("/api/admin/courses/<course_code>", methods=["DELETE"])
+def delete_course(course_code):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        cur.execute("DELETE FROM course WHERE course_code = %s", (course_code,))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
