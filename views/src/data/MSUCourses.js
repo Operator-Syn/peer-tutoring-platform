@@ -25,8 +25,6 @@ export const MSU_COURSES = [
     { code: "IT 412", name: "Systems Administration", college: "CCS" },
     { code: "IS 101", name: "Fundamentals of Information Systems", college: "CCS" },
     { code: "IS 201", name: "Business Process Management", college: "CCS" },
-    { code: "CS 11", name: "Computer Programming I (Legacy)", college: "CCS" },
-    { code: "CS 12", name: "Computer Programming II (Legacy)", college: "CCS" },
 
     // CSM
     { code: "MATH 17", name: "Algebra and Trigonometry", college: "CSM" },
@@ -159,8 +157,8 @@ export const COLLEGES = [
     { code: "CSM", name: "College of Science and Mathematics" },
     { code: "COE", name: "College of Engineering" },
     { code: "CASS", name: "College of Arts and Social Sciences" },
-    { code: "CBAA", name: "College of Business Admin and Accountancy" },
+    { code: "CEBA", name: "College of Economics, Business, and Accountancy" },
     { code: "CED", name: "College of Education" },
-    { code: "CON", name: "College of Health and Sciences" },
+    { code: "CHS", name: "College of Health Sciences" },
     { code: "GEC", name: "General Education Courses" }
 ];

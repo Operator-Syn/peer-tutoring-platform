@@ -189,70 +189,71 @@ export default function TutorList() {
 
             <ModalComponent 
                 show={showRequestModal}
-                onHide={() => setShowRequestModal(false)}
-                title="Request a New Subject"
+                onHide={() => {
+                    setShowRequestModal(false);
+                    resetRequestForm();
+                }}
+                title="Request a New Course"
                 body={
-                    <Form>
+                    <Form className="subject-request-form">
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">College</Form.Label>
-                            <Form.Select
+                            <Select
+                                options={collegeOptions}
                                 value={selectedCollege}
-                                onChange={(e) => {
-                                    setSelectedCollege(e.target.value);
+                                onChange={(option) => {
+                                    setSelectedCollege(option);
+                                    setSelectedCourseOption(null);
                                     setRequestSubject("");
                                     setRequestName("");
                                 }}
-                                className="custom-form-input"
-                            >
-                                <option value="">-- Select College --</option>
-                                {COLLEGES.map(col => (
-                                    <option key={col.code} value={col.code}>{col.name}</option>
-                                ))}
-                            </Form.Select>
+                                placeholder="-- Select College --"
+                                styles={customSelectStyles}
+                                isClearable
+                            />
                         </Form.Group>
 
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Select Course</Form.Label>
-                            <Form.Control 
-                                list="filtered-courses" 
-                                placeholder={selectedCollege ? "Type to search..." : "Select a college first"}
-                                value={requestSubject}
-                                disabled={!selectedCollege}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setRequestSubject(val);
-                                    const match = MSU_COURSES.find(c => c.code === val);
-                                    if(match) setRequestName(match.name);
-                                    else setRequestName("");
+                            <Select
+                                options={getFilteredCourseOptions()}
+                                value={selectedCourseOption}
+                                isDisabled={!selectedCollege}
+                                onChange={(option) => {
+                                    setSelectedCourseOption(option);
+                                    if (option) {
+                                        setRequestSubject(option.value);
+                                        setRequestName(option.fullData.name);
+                                    } else {
+                                        setRequestSubject("");
+                                        setRequestName("");
+                                    }
                                 }}
-                                className="custom-form-input"
+                                placeholder={selectedCollege ? "Type to search..." : "Select College First"}
+                                styles={customSelectStyles}
+                                isClearable
                             />
-                            <datalist id="filtered-courses">
-                                {MSU_COURSES
-                                    .filter(c => c.college === selectedCollege)
-                                    .filter(c => !existingCourses.includes(c.code)) // to avoid showing available/existing subs
-                                    .map(c => (
-                                        <option key={c.code} value={c.code}>{c.name}</option>
-                                    ))
-                                }
-                            </datalist>
                         </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Name</Form.Label>
                             <Form.Control 
                                 type="text" 
                                 value={requestName} 
                                 readOnly 
-                                className="custom-form-input bg-light"
+                                className="custom-form-input"
+                                style={{ backgroundColor: '#f8f9fa' }}
                             />
                         </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Reason (Optional)</Form.Label>
                             <Form.Control 
-                                as="textarea" rows={3} 
+                                as="textarea" 
+                                rows={3} 
                                 value={requestReason} 
-                                onChange={(e) => setRequestReason(e.target.value)}
-                                className="custom-form-input"
+                                onChange={(e) => setRequestReason(e.target.value)} 
+                                className="custom-form-input textarea-input"
                             />
                         </Form.Group>
                     </Form>
@@ -268,12 +269,12 @@ export default function TutorList() {
 
             <ModalComponent 
                 show={showConfirmModal}
-                onHide={cancelConfirmation}
+                onHide={() => setShowConfirmModal(false)}
                 title="Confirm Request"
                 body={
                     <div className="custom-confirm-body">
                         <p>Are you sure you want to submit this request?</p>
-                        <div className="custom-summary-box p-3 bg-light rounded">
+                        <div className="custom-summary-box">
                             <p><strong>Code:</strong> {requestSubject}</p>
                             <p><strong>Name:</strong> {requestName}</p>
                             {requestReason && <p><strong>Reason:</strong> {requestReason}</p>}
@@ -284,13 +285,12 @@ export default function TutorList() {
                     { text: "Confirm Submit", onClick: confirmSubmitRequest, className: "custom-btn-success" }
                 ]}
                 leftButtons={[
-                    { text: "Back", variant: "secondary", onClick: cancelConfirmation, className: "custom-btn-secondary" }
+                    { text: "Back", variant: "secondary", onClick: () => setShowConfirmModal(false), className: "custom-btn-secondary" }
                 ]}
                 spaceBetweenGroups={true}
             />
-
-		</div>
-	);
+        </div>
+    );
 }
 
 

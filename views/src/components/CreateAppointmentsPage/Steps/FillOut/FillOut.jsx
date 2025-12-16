@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./FillOut.css";
 import ModalComponent from "../../../../components/modalComponent/ModalComponent"; 
 import { Form, Button, Toast, ToastContainer } from "react-bootstrap"; 
-import { MSU_COURSES } from "../../../../data/MSUCourses";
+import { MSU_COURSES, COLLEGES } from "../../../../data/MSUCourses";
 
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
@@ -283,9 +283,9 @@ export default function FillOut({ data, update }) {
                     setShowRequestModal(false);
                     resetRequestForm();
                 }}
-                title="Request a New Subject"
+                title="Request a New Course"
                 body={
-                    <Form>
+                    <Form className="subject-request-form">
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">College</Form.Label>
                             <Form.Select
@@ -306,9 +306,7 @@ export default function FillOut({ data, update }) {
 
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Select Course</Form.Label>
-                            <Form.Control 
-                                list="filtered-courses-fillout"
-                                placeholder={selectedCollege ? "Type to search..." : "Select a college first"}
+                            <Form.Select 
                                 value={requestSubject}
                                 disabled={!selectedCollege}
                                 onChange={(e) => {
@@ -319,16 +317,20 @@ export default function FillOut({ data, update }) {
                                     else setRequestName("");
                                 }}
                                 className="custom-form-input"
-                            />
-                            <datalist id="filtered-courses-fillout">
+                            >
+                                <option value="">
+                                    {selectedCollege ? "-- Select a Course --" : "-- Select College First --"}
+                                </option>
                                 {MSU_COURSES
                                     .filter(c => c.college === selectedCollege)
-                                    .filter(c => !courses.some(ac => ac.course_code === c.code)) // filter out active courses
+                                    .filter(c => !courses.some(ac => ac.course_code === c.code))
                                     .map(c => (
-                                        <option key={c.code} value={c.code}>{c.name}</option>
+                                        <option key={c.code} value={c.code}>
+                                            {c.code} - {c.name}
+                                        </option>
                                     ))
                                 }
-                            </datalist>
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Name</Form.Label>

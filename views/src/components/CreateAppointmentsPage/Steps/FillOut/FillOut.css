@@ -136,3 +136,71 @@
 .cant-find-course-link:hover {
     color: #4a5568;
 }
+
+.subject-request-form select.custom-form-input,
+.subject-request-form input.custom-form-input, 
+.subject-request-form textarea.custom-form-input {
+    display: block;
+    width: 100%;
+    height: 50px !important;
+    padding: 10px 15px !important;
+    padding-right: 40px !important;
+    
+    font-size: 1rem !important;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #2d3748 !important;
+    background-color: #fff !important;
+    
+    border: 1px solid #ced4da !important;
+    border-radius: 8px !important;
+    
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+
+.subject-request-form select.custom-form-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 15px center !important;
+    background-size: 12px !important;
+    cursor: pointer;
+}
+
+.subject-request-form .custom-form-input:focus {
+    border-color: #5865f2 !important;
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.15) !important;
+    outline: none !important;
+}
+
+.subject-request-form select.custom-form-input:disabled {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.subject-request-form input.custom-form-input:read-only {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: default;
+    background-image: none !important;
+}
+
+.subject-request-form textarea.custom-form-input {
+    height: auto !important;
+    min-height: 80px;
+    background-image: none !important;
+}
+
+.subject-request-form .custom-form-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
