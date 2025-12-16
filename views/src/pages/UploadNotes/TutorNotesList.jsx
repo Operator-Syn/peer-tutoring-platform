@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Nav } from 'react-bootstrap';
 import './TutorNotesList.css';
 
 export default function TutorNotesList({ tutorId }) {
@@ -6,6 +7,7 @@ export default function TutorNotesList({ tutorId }) {
     const [notesPosts, setNotesPosts] = useState([]);
     const [visibleCount, setVisibleCount] = useState(14);
     const [isOwnProfile, setIsOwnProfile] = useState(false);
+    const [overlayNote, setOverlayNote] = useState(null);
     const listRef = useRef(null);
 
     const fetchNotesPosts = async () => {
@@ -50,8 +52,8 @@ export default function TutorNotesList({ tutorId }) {
         <>
             <div className="tutor-notes-section">
                 <div className='tutor-notes-container'>
-                    <h1 style={{color: "#616DBE"}}>Tutor Notes</h1>
-                    <hr style={{margin: "0"}} />
+                    {/* <h1 style={{color: "#616DBE"}}>Tutor Notes</h1>
+                    <hr style={{margin: "0"}} /> */}
                     {/* <div className="notes-posts-list" ref={listRef}>
                         {notesPosts.slice(0, visibleCount).map((note) => (
                             <NotePostCard 
@@ -64,48 +66,84 @@ export default function TutorNotesList({ tutorId }) {
                             />
                         ))}
                     </div> */}
-                    <div class='accordion' ref={listRef} style={{height: "100%", overflowY: "auto", width: "100%", marginTop: "10px"}}>
-                        {notesPosts.slice(0, visibleCount).map((note) => (
-                            <div class='accordion-item' key={note.posted_note_id}>
-                                <h2 class='accordion-header'>
-                                    <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target={`#collapse${note.posted_note_id}`} aria-expanded='false' aria-controls={`collapse${note.posted_note_id}`}>
-                                        {note.title} &nbsp; <span style={{fontSize: "12px", color: "#555"}}>({note.course_code})</span>
-                                    </button>
-                                </h2>
-                                <div id={`collapse${note.posted_note_id}`} class='accordion-collapse collapse' data-bs-parent='.accordion'>
-                                    <div class='accordion-body' style={{backgroundColor: "#f2f2f2"}}>
-                                        <NotePostCard title={note.title} courseCode={note.course_code} fileUrls={note.file_urls} description={note.description} dateUploaded={note.date_posted} />
-                                    </div>
+                    <div className='' ref={listRef} style={{height: "100%", width: "100%", marginTop: "10px"}}>
+
+                        <Nav className='pills' variant="tabs" defaultActiveKey="notes" style={{borderBottom: "2px solid #ddd"}}>
+                            <Nav.Item>
+                                <Nav.Link eventKey="notes" id="notes-tab" data-bs-toggle="tab" href="#note" role="tab" aria-controls="note" aria-selected="true" style={{color: "#616DBE", fontWeight: "bold"}}>Notes</Nav.Link>
+                            </Nav.Item>
+                            <Nav.Item>
+                                <Nav.Link eventKey="schedule" id="schedule-tab" data-bs-toggle="tab" href="#schedule" role="tab" aria-controls="schedule" aria-selected="false" style={{color: "#616DBE", fontWeight: "bold"}}>Schedule</Nav.Link>
+                            </Nav.Item>
+                        </Nav>
+
+                        <div className='tab-content' id='myTabContent' >
+                            <div className='tab-pane fade show active' id="note" role="tabpanel" aria-labelledby="notes-tab">
+                                <div className="notes-posts-list" ref={listRef}>
+                                    {notesPosts.slice(0, visibleCount).map((note) => (
+                                            <div key={note.posted_note_id} style={{width: "fit-content"}}>
+                                                <NotePostCard title={note.title} courseCode={note.course_code} fileUrls={note.file_urls} description={note.description} dateUploaded={note.date_posted} onView={() => setOverlayNote(note)} />  
+                                            </div>
+                                    ))}
+                                    {notesPosts.length === 0 && (
+                                        <div>
+                                            <img src="https://www.svgrepo.com/show/427101/empty-inbox.svg" alt="No Notes" style={{width: "150px", height: "150px", display: "block", marginLeft: "auto", marginRight: "auto", marginTop: "20px"}} />
+                                            <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>No notes uploaded yet.</p>
+                                        </div>
+                                    )} 
                                 </div>
                             </div>
-                        ))}
-                        {notesPosts.length === 0 && (
-                            <div>
-                                <img src="https://www.svgrepo.com/show/427101/empty-inbox.svg" alt="No Notes" style={{width: "150px", height: "150px", display: "block", marginLeft: "auto", marginRight: "auto", marginTop: "20px"}} />
-                                <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>No notes uploaded yet.</p>
+
+                            <div className='tab-pane fade' id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
+                                Test
                             </div>
-                        )}
+                        </div>
+
                     </div>
 
 
                 </div>
             </div>
+            {overlayNote && (
+                <div className='note-overlay-bg' onClick={() => setOverlayNote(null)}>
+                    <div className='note-overlay-card' onClick={e => e.stopPropagation()}>
+                        <h1>
+                            {overlayNote.title}
+                        </h1>
+                        <p>{overlayNote.description}</p>
+                        <div className='img-cards-tnl'>
+                            {overlayNote.file_urls.map((url, index) => (
+                                <FileCard key={index} fileUrl={url} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
             <div style={{height: "30px"}} />
         </>
         
     );
 }
 
-function NotePostCard({ title, courseCode, fileUrls, description, dateUploaded }) {
+function NotePostCard({ title, courseCode, fileUrls, description, dateUploaded, onView }) {
     return (
-        <div className="" style={{}}>
-            <p className="note-post-description" style={{whiteSpace: "pre-line", textAlign: "justify", wordBreak: "break-word"}}>{description}</p>
-            <div className='img-cards-tnl'>
+
+        <div className="note-post-card" onClick={onView} style={{}}>
+            { (fileUrls[0].endsWith('.png') || fileUrls[0].endsWith('.jpeg') || fileUrls[0].endsWith('.jpg')) ? (
+                <img src={fileUrls[0]} alt="Note" style={{width: "100%", height: "170px", objectFit: "cover", borderRadius: "4px"}} />
+            ) : (
+                <img src="https://www.svgrepo.com/show/532791/file-question-alt.svg" alt="Note" style={{width: "100%", height: "170px", objectFit: "contain", borderRadius: "4px"}} />
+            )}
+            <h3 className="note-post-title" style={{marginBottom: "5px", marginTop: "10px", width: "100%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", padding: "0 10px"}}>{title}</h3>
+            {/* <p className="note-post-description" style={{whiteSpace: "pre-line", textAlign: "justify", wordBreak: "break-word"}}>{description}</p> */}
+            {/* <div className='img-cards-tnl'>
                 {fileUrls.map((url, index) => (
                     <FileCard key={index} fileUrl={url} />
                 ))}
-            </div>
-            <p className="note-post-date" style={{marginBottom: "0px", marginTop: "10px", fontSize: "smaller", color: "#888"}}>{timeAgo(dateUploaded)}</p>
+            </div> */}
+            <p className="note-post-date" style={{marginBottom: "10px", marginTop: "0px", fontSize: "smaller", color: "#888", padding: "0 10px"}}>{timeAgo(dateUploaded)} ({courseCode})</p>
+
+
         </div>
     );
 }
@@ -154,10 +192,9 @@ function FileCard({ fileUrl }) {
                 <p className="file-name-tnl" style={{color: "white", textOverflow: "ellipsis", width: "100%", fontSize: "10px"}}>{fileName}</p>
             </div>
             <div style={{display: "flex", justifyContent: "center", alignItems: "center", width: "100%", height: "100%"}}>
-                {(fileUrl.endsWith('.png') || fileUrl.endsWith('.jpeg') || fileUrl.endsWith('.jpg')) && (
+                { (fileUrl.endsWith('.png') || fileUrl.endsWith('.jpeg') || fileUrl.endsWith('.jpg')) ? (
                     <img src={fileUrl} alt="File" className="file-icon-tnl" style={{height: '100%'}} />
-                )}
-                {(fileUrl.endsWith('.pdf') || fileUrl.endsWith('.doc') || fileUrl.endsWith('.docx') || fileUrl.endsWith('.ppt') || fileUrl.endsWith('.pptx') || fileUrl.endsWith('.txt')) && (
+                ) : (
                     <img src="https://www.svgrepo.com/show/532791/file-question-alt.svg" alt="File" className="file-icon-tnl" style={{width: '70px', height: '70px'}} />
                 )}
             </div>
