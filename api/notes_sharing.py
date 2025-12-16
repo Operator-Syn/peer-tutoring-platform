@@ -32,6 +32,13 @@ def post_notes():
         return jsonify({"error": "Title, course code, file_urls, and tutor ID are required."}), 400
     
     try:
+        url_list = []
+        for item in file_urls:
+            if isinstance(item, dict):
+                url_list.append(item.get('public_url', item.get('file_url', str(item))))
+            else:
+                url_list.append(str(item))
+        
         conn = get_connection()
         with conn:
             with conn.cursor() as cursor:
@@ -39,7 +46,7 @@ def post_notes():
                     INSERT INTO posted_notes (title, description, course_code, file_urls, tutor_id)
                     VALUES (%s, %s, %s, %s, %s) RETURNING posted_note_id
                 """
-                cursor.execute(insert_query, (title, description, course_code, file_urls, tutor_id))
+                cursor.execute(insert_query, (title, description, course_code, url_list, tutor_id))
                 note_id = cursor.fetchone()[0]
 
         return jsonify({"message": "Note shared successfully.", "note_id": note_id}), 201
@@ -60,7 +67,9 @@ def upload_notes():
         return jsonify({"error": "Tutor ID is required"}), 400
 
     try:
-        public_url = upload_file("posted-notes", file, folder_name=tutor_id)
+        result = upload_file("posted-notes", file, folder_name=tutor_id)
+        # Extract just the public_url string from the result dictionary
+        public_url = result.get('public_url') if isinstance(result, dict) else result
         return jsonify({"file_url": public_url}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
