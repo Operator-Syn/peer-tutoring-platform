@@ -10,18 +10,18 @@
     margin: 3rem;
 }
 
-/* Vertical Spacing between form sections (replaces gap-4) */
+/* Vertical Spacing between form sections */
 .fillout-content-gap {
     gap: 1.5rem; 
 }
 
-/* Spacing under the main title (replaces mb-2) */
+/* Spacing under the main title */
 .fillout-title {
     margin-bottom: 0.5rem;
     margin-top: 0;
 }
 
-/* Spacing under the "Fill Out" label (replaces mb-3) */
+/* Spacing under the "Fill Out" label */
 .fillout-side-label {
     margin-bottom: 1rem;
 }
@@ -106,19 +106,28 @@
     }
 }
 
+/* --- SUBJECT ROW SPECIFIC STYLES --- */
+
 .subject-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: -25px;
-    margin-bottom: 5px;
+    position: relative;
+    padding-top: 10px;
+    margin-bottom: 0;
+    z-index: 10;
 }
 
-.static-label {
-    position: static !important;
-    transform: none !important;
-    background-color: transparent !important;
-    margin-bottom: 0 !important;
+.subject-header-row .custom-border-label {
+    position: absolute; 
+    top: -0.6em;
+    left: 0.75rem;
+    background-color: #F8F9FF; 
+    padding: 0 0.4em;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+    border-radius: 0.25rem;
+    z-index: 20;
 }
 
 .cant-find-course-link {
@@ -128,9 +137,14 @@
     text-decoration: underline;
     font-size: 0.85rem;
     cursor: pointer;
-    padding: 0 10px;
-    z-index: 10;
     transition: color 0.2s ease;
+    
+    position: absolute;
+    right: 0.75rem; 
+    top: -0.6em;
+    padding: 0 0.4em; 
+    z-index: 20; 
+    background-color: #F8F9FF;
 }
 
 .cant-find-course-link:hover {

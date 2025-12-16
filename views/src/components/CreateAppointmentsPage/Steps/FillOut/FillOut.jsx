@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./FillOut.css";
-import ModalComponent from "../../../../components/modalComponent/ModalComponent"; 
-import { Form, Button, Toast, ToastContainer } from "react-bootstrap"; 
+import ModalComponent from "../../../../components/modalComponent/ModalComponent";
+import { Form, Button, Toast, ToastContainer } from "react-bootstrap";
 
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
@@ -14,7 +14,7 @@ export default function FillOut({ data, update }) {
     const [requestSubject, setRequestSubject] = useState('');
     const [requestName, setRequestName] = useState('');
     const [requestReason, setRequestReason] = useState('');
-    
+
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [toastVariant, setToastVariant] = useState('success');
@@ -88,7 +88,7 @@ export default function FillOut({ data, update }) {
     const handleInitialSubmit = () => {
         const subjectTrimmed = requestSubject ? requestSubject.trim() : '';
         const nameTrimmed = requestName ? requestName.trim() : '';
-        
+
         if (!subjectTrimmed || !nameTrimmed) {
             triggerToast("Course Code and Course Name are required", "danger");
             return;
@@ -109,7 +109,7 @@ export default function FillOut({ data, update }) {
                 })
             });
             const result = await res.json();
-            
+
             if (res.ok) {
                 triggerToast("Request submitted successfully!", "success");
                 setShowConfirmModal(false);
@@ -153,7 +153,7 @@ export default function FillOut({ data, update }) {
 
             {/* Custom Class: fillout-content-gap (Replaces gap-4) */}
             <div className="container d-flex flex-column fillout-content-gap">
-                
+
                 {/* Custom Class: fillout-title (Replaces mb-2) */}
                 <h1 className="text-center text-decoration-underline fillout-title">
                     Appointment Form
@@ -230,8 +230,8 @@ export default function FillOut({ data, update }) {
                 {/* Course Subject */}
                 <div className="custom-border-label-group">
                     <div className="subject-header-row">
-                        <label className="form-label custom-border-label static-label">Subject Code to Avail Tutoring</label>
-                        <button 
+                        <label className="form-label custom-border-label">Subject Code to Avail Tutoring</label>
+                        <button
                             className="cant-find-course-link"
                             onClick={openRequestModal}
                         >
@@ -270,14 +270,14 @@ export default function FillOut({ data, update }) {
                         }}
                         onBlur={(e) => {
                             e.target.type = "text";
-                            e.target.value = displayDate; 
+                            e.target.value = displayDate;
                         }}
                         onChange={handleDateChange}
                     />
                 </div>
             </div>
 
-            <ModalComponent 
+            <ModalComponent
                 show={showRequestModal}
                 onHide={() => {
                     setShowRequestModal(false);
@@ -288,31 +288,31 @@ export default function FillOut({ data, update }) {
                     <Form>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Code</Form.Label>
-                            <Form.Control 
-                                type="text" 
-                                placeholder="e.g. CSC 101" 
-                                value={requestSubject} 
+                            <Form.Control
+                                type="text"
+                                placeholder="e.g. CSC 101"
+                                value={requestSubject}
                                 onChange={(e) => setRequestSubject(e.target.value)}
                                 className="custom-form-input"
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Name</Form.Label>
-                            <Form.Control 
-                                type="text" 
-                                placeholder="e.g. Introduction to Computing" 
-                                value={requestName} 
+                            <Form.Control
+                                type="text"
+                                placeholder="e.g. Introduction to Computing"
+                                value={requestName}
                                 onChange={(e) => setRequestName(e.target.value)}
                                 className="custom-form-input"
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Reason (Optional)</Form.Label>
-                            <Form.Control 
-                                as="textarea" 
-                                rows={3} 
-                                placeholder="Why do you need this subject?" 
-                                value={requestReason} 
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                placeholder="Why do you need this subject?"
+                                value={requestReason}
                                 onChange={(e) => setRequestReason(e.target.value)}
                                 className="custom-form-input"
                             />
@@ -328,7 +328,7 @@ export default function FillOut({ data, update }) {
                 spaceBetweenGroups={true}
             />
 
-            <ModalComponent 
+            <ModalComponent
                 show={showConfirmModal}
                 onHide={cancelConfirmation}
                 title="Confirm Request"
