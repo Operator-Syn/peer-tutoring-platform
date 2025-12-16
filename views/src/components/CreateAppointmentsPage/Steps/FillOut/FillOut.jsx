@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+// 1. IMPORT LIBRARY
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 import "./FillOut.css";
 import ModalComponent from "../../../../components/modalComponent/ModalComponent";
 import { Form, Button, Toast, ToastContainer } from "react-bootstrap";
@@ -7,7 +11,6 @@ import { Form, Button, Toast, ToastContainer } from "react-bootstrap";
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
     const [courses, setCourses] = useState([]);
-    const [displayDate, setDisplayDate] = useState("");
 
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -19,7 +22,6 @@ export default function FillOut({ data, update }) {
     const [toastMessage, setToastMessage] = useState('');
     const [toastVariant, setToastVariant] = useState('success');
 
-    // Fetch programs and courses
     useEffect(() => {
         fetch("/api/fillout", { credentials: "include" })
             .then((res) => res.json())
@@ -38,45 +40,39 @@ export default function FillOut({ data, update }) {
             .catch((err) => console.error("Error fetching programs:", err));
     }, []);
 
-    // Date initialization logic
     useEffect(() => {
         if (!data.preferredDate) {
-            const today = getToday();
+            const today = new Date();
+            const formattedToday = formatDateForDB(today);
             const dayOfWeek = getDayOfWeek(today);
-            update({ preferredDate: today, day_of_week: dayOfWeek });
-            setDisplayDate(formatDisplayDate(today));
-        } else {
-            setDisplayDate(formatDisplayDate(data.preferredDate));
+            update({ preferredDate: formattedToday, day_of_week: dayOfWeek });
         }
     }, []);
 
-    const formatDisplayDate = (dateString) => {
-        if (!dateString) return "";
-        const dateParts = dateString.split("-");
-        const date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-        return date.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "2-digit" });
+    const formatDateForDB = (date) => {
+        if (!date) return null;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
     };
 
-    const getDayOfWeek = (dateString) => {
+    const parseDateFromDB = (dateString) => {
         if (!dateString) return null;
-        const date = new Date(dateString);
+        const [year, month, day] = dateString.split("-");
+        return new Date(year, month - 1, day);
+    };
+
+    const getDayOfWeek = (date) => {
+        if (!date) return null;
         const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         return days[date.getDay()];
     };
 
-    const handleDateChange = (e) => {
-        const selected = e.target.value;
-        const dayOfWeek = getDayOfWeek(selected);
-        update({ preferredDate: selected, day_of_week: dayOfWeek });
-        setDisplayDate(formatDisplayDate(selected));
-    };
-
-    const getToday = () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, "0");
-        const day = String(today.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
+    const handleDateChange = (date) => {
+        const formattedDate = formatDateForDB(date);
+        const dayOfWeek = getDayOfWeek(date);
+        update({ preferredDate: formattedDate, day_of_week: dayOfWeek });
     };
 
     const triggerToast = (message, variant = 'success') => {
@@ -151,15 +147,12 @@ export default function FillOut({ data, update }) {
 
             <h3 className="fillout-side-label h3-absolute">Fill Out</h3>
 
-            {/* Custom Class: fillout-content-gap (Replaces gap-4) */}
             <div className="container d-flex flex-column fillout-content-gap">
 
-                {/* Custom Class: fillout-title (Replaces mb-2) */}
                 <h1 className="text-center text-decoration-underline fillout-title">
                     Appointment Form
                 </h1>
 
-                {/* Row with two columns - Standard Bootstrap Grid */}
                 <div className="row g-3">
                     <div className="col-12 col-md-6 d-flex flex-column gap-3">
                         <div className="custom-border-label-group">
@@ -209,7 +202,6 @@ export default function FillOut({ data, update }) {
                     </div>
                 </div>
 
-                {/* Program select */}
                 <div className="custom-border-label-group">
                     <label className="form-label custom-border-label">Program</label>
                     <select
@@ -227,7 +219,6 @@ export default function FillOut({ data, update }) {
                     </select>
                 </div>
 
-                {/* Course Subject */}
                 <div className="custom-border-label-group">
                     <div className="subject-header-row">
                         <label className="form-label custom-border-label">Subject Code to Avail Tutoring</label>
@@ -254,26 +245,25 @@ export default function FillOut({ data, update }) {
 
                 <div className="custom-border-label-group">
                     <label className="form-label custom-border-label">Preferred Date</label>
-                    <input
-                        type="text"
-                        className="form-control custom-input"
-                        value={displayDate}
-                        onKeyDown={(e) => e.preventDefault()}
-                        onFocus={(e) => {
-                            e.target.type = "date";
-                            if (data.preferredDate && data.preferredDate.includes('/')) {
-                                const [mm, dd, yyyy] = data.preferredDate.split("/");
-                                e.target.value = `${yyyy}-${mm}-${dd}`;
-                            } else if (data.preferredDate) {
-                                e.target.value = data.preferredDate;
-                            }
-                        }}
-                        onBlur={(e) => {
-                            e.target.type = "text";
-                            e.target.value = displayDate;
-                        }}
-                        onChange={handleDateChange}
-                    />
+                    <div className="fillout-datepicker-container">
+                        <DatePicker
+                            selected={parseDateFromDB(data.preferredDate)}
+                            onChange={handleDateChange}
+                            dateFormat="MMMM d, yyyy"
+                            className="form-control custom-input"
+                            wrapperClassName="w-100"
+                            placeholderText="Select a date"
+
+                            /* --- FIX: PREVENT TYPING --- */
+                            /* This intercepts any keystroke and stops it from entering text */
+                            onKeyDown={(e) => e.preventDefault()}
+
+                            /* Keep this to prevent mobile keyboards from flashing open */
+                            onFocus={(e) => e.target.blur()}
+
+                            calendarClassName="fillout-calendar-large"
+                        />
+                    </div>
                 </div>
             </div>
 
