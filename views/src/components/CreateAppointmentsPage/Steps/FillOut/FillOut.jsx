@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./FillOut.css";
 import ModalComponent from "../../../../components/modalComponent/ModalComponent"; 
 import { Form, Button, Toast, ToastContainer } from "react-bootstrap"; 
+import { MSU_COURSES } from "../../../../data/MSUCourses";
 
 export default function FillOut({ data, update }) {
     const [programs, setPrograms] = useState([]);
@@ -11,6 +12,7 @@ export default function FillOut({ data, update }) {
 
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedCollege, setSelectedCollege] = useState("");
     const [requestSubject, setRequestSubject] = useState('');
     const [requestName, setRequestName] = useState('');
     const [requestReason, setRequestReason] = useState('');
@@ -86,11 +88,9 @@ export default function FillOut({ data, update }) {
     };
 
     const handleInitialSubmit = () => {
-        const subjectTrimmed = requestSubject ? requestSubject.trim() : '';
-        const nameTrimmed = requestName ? requestName.trim() : '';
-        
-        if (!subjectTrimmed || !nameTrimmed) {
-            triggerToast("Course Code and Course Name are required", "danger");
+        const isValidCourse = MSU_COURSES.some(c => c.code === requestSubject);
+        if (!requestSubject || !isValidCourse) {
+            triggerToast("Please select a valid course from the list.", "danger");
             return;
         }
         setShowRequestModal(false);
@@ -287,35 +287,56 @@ export default function FillOut({ data, update }) {
                 body={
                     <Form>
                         <Form.Group className="mb-3">
-                            <Form.Label className="custom-form-label">Course Code</Form.Label>
+                            <Form.Label className="custom-form-label">College</Form.Label>
+                            <Form.Select
+                                value={selectedCollege}
+                                onChange={(e) => {
+                                    setSelectedCollege(e.target.value);
+                                    setRequestSubject("");
+                                    setRequestName("");
+                                }}
+                                className="custom-form-input"
+                            >
+                                <option value="">-- Select College --</option>
+                                {COLLEGES.map(col => (
+                                    <option key={col.code} value={col.code}>{col.name}</option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Select Course</Form.Label>
                             <Form.Control 
-                                type="text" 
-                                placeholder="e.g. CSC 101" 
-                                value={requestSubject} 
-                                onChange={(e) => setRequestSubject(e.target.value)}
+                                list="filtered-courses-fillout"
+                                placeholder={selectedCollege ? "Type to search..." : "Select a college first"}
+                                value={requestSubject}
+                                disabled={!selectedCollege}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setRequestSubject(val);
+                                    const match = MSU_COURSES.find(c => c.code === val);
+                                    if(match) setRequestName(match.name);
+                                    else setRequestName("");
+                                }}
                                 className="custom-form-input"
                             />
+                            <datalist id="filtered-courses-fillout">
+                                {MSU_COURSES
+                                    .filter(c => c.college === selectedCollege)
+                                    .filter(c => !courses.some(ac => ac.course_code === c.code)) // filter out active courses
+                                    .map(c => (
+                                        <option key={c.code} value={c.code}>{c.name}</option>
+                                    ))
+                                }
+                            </datalist>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Name</Form.Label>
-                            <Form.Control 
-                                type="text" 
-                                placeholder="e.g. Introduction to Computing" 
-                                value={requestName} 
-                                onChange={(e) => setRequestName(e.target.value)}
-                                className="custom-form-input"
-                            />
+                            <Form.Control type="text" value={requestName} readOnly className="custom-form-input bg-light"/>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Reason (Optional)</Form.Label>
-                            <Form.Control 
-                                as="textarea" 
-                                rows={3} 
-                                placeholder="Why do you need this subject?" 
-                                value={requestReason} 
-                                onChange={(e) => setRequestReason(e.target.value)}
-                                className="custom-form-input"
-                            />
+                            <Form.Control as="textarea" rows={3} value={requestReason} onChange={(e) => setRequestReason(e.target.value)} className="custom-form-input"/>
                         </Form.Group>
                     </Form>
                 }

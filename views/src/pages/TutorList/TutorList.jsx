@@ -7,6 +7,7 @@ import ModalComponent from '../../components/modalComponent/ModalComponent.jsx';
 import Select from 'react-select';
 import { Form, Card, Button, Toast, ToastContainer } from 'react-bootstrap'; // Added Toast components
 import { useNavigate } from "react-router-dom";
+import { MSU_COURSES, COLLEGES } from "../../data/MSUCourses.js";
 
 
 const availabilityOptions = [
@@ -29,9 +30,10 @@ export default function TutorList() {
 	const [availabilitySearch, setAvailabilitySearch] = useState('');
 	const [nameSearch, setNameSearch] = useState('');
 	const [loading, setLoading] = useState(true);
-
+    const [existingCourses, setExistingCourses] = useState([]);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedCollege, setSelectedCollege] = useState(""); // Step 1
     const [requestSubject, setRequestSubject] = useState('');
 	const [requestName, setRequestName] = useState('');
     const [requestReason, setRequestReason] = useState('');
@@ -75,11 +77,10 @@ export default function TutorList() {
     };
 
     const handleInitialSubmit = () => {
-        const subjectTrimmed = requestSubject ? requestSubject.trim() : '';
-        const nameTrimmed = requestName ? requestName.trim() : '';
+        const isValidCourse = MSU_COURSES.some(c => c.code === requestSubject);
         
-        if (!subjectTrimmed || !nameTrimmed) {
-            triggerToast("Course Code and Course Name are required", "danger");
+        if (!requestSubject || !isValidCourse) {
+            triggerToast("Please select a valid course from the list.", "danger");
             return;
         }
         setShowRequestModal(false);
@@ -193,23 +194,56 @@ export default function TutorList() {
                 body={
                     <Form>
                         <Form.Group className="mb-3">
-                            <Form.Label className="custom-form-label">Course Code</Form.Label>
+                            <Form.Label className="custom-form-label">College</Form.Label>
+                            <Form.Select
+                                value={selectedCollege}
+                                onChange={(e) => {
+                                    setSelectedCollege(e.target.value);
+                                    setRequestSubject("");
+                                    setRequestName("");
+                                }}
+                                className="custom-form-input"
+                            >
+                                <option value="">-- Select College --</option>
+                                {COLLEGES.map(col => (
+                                    <option key={col.code} value={col.code}>{col.name}</option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label className="custom-form-label">Select Course</Form.Label>
                             <Form.Control 
-                                type="text" 
-                                placeholder="e.g. CSC 101" 
-                                value={requestSubject} 
-                                onChange={(e) => setRequestSubject(e.target.value)}
+                                list="filtered-courses" 
+                                placeholder={selectedCollege ? "Type to search..." : "Select a college first"}
+                                value={requestSubject}
+                                disabled={!selectedCollege}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setRequestSubject(val);
+                                    const match = MSU_COURSES.find(c => c.code === val);
+                                    if(match) setRequestName(match.name);
+                                    else setRequestName("");
+                                }}
                                 className="custom-form-input"
                             />
+                            <datalist id="filtered-courses">
+                                {MSU_COURSES
+                                    .filter(c => c.college === selectedCollege)
+                                    .filter(c => !existingCourses.includes(c.code)) // to avoid showing available/existing subs
+                                    .map(c => (
+                                        <option key={c.code} value={c.code}>{c.name}</option>
+                                    ))
+                                }
+                            </datalist>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="custom-form-label">Course Name</Form.Label>
                             <Form.Control 
                                 type="text" 
-                                placeholder="e.g. Introduction to Computing" 
                                 value={requestName} 
-                                onChange={(e) => setRequestName(e.target.value)}
-                                className="custom-form-input"
+                                readOnly 
+                                className="custom-form-input bg-light"
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
