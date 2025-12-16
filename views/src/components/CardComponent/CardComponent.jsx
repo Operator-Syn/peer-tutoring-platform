@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "react-bootstrap";
+import { Card, Badge } from "react-bootstrap"; 
 import ModalComponent from "../modalComponent/ModalComponent";
 import "./CardComponent.css";
 
@@ -17,6 +17,7 @@ export default function CardComponent({
     modalButtonsLeft = [],
     modalButtonsRight = [],
     disableModal = false,
+    rating = null, 
 }) {
     const [showModal, setShowModal] = useState(false);
     
@@ -38,6 +39,48 @@ export default function CardComponent({
         }));
 
     const leftTexts = leftAlignText ? [leftAlignText] : [];
+
+    // --- Helper: Render Stars or "New Tutor" Badge ---
+    const renderRating = () => {
+        // 1. Loading State
+        if (rating === null || rating === undefined) {
+            return (
+                <div className="placeholder-glow" style={{ width: "80px" }}>
+                    <span className="placeholder w-100 bg-secondary opacity-25 rounded"></span>
+                </div>
+            );
+        }
+
+        const numRating = parseFloat(rating) || 0;
+
+        // 2. New Tutor State (0 Rating)
+        if (numRating === 0) {
+            return (
+                <Badge bg="info" className="text-dark shadow-sm">
+                    <i className="bi bi-stars me-1"></i>New Tutor
+                </Badge>
+            );
+        }
+
+        // 3. Star Rating State
+        const stars = [];
+        for (let i = 1; i <= 5; i++) {
+            if (numRating >= i) {
+                stars.push(<i key={i} className="bi bi-star-fill text-warning" style={{ fontSize: "0.9rem" }}></i>);
+            } else if (numRating >= i - 0.5) {
+                stars.push(<i key={i} className="bi bi-star-half text-warning" style={{ fontSize: "0.9rem" }}></i>);
+            } else {
+                stars.push(<i key={i} className="bi bi-star text-muted opacity-25" style={{ fontSize: "0.9rem" }}></i>);
+            }
+        }
+
+        return (
+            <div className="d-flex align-items-center" title={`${numRating.toFixed(1)} / 5`}>
+                <span className="me-1">{stars}</span>
+                <small className="text-muted" style={{ fontSize: "0.85rem" }}>({numRating.toFixed(1)})</small>
+            </div>
+        );
+    };
 
     // --- Helper functions ---
     const renderTitle = (title) => {
@@ -134,7 +177,12 @@ export default function CardComponent({
                 )}
 
                 <Card.Body>
-                    <Card.Title>{renderTitle(title)}</Card.Title>
+                    {/* --- CHANGED: Flex container for Title + Rating on the same line --- */}
+                    <Card.Title className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="text-truncate me-2">{renderTitle(title)}</span>
+                        <span className="flex-shrink-0">{renderRating()}</span>
+                    </Card.Title>
+
                     {renderLeftTexts(leftTexts)}
                     {disableModal && renderModalContent(modalContent, tutorMessage)}
                     {renderRightTexts(rightAlignTop, rightAlignBottom)}
@@ -158,6 +206,7 @@ export default function CardComponent({
                             image={image}
                             footer={modalFooter || footer}
                             disableModal={true}
+                            rating={rating} 
                         />
                     }
                     footer={modalFooter}

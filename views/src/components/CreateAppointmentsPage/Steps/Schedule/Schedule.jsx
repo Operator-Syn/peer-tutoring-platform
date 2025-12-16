@@ -1,6 +1,6 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useState, useRef } from "react";
-import { Pagination } from "react-bootstrap"; 
+import { Pagination } from "react-bootstrap";
 import CardComponent from "../../../CardComponent/CardComponent";
 import "./Schedule.css";
 
@@ -13,14 +13,17 @@ export default function Schedule({ data, update }) {
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(data.vacant_id || null);
     
+    // --- NEW: Store fetched ratings ---
+    const [tutorRatings, setTutorRatings] = useState({});
+
     // Responsive State
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [itemsPerPage, setItemsPerPage] = useState(window.innerWidth < 768 ? 3 : 6);
-    
+
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [emptyStateImgLoaded, setEmptyStateImgLoaded] = useState(false);
-    
+
     const headerRef = useRef(null);
     const isFirstRender = useRef(true);
 
@@ -29,7 +32,7 @@ export default function Schedule({ data, update }) {
         const handleResize = () => {
             const mobile = window.innerWidth < 768;
             setIsMobile(mobile);
-            setItemsPerPage(mobile ? 3 : 6); 
+            setItemsPerPage(mobile ? 3 : 6);
         };
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
@@ -45,11 +48,14 @@ export default function Schedule({ data, update }) {
         setLoading(true);
         setEmptyStateImgLoaded(false);
         setCurrentPage(1); // Reset page on new fetch
+        
+        // Reset ratings when search changes
+        setTutorRatings({});
 
         // 🚨 FIXED: Added credentials: 'include' so backend gets the session cookie
         fetch(`/api/availability/by-subject?course_code=${data.courseCode}&appointment_date=${data.preferredDate}`, {
             method: 'GET',
-            credentials: 'include' 
+            credentials: 'include'
         })
             .then(res => res.json())
             .then(fetchedData => {
@@ -76,7 +82,38 @@ export default function Schedule({ data, update }) {
                 headerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
-    }, [currentPage]); 
+    }, [currentPage]);
+
+    // --- NEW: Fetch Ratings for Visible Tutors ---
+    useEffect(() => {
+        if (availabilities.length === 0) return;
+
+        // 1. Calculate current items indices
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        const currentItems = availabilities.slice(indexOfFirstItem, indexOfLastItem);
+
+        // 2. Get unique tutor IDs
+        const uniqueTutorIds = [...new Set(currentItems.map(a => a.tutor_id))];
+        
+        uniqueTutorIds.forEach(tutorId => {
+            if (tutorRatings[tutorId] !== undefined) return; // Already fetched
+
+            fetch(`/api/rate-session/tutor/${tutorId}`)
+                .then(res => res.json())
+                .then(ratings => {
+                    // Calculate Average
+                    if (Array.isArray(ratings) && ratings.length > 0) {
+                        const sum = ratings.reduce((acc, curr) => acc + (curr.rating || 0), 0);
+                        const avg = sum / ratings.length;
+                        setTutorRatings(prev => ({ ...prev, [tutorId]: avg }));
+                    } else {
+                        setTutorRatings(prev => ({ ...prev, [tutorId]: 0 })); // 0 for New Tutor
+                    }
+                })
+                .catch(err => console.error("Error fetching rating for", tutorId, err));
+        });
+    }, [availabilities, currentPage, itemsPerPage]);
 
     const handleSelect = (vacant_id) => {
         if (selected === vacant_id) {
@@ -126,28 +163,28 @@ export default function Schedule({ data, update }) {
                 <div className="d-flex flex-column align-items-center justify-content-center text-center py-3">
                     <div className="mb-3 position-relative rounded-4 shadow-sm overflow-hidden" style={{ width: "250px", height: "250px" }}>
                         {!emptyStateImgLoaded && (
-                            <div 
+                            <div
                                 className="w-100 h-100 bg-secondary-subtle placeholder-glow d-flex align-items-center justify-content-center"
                                 style={{ position: "absolute", top: 0, left: 0, zIndex: 1 }}
                             >
                                 <span className="placeholder w-100 h-100"></span>
                             </div>
                         )}
-                        <img 
-                            src={NO_TUTOR_IMAGE_URL} 
-                            alt="No tutors around" 
+                        <img
+                            src={NO_TUTOR_IMAGE_URL}
+                            alt="No tutors around"
                             className="w-100 h-100"
-                            style={{ 
-                                objectFit: "cover", 
-                                opacity: emptyStateImgLoaded ? 1 : 0, 
-                                transition: "opacity 0.5s ease-in-out" 
+                            style={{
+                                objectFit: "cover",
+                                opacity: emptyStateImgLoaded ? 1 : 0,
+                                transition: "opacity 0.5s ease-in-out"
                             }}
                             onLoad={() => setEmptyStateImgLoaded(true)}
                         />
                     </div>
                     <h4 className="fw-bold text-secondary">It's quiet... too quiet.</h4>
                     <p className="text-muted" style={{ maxWidth: "400px" }}>
-                        Looks like no owls are roosting on this branch right now. 
+                        Looks like no owls are roosting on this branch right now.
                         Try picking a different date to get a hoot from us!
                     </p>
                 </div>
@@ -162,7 +199,7 @@ export default function Schedule({ data, update }) {
         const cardsPerRow = 3;
         const remainder = currentItems.length % cardsPerRow;
         const placeholders = (!isMobile && remainder > 0) ? Array(cardsPerRow - remainder).fill(null) : [];
-        
+
         const paginationBtnStyle = { minWidth: "3rem", textAlign: "center" };
 
         return (
@@ -171,6 +208,9 @@ export default function Schedule({ data, update }) {
                     {currentItems.map(a => {
                         const isSelected = selected === a.vacant_id;
                         const isDisabled = selected && !isSelected;
+                        
+                        // --- Get Rating (Default to null if loading) ---
+                        const rating = tutorRatings[a.tutor_id] !== undefined ? tutorRatings[a.tutor_id] : null;
 
                         const selectButton = {
                             text: isSelected ? "Unselect" : "Select",
@@ -186,6 +226,10 @@ export default function Schedule({ data, update }) {
                             <CardComponent
                                 key={a.vacant_id}
                                 title={{ label: "Tutor:", value: a.tutor_name }}
+                                
+                                // --- Pass Rating ---
+                                rating={rating}
+                                
                                 modalTitle="Availability Details"
                                 leftAlignText={`Day: ${a.day_of_week}`}
                                 rightAlignTop={`Course: ${a.course_code}`}
@@ -193,8 +237,13 @@ export default function Schedule({ data, update }) {
                                 footer={isSelected ? "Selected" : ""}
                                 image={SCHEDULE_OWL_URL}
                                 modalContent={[
-                                    { role: "Tutor ID", text: ` ${a.tutor_id}` },
-                                    { text: `Vacant Slot ID: ${a.vacant_id}` },
+                                    {
+                                        role: "Tutor",
+                                        text: a.tutor_name,
+                                        url: `/tutor/${a.tutor_id}`
+                                    },
+                                    { role: "Tutor ID", text: a.tutor_id },
+                                    // Removed Vacant Slot ID as requested
                                 ]}
                                 modalButtonsRight={[selectButton]}
                                 modalButtonsLeft={[]}
@@ -210,12 +259,12 @@ export default function Schedule({ data, update }) {
                 {totalPages > 1 && (
                     <div className="d-flex justify-content-center mt-4 pb-2">
                         <Pagination size={isMobile ? "sm" : "md"}>
-                            <Pagination.Prev 
-                                onClick={() => handlePageChange(currentPage - 1)} 
+                            <Pagination.Prev
+                                onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 style={paginationBtnStyle}
                             />
-                            
+
                             {[...Array(totalPages)].map((_, index) => (
                                 <Pagination.Item
                                     key={index + 1}
@@ -227,8 +276,8 @@ export default function Schedule({ data, update }) {
                                 </Pagination.Item>
                             ))}
 
-                            <Pagination.Next 
-                                onClick={() => handlePageChange(currentPage + 1)} 
+                            <Pagination.Next
+                                onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
                                 style={paginationBtnStyle}
                             />
@@ -242,15 +291,15 @@ export default function Schedule({ data, update }) {
     return (
         <div className="container create-appointment-form-bg p-3 p-md-5 mb-4">
             <div className="d-flex align-items-center justify-content-between mb-3">
-                <h3 
-                    ref={headerRef} 
-                    className="mb-0 h3-absolute" 
-                    style={{ scrollMarginTop: "20px" }} 
+                <h3
+                    ref={headerRef}
+                    className="mb-0 h3-absolute"
+                    style={{ scrollMarginTop: "20px" }}
                 >
                     Schedule
                 </h3>
             </div>
-            
+
             {renderContent()}
         </div>
     );
