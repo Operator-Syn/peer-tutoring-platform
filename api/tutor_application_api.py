@@ -67,11 +67,13 @@ def submit_tutor_application():
         file.filename = random_filename
 
         try:
-            cor_url = upload_file("cor-uploads", file, folder_name=student_id)
-        except Exception as e:
-            print(f"Supabase Upload Error: {e}")
-            return jsonify({'error': 'Failed to upload document to cloud storage'}), 500
+            upload_result = upload_file("cor-uploads", file, folder_name=student_id)
+            cor_url = upload_result['public_url']
 
+        except Exception as e:
+            print(f"Supabase Upload Error; {e}")
+            return jsonify({'error': 'Failed to upload document to cloud storage'}), 500
+        
         conn = get_connection()
         with conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:

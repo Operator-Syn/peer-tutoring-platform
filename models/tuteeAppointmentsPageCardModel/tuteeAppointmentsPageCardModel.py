@@ -20,6 +20,7 @@ class AppointmentCard:
     end_time: str               # formatted for display
     modal_content: List[ModalContentItem]
     status: str
+    tutor_id: str               # <--- ADDED FIELD HERE
     footer: Optional[str] = field(init=False)
 
     def __post_init__(self):
@@ -70,6 +71,7 @@ class AppointmentCard:
             tutee_id = tutee_res["id_number"]
 
             # 2. Fetch Appointments
+            # Note: The query already selects 'tutor_id', so we can use it directly below.
             query = """
                 SELECT
                     a.appointment_id,
@@ -117,7 +119,8 @@ class AppointmentCard:
                     start_time=start_str,
                     end_time=end_str,
                     modal_content=modal_content,
-                    status=row["status"]
+                    status=row["status"],
+                    tutor_id=row["tutor_id"]  # <--- PASSING THE ID HERE
                 )
                 cards.append(asdict(card)) # Return as dict for JSON
 

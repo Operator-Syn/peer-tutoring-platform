@@ -709,63 +709,80 @@ useEffect(() => {
                         boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      <div className="button-grid">
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={panctual} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Punctual
-                        </button>
+                   <div className="button-grid">
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed", 
+      opacity: 1, // No opacity change, still appears as normal
+      pointerEvents: "none", // Ensures the button cannot be interacted with
+    }}
+  >
+    <img
+      src={panctual}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Punctual
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={responsive} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Engaging
-                        </button>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={responsive}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Engaging
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={friendly} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Friendly
-                        </button>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={friendly}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Friendly
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={proficient} style={{ width: "60px", height: "60px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Proficient
-                        </button>
-                      </div>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={proficient}
+      style={{ width: "60px", height: "60px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Proficient
+  </button>
+</div>
+
                     </div>
 
                     <div
@@ -868,16 +885,12 @@ useEffect(() => {
               </div>
             </div>
 
-<div className="container py-5"> 
-  {/* Schedules / Badge count aligned under profile */}
+{/* <div className="container py-5"> 
   <div className="container py-5">
     <div className="column justify-content-start">
-      {/* Match left column width (col-md-4 like the profile card) */}
       <div className="col-12 col-md-4 d-flex justify-start">
         <h4 className="displays text-center">Schedules_________________</h4>
       </div>
-
-      {/* Dynamic Schedule Cards (from tutor.availability) */}
       <div
         className="d-flex flex-wrap gap-4 mt-5"
         style={{
@@ -926,7 +939,7 @@ useEffect(() => {
       </div>
     </div>
   </div>
-</div>
+</div> */}
             {/* BADGE MODAL */}
             {isModalOpen && (
               <div
@@ -1213,7 +1226,7 @@ useEffect(() => {
     </div>
   </div>
 )}
-  <TutorNotesList tutorId={tutor?.tutor_id} />
+  <TutorNotesList tutorId={tutor?.tutor_id} tutorAvailability={tutor?.availability} />
     </>
   );
 }

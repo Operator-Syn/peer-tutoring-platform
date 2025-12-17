@@ -5,23 +5,22 @@
     background-color: #F8F9FF;
     border-radius: 20px;
     box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-    /* Large spacing for desktop (replacing m-5 p-5) */
     padding: 3rem; 
     margin: 3rem;
 }
 
-/* Vertical Spacing between form sections (replaces gap-4) */
+/* Vertical Spacing between form sections */
 .fillout-content-gap {
     gap: 1.5rem; 
 }
 
-/* Spacing under the main title (replaces mb-2) */
+/* Spacing under the main title */
 .fillout-title {
     margin-bottom: 0.5rem;
     margin-top: 0;
 }
 
-/* Spacing under the "Fill Out" label (replaces mb-3) */
+/* Spacing under the "Fill Out" label */
 .fillout-side-label {
     margin-bottom: 1rem;
 }
@@ -30,14 +29,12 @@
 /* --- FLOATING LABELS STYLING --- */
 .custom-border-label-group {
     position: relative;
-    /* No margin needed, the flex gap handles it */
 }
 
 .custom-border-label-group .custom-border-label {
     position: absolute;
     top: -0.6em;
     left: 0.75rem;
-    /* Matches background to hide the border line */
     background-color: #F8F9FF; 
     padding: 0 0.4em;
     font-size: 0.85rem;
@@ -74,51 +71,49 @@
 
 /* --- MOBILE VIEW (< 768px) --- */
 @media (max-width: 768px) {
-    
-    /* 1. Shrink the main container padding/margin */
     .create-appointment-form-bg {
         padding: 1.5rem 1rem; 
         margin: 0.5rem;       
         border-radius: 15px;
     }
-
-    /* 2. Remove Bootstrap container padding to maximize width */
     .fillout-content-gap.container {
         padding-left: 0;
         padding-right: 0;
     }
-
-    /* 3. Reduce vertical gap (tighter stack) */
     .fillout-content-gap {
         gap: 1rem; 
     }
-
-    /* 4. Smaller Title */
     .fillout-title {
         font-size: 1.5rem;
         margin-bottom: 0.25rem; 
     }
-
-    /* 5. Smaller Side Label Spacing */
     .fillout-side-label {
         margin-bottom: 0.5rem;
         font-size: 1.25rem;
     }
 }
 
+/* --- SUBJECT ROW SPECIFIC STYLES --- */
 .subject-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: -25px;
-    margin-bottom: 5px;
+    position: relative;
+    padding-top: 10px;
+    margin-bottom: 0;
+    z-index: 10;
 }
 
-.static-label {
-    position: static !important;
-    transform: none !important;
-    background-color: transparent !important;
-    margin-bottom: 0 !important;
+.subject-header-row .custom-border-label {
+    position: absolute; 
+    top: -0.6em;
+    left: 0.75rem;
+    background-color: #F8F9FF; 
+    padding: 0 0.4em;
+    font-size: 0.85rem;
+    color: var(--bs-secondary-color);
+    border-radius: 0.25rem;
+    z-index: 20;
 }
 
 .cant-find-course-link {
@@ -128,11 +123,189 @@
     text-decoration: underline;
     font-size: 0.85rem;
     cursor: pointer;
-    padding: 0 10px;
-    z-index: 10;
     transition: color 0.2s ease;
+    
+    position: absolute;
+    right: 0.75rem; 
+    top: -0.6em;
+    padding: 0 0.4em; 
+    z-index: 20; 
+    background-color: #F8F9FF;
 }
 
 .cant-find-course-link:hover {
     color: #4a5568;
+}
+
+/* --- Date Picker Wrapper --- */
+.fillout-datepicker-container .react-datepicker-wrapper {
+    width: 100%;
+}
+
+/* --- UTILITY CLASS: LARGE CALENDAR --- */
+
+/* 1. Scale the overall font and container */
+.fillout-calendar-large {
+    font-size: 1.1rem !important;
+    font-family: inherit !important;
+    border-color: #dee2e6 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 2. Increase the header size (Month/Year) */
+.fillout-calendar-large .react-datepicker__header {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    padding-top: 1rem !important;
+}
+
+.fillout-calendar-large .react-datepicker__current-month {
+    font-size: 1.3rem !important;
+    margin-bottom: 0.5rem !important;
+    color: #212529 !important;
+}
+
+.fillout-calendar-large .react-datepicker__day-name {
+    width: 3rem !important;
+    line-height: 2rem !important;
+    margin: 0.2rem !important;
+    color: #6c757d !important;
+    font-weight: 600 !important;
+}
+
+/* 3. Increase the Day Squares (Size & Hitbox) */
+.fillout-calendar-large .react-datepicker__day {
+    width: 3rem !important;       /* Wider */
+    line-height: 3rem !important; /* Taller */
+    margin: 0.2rem !important;    /* Spacing */
+    font-size: 1.1rem !important;
+    border-radius: 50% !important;
+}
+
+/* 4. Hover State */
+.fillout-calendar-large .react-datepicker__day:hover {
+    background-color: #e9ecef !important;
+    border-radius: 50% !important;
+}
+
+/* 5. Selected State */
+.fillout-calendar-large .react-datepicker__day--selected,
+.fillout-calendar-large .react-datepicker__day--keyboard-selected {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+/* 6. Today's Date Indicator */
+.fillout-calendar-large .react-datepicker__day--today {
+    font-weight: bold !important;
+    border: 1px solid #0d6efd !important;
+    background-color: transparent;
+}
+.fillout-calendar-large .react-datepicker__day--today.react-datepicker__day--selected {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+/* --- 7. NEW: ARROW CUSTOMIZATION (Scale up & Center Safe) --- */
+.fillout-calendar-large .react-datepicker__navigation {
+    /* CHANGED: Moved from 1.35rem UP to 0.6rem */
+    top: 0.6rem !important; 
+    height: 32px !important;
+    width: 32px !important;
+}
+
+.fillout-calendar-large .react-datepicker__navigation--previous {
+    left: 1rem !important;
+}
+
+.fillout-calendar-large .react-datepicker__navigation--next {
+    right: 1rem !important;
+}
+
+.fillout-calendar-large .react-datepicker__navigation-icon::before {
+    border-color: #6c757d !important;
+    border-width: 3px 3px 0 0 !important; 
+    height: 10px !important;               
+    width: 10px !important;
+    
+    /* Perfect Vertical Center */
+    top: 11px !important; 
+}
+
+.fillout-calendar-large .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+    border-color: #0d6efd !important;
+}
+
+/* --- FIX: Make DatePicker appear above floating labels --- */
+.react-datepicker-popper {
+    z-index: 50 !important; 
+}
+
+.subject-request-form select.custom-form-input,
+.subject-request-form input.custom-form-input, 
+.subject-request-form textarea.custom-form-input {
+    display: block;
+    width: 100%;
+    height: 50px !important;
+    padding: 10px 15px !important;
+    padding-right: 40px !important;
+    
+    font-size: 1rem !important;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #2d3748 !important;
+    background-color: #fff !important;
+    
+    border: 1px solid #ced4da !important;
+    border-radius: 8px !important;
+    
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+
+.subject-request-form select.custom-form-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 15px center !important;
+    background-size: 12px !important;
+    cursor: pointer;
+}
+
+.subject-request-form .custom-form-input:focus {
+    border-color: #5865f2 !important;
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.15) !important;
+    outline: none !important;
+}
+
+.subject-request-form select.custom-form-input:disabled {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.subject-request-form input.custom-form-input:read-only {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: default;
+    background-image: none !important;
+}
+
+.subject-request-form textarea.custom-form-input {
+    height: auto !important;
+    min-height: 80px;
+    background-image: none !important;
+}
+
+.subject-request-form .custom-form-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }

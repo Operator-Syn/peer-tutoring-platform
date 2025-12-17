@@ -112,3 +112,51 @@
     max-width: none !important;
   }
 }
+
+.subject-request-form .custom-form-input,
+.filter-group .custom-form-input {
+    width: 100%;
+    height: 50px;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #2d3748;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.subject-request-form .custom-form-input:focus,
+.filter-group .custom-form-input:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.15);
+    outline: none;
+}
+
+.subject-request-form .custom-form-input:read-only {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: default;
+}
+
+.subject-request-form textarea.custom-form-input {
+    height: auto;
+    min-height: 80px;
+    padding-top: 12px;
+}
+
+.subject-request-form .custom-form-label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.custom-summary-box {
+    background-color: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
