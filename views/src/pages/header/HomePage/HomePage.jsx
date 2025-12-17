@@ -1,10 +1,6 @@
-import tutorSchedulesImg from '../../../assets/tutor_schedules.png';
 import searchSvg from '../../../assets/search_icon.svg';
 import bookSvg from '../../../assets/book_icon.svg';
 import peopleSvg from '../../../assets/people_icon.svg';
-import caro1 from '../../../assets/caro1.jpg';
-import caro2 from '../../../assets/caro2.jpg';
-import caro3 from '../../../assets/caro3.jpg';
 
 import './HomePage.css';
 import BasicButton from '../../../components/BasicButton/BasicButton';
@@ -20,6 +16,15 @@ export default function HomePage() {
     const navigate = useNavigate();
     const loginCheck = useLoginCheck();
     const checkIfLoggedinBeforeCreatingAppointment = useLoginCheck({ route: "/CreateAppointment" })
+    const tutorSchedulesImg =
+        'https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/tutor_schedules.png';
+
+    const caro1 =
+        'https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/caro1.jpg';
+
+    const caro2 =
+        'https://wedygbolktkdbpxxrlcr.supabase.co/storage/v1/object/public/assets/caro2.jpg';
+
 
     // 2. State to hold user data
     const [currentUser, setCurrentUser] = useState(null);
@@ -44,7 +49,7 @@ export default function HomePage() {
     const handleAppointmentsClick = (appointmentId = null) => {
         // We check the variable we already have in memory.
         // No fetch, no waiting, no flash.
-        
+
         const isActiveTutor = currentUser?.role === "TUTOR" && currentUser?.tutor_status === "ACTIVE";
 
         if (isActiveTutor) {
