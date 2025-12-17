@@ -18,8 +18,9 @@ import profilePlaceholder from "../assets/images/M_layouts/profile.png";
 import arrow from "../assets/images/M_layouts/downarrow.png";
 import uploadIcon from "../assets/images/M_layouts/upload.svg";
 import histIcon from "../assets/images/M_layouts/History.png"; 
+import profileIcon from "../assets/images/M_layouts/profile_link.png";
 
-// Define your socket URL
+
 const SOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || "http://localhost:5000";
 
 function Header() {
@@ -27,10 +28,17 @@ function Header() {
   const [socket, setSocket] = useState(null); 
   const [profileUrl, setProfileUrl] = useState(null); 
 
-  // Keep hook, but ignore result to prevent re-renders
+
+  //changes 1
+  const isTutor = user?.role ==="TUTOR";// check if tutor
+  const isAdmin = user?.role ==="ADMIN"; // checker if admin 
+  const isTutee = user && !isTutor && !isAdmin; // the user is login but they are not a tutor and an admin (BOOLEAN)
+
+
+
   const loginCheck = useLoginCheck({ login: false });
 
-  // State for Notification Panel Visibility and Count
+
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -41,7 +49,7 @@ function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // --- 1. STABILIZED USER DATA FETCHER ---
+
   const fetchUserData = useCallback(async () => {
     let fullUserData = null;
     
@@ -89,17 +97,17 @@ function Header() {
     }
   }, []); 
 
-  // --- Initial Fetch ---
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]); 
 
-  // --- 2. FIXED SOCKET CONNECTION LOGIC ---
+
   useEffect(() => {
-    // We check for id_number, but fallback to google_id or id if necessary
+  
     const userId = user?.id_number || user?.google_id || user?.id;
 
-    // If no user ID, ensure we disconnect any existing socket and stop.
+
     if (!userId) {
       if (socket) {
         console.log("User logged out, disconnecting socket.");
@@ -108,9 +116,7 @@ function Header() {
       }
       return;
     }
-    
-    // If we already have a socket connected for this EXACT user, do nothing.
-    // We convert to String to avoid mismatches (e.g. 123 vs "123")
+
     if (socket && String(socket.io.opts.query.user_id) === String(userId)) {
         return;
     }
@@ -301,7 +307,7 @@ function Header() {
             </ul>
           </div>
 
-          {!menuOpen && !menuAnimating && (
+          {!menuOpen && !menuAnimating &&( // add user && if u want the guests to not see the avatar circle
             <div className="position-relative ms-3">
               <div
                 className="prof"
@@ -343,16 +349,30 @@ function Header() {
 
               {popup && (
                 <div className="profilepopup">
+
+                  {/*changes 2*/}
+                  {isTutor && ( // If tutor(true) then show the pop
+
+                  <p onClick = {()=> {
+                    setPopup(false); // this closes the popup when being clicked
+                    handleNavClick();//closes the mobile navbar menu after click something
+                    navigate(`/tutor/${user.id_number}`)
+
+                  }}
+                    style = {{ cursor:"pointer"}}// adds pointer
+                  >
+                    <img src={profileIcon} alt="Profile" /> Profile
+                  </p>
+
+)}  
                   <p onClick={handleShowNotifications} style={{ cursor: "pointer", position: 'relative' }}>
                     <img src={notifIcon} alt="Notifications" /> Notifications
                     {unreadCount > 0 && (
-                      <span className="badge bg-danger ms-2">{unreadCount}</span>
+                      <span className="badge bg-danger ms-2">{unreadCount}</span> 
                     )}
                   </p>
+             
                   
-                  <p>
-                    <img src={histIcon} alt="History" /> History
-                  </p>
                   
                   <p
                     style={{ cursor: "pointer" }}

@@ -103,18 +103,26 @@ export default function TutorNotesList({ tutorId, tutorAvailability }) {
 
                             <div className='tab-pane fade' id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
                                 <div className='slot-list-tnl'>
-                                {Object.entries(groupedSlots).map(([day, slots], index) => (
-                                    <div key={index} className='availability-slot-card-tnl'>
-                                    <h3>{day}</h3>
-                                    {slots.map((slot, idx) => (
-                                        <p key={idx} style={{ margin: "0" }}>
-                                        <span style={{ fontWeight: "bold" }}>{slot.day}</span>
-                                        {" "}{slot.start_time} - {slot.end_time}
-                                        </p>
-                                    ))}
-                                    </div>
-                                ))}
-                                </div>
+    {Object.entries(groupedSlots).map(([day, slots], index) => (
+        <div key={index} className='availability-slot-card-tnl'>
+            <h3>{day}</h3>
+            {slots.map((slot, idx) => (
+                <div key={idx} style={{ margin: "10px 0" }}>
+                    <p style={{ margin: "0" }}>
+                        <span style={{ fontWeight: "bold" }}>{slot.day}</span> {" "}
+                        {slot.start_time} - {slot.end_time}
+                    </p>
+                    {slot.appointment_date && (
+                        <p style={{ fontSize: "smaller", color: "#888", margin: "0" }}>
+                            Appointment Date: {new Date(slot.appointment_date).toLocaleDateString()}
+                        </p>
+                    )}
+                </div>
+            ))}
+        </div>
+    ))}
+</div>
+
                             </div>
                         </div>
 

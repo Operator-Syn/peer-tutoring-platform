@@ -709,63 +709,80 @@ useEffect(() => {
                         boxShadow: "0 8px 10px rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      <div className="button-grid">
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={panctual} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Punctual
-                        </button>
+                   <div className="button-grid">
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed", 
+      opacity: 1, // No opacity change, still appears as normal
+      pointerEvents: "none", // Ensures the button cannot be interacted with
+    }}
+  >
+    <img
+      src={panctual}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Punctual
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={responsive} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Engaging
-                        </button>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={responsive}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Engaging
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={friendly} style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Friendly
-                        </button>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={friendly}
+      style={{ width: "60px", height: "55px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Friendly
+  </button>
 
-                        <button
-                          className="tutor-btn"
-                          onClick={() => {
-                            if (userGoogleId && tutor && userGoogleId !== tutor.google_id) {
-                              openBadgeModal();
-                            }
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                        >
-                          <img src={proficient} style={{ width: "60px", height: "60px", marginBottom: "5px", transition: "transform 0.3s ease" }} />
-                          Proficient
-                        </button>
-                      </div>
+  <button
+    className="tutor-btn"
+    disabled
+    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    style={{
+      cursor: "not-allowed",
+      opacity: 1,
+      pointerEvents: "none", 
+    }}
+  >
+    <img
+      src={proficient}
+      style={{ width: "60px", height: "60px", marginBottom: "5px", transition: "transform 0.3s ease" }}
+    />
+    Proficient
+  </button>
+</div>
+
                     </div>
 
                     <div
