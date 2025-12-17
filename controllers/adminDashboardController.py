@@ -79,6 +79,26 @@ def get_all_courses():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@admin_dashboard_bp.route("/api/admin/courses", methods=["POST"])
+def add_course():
+    data = request.get_json()
+    code = data.get("course_code", "").strip().upper()
+    name = data.get("course_name", "").strip()
+
+    if not code or not name:
+        return jsonify({"success": False, "error": "Code and Name required"}), 400
+
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO course (course_code, course_name) VALUES (%s, %s)", (code, name))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @admin_dashboard_bp.route("/api/admin/courses/<course_code>", methods=["DELETE"])
 def delete_course(course_code):
     try:
@@ -92,19 +112,62 @@ def delete_course(course_code):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@admin_dashboard_bp.route("/api/admin/courses/<course_code>/tutors", methods=["GET"])
+def get_tutors_by_course(course_code):
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        query = """
+            SELECT DISTINCT
+                t.tutor_id as google_id,
+                tutee.first_name,
+                tutee.last_name,
+                ua.email,
+                ua.role
+            FROM teaches te
+            JOIN tutor t ON te.tutor_id = t.tutor_id
+            JOIN tutee ON t.tutor_id = tutee.id_number
+            JOIN user_account ua ON tutee.google_id = ua.google_id
+            WHERE te.course_code = %s AND t.status = 'ACTIVE'
+            ORDER BY tutee.last_name, tutee.first_name
+        """
+        cur.execute(query, (course_code,))
+        tutors = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({"success": True, "tutors": tutors}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @admin_dashboard_bp.route("/api/admin/subject-requests", methods=["GET"])
 def get_subject_requests():
     try:
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 5))
         status = request.args.get("status", "all")
+        search = request.args.get("search", "").strip()
+        sort_by = request.args.get("sort_by", "date_desc")
         offset = (page - 1) * limit
         params = []
-        where_clause = ""
+        where_clauses = []
 
         if status != "all":
-            where_clause = "WHERE sr.status = %s"
+            where_clauses.append("sr.status = %s")
             params.append(status)
+        if search:
+            where_clauses.append("(sr.subject_code ILIKE %s OR sr.subject_name ILIKE %s OR sr.requester_id ILIKE %s)")
+            params.extend([f"%{search}%", f"%{search}%", f"%{search}%"])
+
+        where_clause = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+        sort_map = {
+            "date_desc": "sr.created_at DESC",
+            "date_asc": "sr.created_at ASC"
+        }
+        order_by = sort_map.get(sort_by, "sr.created_at DESC")
 
         conn = get_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -126,7 +189,7 @@ def get_subject_requests():
             FROM subject_request sr
             LEFT JOIN tutee t ON sr.requester_id = t.id_number
             {where_clause}
-            ORDER BY sr.created_at DESC
+            ORDER BY {order_by}
             LIMIT %s OFFSET %s
         """
         cur.execute(query, params + [limit, offset])
@@ -518,5 +581,4 @@ def get_admin_statistics():
         return jsonify({"statistics": statistics})
 
     except Exception as e:
-        print("Error fetching statistics:", e)
         return jsonify({"error": str(e)}), 500

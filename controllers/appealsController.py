@@ -147,18 +147,24 @@ def resolve_appeal(appeal_id):
         cur = conn.cursor()
         
         new_status = 'APPROVED' if action == 'APPROVE' else 'REJECTED'
-        
-        if action == 'APPROVE':
-            cur.execute("UPDATE appeals SET status = 'APPROVED' WHERE appeal_id = %s", (appeal_id,))
-        
-        cur.execute("""
-            UPDATE user_account 
-            SET status = 'ACTIVE' 
-            WHERE google_id = (
-                SELECT google_id FROM tutee admindas
-                WHERE id_number = (SELECT id_number FROM appeals WHERE appeal_id = %s)
-            )
-        """, (appeal_id,))
+
+        # Fetch google_id once to avoid subquery returning multiple rows / bad adaptation
+        cur.execute("SELECT google_id FROM appeals WHERE appeal_id = %s", (appeal_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "Appeal not found"}), 404
+        appeal_google_id = row[0]
+
+        # Update appeal status (both approve and reject)
+        cur.execute("UPDATE appeals SET status = %s WHERE appeal_id = %s", (new_status, appeal_id))
+
+        # Only activate account on approval
+        if action == 'APPROVE' and appeal_google_id:
+            cur.execute("""
+                UPDATE user_account 
+                SET status = 'ACTIVE' 
+                WHERE google_id = %s
+            """, (appeal_google_id,))
             
         conn.commit()
         return jsonify({"success": True}), 200

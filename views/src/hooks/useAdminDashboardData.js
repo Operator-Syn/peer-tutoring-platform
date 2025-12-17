@@ -149,12 +149,14 @@ export const useAdminDashboardData = () => {
                 body: JSON.stringify(actionType === 'UPDATE_USER_STATUS' ? { google_id: id, ...payload } : payload)
             });
 
-            if (res.ok) {
+            const result = await res.json().catch(() => ({}));
+
+            if (res.ok && result.success !== false) {
                 fetchData();
                 fetchStatistics();
-                return { success: true };
+                return { success: true, message: result.message };
             } else {
-                return { success: false, message: "Action failed" };
+                return { success: false, message: result.error || result.message || 'Action failed' };
             }
         } catch (e) {
             return { success: false, message: e.message };

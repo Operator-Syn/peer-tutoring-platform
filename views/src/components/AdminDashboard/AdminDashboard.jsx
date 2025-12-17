@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [requestData, setRequestData] = useState([]);
   
-  const [subjectFilter, setSubjectFilter] = useState('all'); 
+  const [subjectFilter, setSubjectFilter] = useState('no_tutors'); 
   
   const [customPagination, setCustomPagination] = useState({
       current_page: 1, total_pages: 1, total_items: 0, items_per_page: 10
@@ -23,6 +23,9 @@ const AdminDashboard = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
+
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
+  const [newCourse, setNewCourse] = useState({ code: '', name: '' });
 
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionData, setActionData] = useState({ 
@@ -32,10 +35,20 @@ const AdminDashboard = () => {
   const [actionNote, setActionNote] = useState('');
   const [showCorModal, setShowCorModal] = useState(false);
   const [selectedCorFile, setSelectedCorFile] = useState(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
   const [reportList, setReportList] = useState([]);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showTutorModal, setShowTutorModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courseTutors, setCourseTutors] = useState([]);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [toastVariant, setToastVariant] = useState('success');
+
+    const pushToast = (msg, variant = 'success') => {
+        setToastMessage(msg);
+        setToastVariant(variant);
+        setShowToast(true);
+    };
 
   const formatStatusLabel = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
@@ -45,38 +58,53 @@ const AdminDashboard = () => {
       setCustomPagination(prev => ({ ...prev, current_page: 1 }));
   };
 
-  useEffect(() => {
-      const fetchCustomData = async () => {
-          const safeLimit = filters.limit || 10;
-          const safePage = filters.page || 1;
-
-          if (activeTab === 'inventory') {
-              try {
-                  const query = `?page=${safePage}&limit=${safeLimit}&search=${filters.search}&filter=${subjectFilter}`;
-                  const res = await fetch(`/api/admin/courses${query}`);
-                  const result = await res.json();
-                  if (result.success) {
-                      setCourses(result.data);
-                      setCustomPagination(result.pagination);
-                  }
-              } catch(e) { console.error(e); }
-          } 
-          else if (activeTab === 'requests') {
-              try {
-                  const query = `?page=${safePage}&limit=${safeLimit}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
-                  const res = await fetch(`/api/admin/subject-requests${query}`);
-                  const result = await res.json();
-                  if (result.success) {
-                      setRequestData(result.data);
-                      setCustomPagination(result.pagination);
-                  }
-              } catch(e) { console.error(e); }
+  const fetchInventory = async () => {
+      try {
+          const query = `?page=${filters.page || 1}&limit=${filters.limit || 10}&search=${filters.search}&filter=${subjectFilter}`;
+          const res = await fetch(`/api/admin/courses${query}`);
+          const result = await res.json();
+          if (result.success) {
+              setCourses(result.data);
+              setCustomPagination(result.pagination);
           }
-      };
+      } catch(e) { console.error(e); }
+  };
 
-      fetchCustomData();
+  const fetchRequests = async () => {
+      try {
+          const query = `?page=${filters.page || 1}&limit=${filters.limit || 10}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
+          const res = await fetch(`/api/admin/subject-requests${query}`);
+          const result = await res.json();
+          if (result.success) {
+              setRequestData(result.data);
+              setCustomPagination(result.pagination);
+          }
+      } catch(e) { console.error(e); }
+  };
+
+  useEffect(() => {
+      if (activeTab === 'courses') fetchInventory();
+      else if (activeTab === 'requests') fetchRequests();
   }, [activeTab, filters.page, filters.limit, filters.search, filters.status, subjectFilter]);
 
+  const handleAddCourse = async () => {
+      if (!newCourse.code || !newCourse.name) return;
+      try {
+          const res = await fetch('/api/admin/courses', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ course_code: newCourse.code, course_name: newCourse.name })
+          });
+          if(res.ok) {
+              setShowAddCourseModal(false);
+              setNewCourse({ code: '', name: '' });
+              fetchInventory();
+              pushToast('Subject added');
+          } else {
+              pushToast('Failed to add subject', 'danger');
+          }
+      } catch(e) { console.error(e); }
+  };
 
   const handleDeleteClick = (code) => {
       setCourseToDelete(code);
@@ -88,18 +116,10 @@ const AdminDashboard = () => {
       try {
           const res = await fetch(`/api/admin/courses/${courseToDelete}`, { method: 'DELETE' });
           if(res.ok) {
-              setToastMessage("Course deleted successfully"); 
-              setShowToast(true);
-              // Refresh immediately
-              const query = `?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&filter=${subjectFilter}`;
-              const refresh = await fetch(`/api/admin/courses${query}`);
-              const result = await refresh.json();
-              if(result.success) {
-                  setCourses(result.data);
-                  setCustomPagination(result.pagination);
-              }
+              fetchInventory();
+              pushToast('Subject deleted');
           } else {
-              setToastMessage("Failed to delete course"); setShowToast(true);
+              pushToast('Failed to delete subject', 'danger');
           }
       } catch(e) { console.error(e); }
       setShowDeleteModal(false);
@@ -110,6 +130,22 @@ const AdminDashboard = () => {
     const res = await fetch(`/api/admin/users/${userId}/reports`);
     const data = await res.json();
     if (data.success) { setReportList(data.reports); setShowReportModal(true); }
+  };
+
+  const fetchAndShowTutors = async (courseCode) => {
+    try {
+      const res = await fetch(`/api/admin/courses/${courseCode}/tutors`);
+      const data = await res.json();
+      if (data.success) {
+        setSelectedCourse(courseCode);
+        setCourseTutors(data.tutors || []);
+        setShowTutorModal(true);
+      } else {
+        console.error('Error fetching tutors:', data.error || 'Unknown error');
+      }
+    } catch(e) { 
+      console.error('Error fetching tutors:', e);
+    }
   };
 
   const handleShowCor = (url, isAppeal = false) => {
@@ -147,16 +183,16 @@ const AdminDashboard = () => {
     const res = await actions.handleAction(apiAction, actionData.id, payload);
     if (res.success) { 
         setShowActionModal(false); 
-        if (activeTab === 'requests') {
-             const query = `?page=${filters.page}&limit=${filters.limit}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
-             fetch(`/api/admin/subject-requests${query}`).then(r=>r.json()).then(d=>{if(d.success){ setRequestData(d.data); setCustomPagination(d.pagination); }});
-        }
+        if (activeTab === 'requests') fetchRequests();
+        if (activeTab === 'courses') fetchInventory();
+        pushToast('Action completed');
+    } else {
+        pushToast(res.message || 'Action failed', 'danger');
     }
-    else { setToastMessage(res.message || "Action failed"); setShowToast(true); }
   };
 
   const renderPagination = () => {
-    const currentPagination = (activeTab === 'inventory' || activeTab === 'requests') ? customPagination : pagination;
+    const currentPagination = (activeTab === 'courses' || activeTab === 'requests') ? customPagination : pagination;
     return (
         <div className="admin-pagination-wrapper">
             <span className="admin-page-info">Page {currentPagination.current_page} of {currentPagination.total_pages}</span>
@@ -176,18 +212,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-container">
-      <header className="admin-header">
-        <div className="admin-header-content">
-          <div className="logo-section"><div className="logo-circle"><i className="bi bi-mortarboard-fill"></i></div></div>
-          <nav className="header-nav">{['Home','About','Events','Messages','Reports'].map(l => <a key={l} href={`/${l.toLowerCase()}`} className="custom-nav-link">{l}</a>)}</nav>
-          <div className="user-section"><div className="user-avatar"><i className="bi bi-person-circle"></i></div></div>
-        </div>
-      </header>
-
-      <ToastContainer position="top-end" className="p-3 admin-toast-container">
-        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg="danger"><Toast.Body className="text-white">{toastMessage}</Toast.Body></Toast>
-      </ToastContainer>
-
+            <ToastContainer position="top-end" className="p-3 admin-toast-container">
+                <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={toastVariant}>
+                    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+                </Toast>
+            </ToastContainer>
       <div className="admin-content">
         <div className="admin-page-title"><h1>Admin Dashboard</h1></div>
         
@@ -202,14 +231,14 @@ const AdminDashboard = () => {
             <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => handleTabChange('users')}>User Management</button>
             <button className={`admin-tab-btn ${activeTab === 'appeals' ? 'active' : ''}`} onClick={() => handleTabChange('appeals')}>Appeals</button>
             <button className={`admin-tab-btn ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => handleTabChange('requests')}>Subject Requests</button>
-            <button className={`admin-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => handleTabChange('inventory')}>Subject Management</button>
+            <button className={`admin-tab-btn ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => handleTabChange('courses')}>Subject Management</button>
         </div>
 
         <div className="admin-filters-row">
-             <button className={`admin-pill ${filters.status === 'all' ? 'active' : ''}`} onClick={() => filters.setStatus('all')}>All</button>
+             {activeTab !== 'courses' && <button className={`admin-pill ${filters.status === 'all' ? 'active' : ''}`} onClick={() => filters.setStatus('all')}>All</button>}
              {['PENDING','APPROVED','REJECTED','ACTIVE','BANNED','PROBATION'].filter(s => {
                  if (activeTab === 'users') return ['ACTIVE','BANNED','PROBATION'].includes(s);
-                 if (activeTab === 'inventory') return false; 
+                 if (activeTab === 'courses') return false; 
                  if (activeTab === 'requests') return ['PENDING','APPROVED','REJECTED'].includes(s);
                  return ['PENDING','APPROVED','REJECTED'].includes(s);
              }).map(s => (
@@ -229,14 +258,24 @@ const AdminDashboard = () => {
                         </select>
                     </>
                 )}
-                {activeTab === 'inventory' && (
-                    <select className="admin-form-select admin-filter-dropdown" value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
-                        <option value="all">All Subjects</option>
-                        <option value="no_tutors">No Tutors</option>
-                        <option value="with_tutors">Has Tutors</option>
-                    </select>
+                {activeTab === 'courses' && (
+                    <>
+                        <select className="admin-form-select admin-filter-dropdown" value={subjectFilter} onChange={(e) => {setSubjectFilter(e.target.value); filters.setPage(1); setCustomPagination(prev => ({ ...prev, current_page: 1 }));}}>
+                            <option value="no_tutors">No Tutors</option>
+                            <option value="with_tutors">Has Tutors</option>
+                        </select>
+                        <Button className="admin-btn-accept" onClick={() => setShowAddCourseModal(true)}>+ Add Subject</Button>
+                    </>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'requests' && (
+                {activeTab === 'requests' && (
+                    <div className="admin-sort-dropdown">
+                        <select className="admin-form-select admin-sort" value={filters.sort} onChange={(e) => filters.setSort(e.target.value)}>
+                            <option value="date_desc">Newest First</option>
+                            <option value="date_asc">Oldest First</option>
+                        </select>
+                    </div>
+                )}
+                {activeTab !== 'courses' && activeTab !== 'requests' && (
                     <div className="admin-sort-dropdown">
                         <select className="admin-form-select admin-sort" value={filters.sort} onChange={(e) => filters.setSort(e.target.value)}>
                             <option value="date_desc">Newest First</option>
@@ -257,21 +296,14 @@ const AdminDashboard = () => {
             </div>
         </div>
 
-        {loading && activeTab !== 'inventory' && activeTab !== 'requests' ? (
+        {loading && activeTab !== 'courses' && activeTab !== 'requests' ? (
             <div className="admin-loading-container"><div className="admin-spinner"></div><p>Loading Data...</p></div>
         ) : (
             <>
                 {activeTab === 'requests' && (
                     <div className="admin-table-box">
                         <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th style={{width: '20%'}}>Requester</th>
-                                    <th style={{width: '25%'}}>Requested Subject</th>
-                                    <th style={{width: '30%'}}>Reason</th>
-                                    <th className="col-actions">Actions</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Requester</th><th>Requested Subject</th><th>Reason</th><th style={{textAlign: 'right'}}>Actions</th></tr></thead>
                             <tbody>
                                 {requestData.length === 0 ? (
                                     <tr><td colSpan="4" className="text-center p-4">No requests found.</td></tr>
@@ -307,14 +339,14 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                {activeTab === 'inventory' && (
+                {activeTab === 'courses' && (
                     <div className="admin-table-box">
                         <table className="admin-table">
                             <thead>
                                 <tr>
-                                    <th style={{width: '20%'}}>Code</th>
-                                    <th style={{width: '45%'}}>Course Name</th>
-                                    <th style={{width: '20%'}}>Availability</th>
+                                    <th style={{width: '25%'}}>Code</th>
+                                    <th style={{width: '50%'}}>Course Name</th>
+                                    <th style={{width: '15%'}}>Availability</th>
                                     <th className="col-actions">Actions</th>
                                 </tr>
                             </thead>
@@ -326,7 +358,7 @@ const AdminDashboard = () => {
                                         <tr key={c.course_code}>
                                             <td><span className="admin-bold">{c.course_code}</span></td>
                                             <td>{c.course_name}</td>
-                                            <td>
+                                            <td style={{cursor: 'pointer'}} onClick={() => fetchAndShowTutors(c.course_code)}>
                                                 {parseInt(c.tutor_count || 0) === 0 ? 
                                                     <span className="admin-status-badge rejected" style={{fontSize:'0.7rem'}}>No Tutors</span> : 
                                                     <span className="admin-status-badge active" style={{fontSize:'0.7rem'}}>{c.tutor_count} Active Tutors</span>
@@ -347,23 +379,33 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                {/* --- OTHER TABS --- */}
-                {activeTab !== 'requests' && activeTab !== 'inventory' && (
+                {activeTab !== 'requests' && activeTab !== 'courses' && (
                     <div className="admin-card-list">
                         {activeTab === 'applications' && data.map(app => (
-                           <div key={app.application_id} className="admin-app-card">
-                               <div className="admin-card-row header"><span>College</span><span>Name</span><span>Gender</span><span>Year</span><span>Doc</span><span>Action</span></div>
-                               <div className="admin-card-row body">
-                                   <span className="admin-bold">{app.program || 'N/A'}</span>
-                                   <span className="admin-text-main">{app.student_name}</span>
-                                   <span>N/A</span>
-                                   <span>{app.school_year}</span>
-                                   <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button>
-                                   <div className="admin-flex-align">
-                                       {app.status === 'PENDING' ? <><button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')}>Accept</button><button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECT')}>Decline</button></> : <span>{app.status}</span>}
-                                   </div>
-                               </div>
-                           </div>
+                                                     <div key={app.application_id} className="admin-app-card">
+                                                             <div className="admin-card-row header"><span>College</span><span>Name</span><span>Gender</span><span>Year</span><span>COR</span><span>Action</span></div>
+                                                             <div className="admin-card-row body">
+                                                                     <span className="admin-bold">{app.program || 'N/A'}</span>
+                                                                     <span className="admin-text-main" style={{display:'flex', flexDirection:'column', gap:'0.35rem'}}>
+                                                                         <span>{app.student_name}</span>
+                                                                         <span className="admin-flex-wrap" style={{gap:'0.25rem'}}>
+                                                                             {Array.isArray(app.courses) && app.courses.length ? (
+                                                                                    app.courses.map((c,i) => (
+                                                                                        <span key={`${app.application_id}-course-${i}`} className="badge bg-secondary" style={{fontSize:'0.72rem'}}>{c}</span>
+                                                                                    ))
+                                                                             ) : (
+                                                                                    <span className="admin-text-muted">None</span>
+                                                                             )}
+                                                                         </span>
+                                                                     </span>
+                                                                     <span>N/A</span>
+                                                                     <span>{app.school_year}</span>
+                                                                     <button className="admin-btn-icon" onClick={() => handleShowCor(app.cor_filename)}><i className="bi bi-file-text"></i></button>
+                                                                     <div className="admin-flex-align">
+                                                                             {app.status === 'PENDING' ? <><button className="admin-btn-accept" onClick={() => openActionModal('APP', app, 'APPROVED')}>Accept</button><button className="admin-btn-decline" onClick={() => openActionModal('APP', app, 'REJECT')}>Decline</button></> : <span>{app.status}</span>}
+                                                                     </div>
+                                                             </div>
+                                                     </div>
                        ))}
                        
                        {activeTab === 'users' && (
@@ -423,6 +465,24 @@ const AdminDashboard = () => {
         </Modal.Footer>
       </Modal>
 
+      <Modal show={showAddCourseModal} onHide={() => setShowAddCourseModal(false)} centered>
+        <Modal.Header closeButton><Modal.Title>Add New Subject</Modal.Title></Modal.Header>
+        <Modal.Body>
+            <Form.Group className="mb-3">
+                <Form.Label>Course Code</Form.Label>
+                <Form.Control type="text" placeholder="e.g. IT101" value={newCourse.code} onChange={(e) => setNewCourse({...newCourse, code: e.target.value.toUpperCase()})} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+                <Form.Label>Course Name</Form.Label>
+                <Form.Control type="text" placeholder="e.g. Introduction to Computing" value={newCourse.name} onChange={(e) => setNewCourse({...newCourse, name: e.target.value})} />
+            </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddCourseModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleAddCourse}>Add Subject</Button>
+        </Modal.Footer>
+      </Modal>
+
       <Modal show={showActionModal} onHide={() => setShowActionModal(false)} centered>
         <Modal.Header closeButton><Modal.Title>{actionData.title}</Modal.Title></Modal.Header>
         <Modal.Body>
@@ -470,6 +530,32 @@ const AdminDashboard = () => {
           {selectedCorFile ? (selectedCorFile.toLowerCase().endsWith('.pdf') ? <iframe src={selectedCorFile} className="admin-doc-iframe" title="Doc"></iframe> : <img src={selectedCorFile} className="admin-doc-image" alt="Doc" />) : <div className="text-white p-5 text-center">No File</div>}
         </Modal.Body>
         <Modal.Footer className="admin-doc-modal-footer"><Button variant="light" onClick={() => setShowCorModal(false)}>Close</Button></Modal.Footer>
+      </Modal>
+
+      <Modal show={showTutorModal} onHide={() => setShowTutorModal(false)} size="lg" centered>
+        <Modal.Header closeButton><Modal.Title>Tutors for {selectedCourse}</Modal.Title></Modal.Header>
+        <Modal.Body>
+          {courseTutors.length === 0 ? (
+            <p>No tutors found for this course.</p>
+          ) : (
+            <div className="list-group">
+              {courseTutors.map(tutor => (
+                <div key={tutor.google_id} className="list-group-item">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h5 className="mb-1">{tutor.first_name} {tutor.last_name}</h5>
+                      <p className="mb-1 text-muted small">{tutor.email}</p>
+                    </div>
+                    <span className="badge bg-primary">{tutor.role}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowTutorModal(false)}>Close</Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
