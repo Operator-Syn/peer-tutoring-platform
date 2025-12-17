@@ -14,7 +14,9 @@ const AdminDashboard = () => {
 
   const [courses, setCourses] = useState([]);
   const [requestData, setRequestData] = useState([]);
+  
   const [subjectFilter, setSubjectFilter] = useState('all'); 
+  
   const [customPagination, setCustomPagination] = useState({
       current_page: 1, total_pages: 1, total_items: 0, items_per_page: 10
   });
@@ -40,14 +42,17 @@ const AdminDashboard = () => {
   const handleTabChange = (tab) => {
       setActiveTab(tab);
       filters.setPage(1); 
-      setCustomPagination({ ...customPagination, current_page: 1 });
+      setCustomPagination(prev => ({ ...prev, current_page: 1 }));
   };
 
   useEffect(() => {
       const fetchCustomData = async () => {
+          const safeLimit = filters.limit || 10;
+          const safePage = filters.page || 1;
+
           if (activeTab === 'inventory') {
               try {
-                  const query = `?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&filter=${subjectFilter}`;
+                  const query = `?page=${safePage}&limit=${safeLimit}&search=${filters.search}&filter=${subjectFilter}`;
                   const res = await fetch(`/api/admin/courses${query}`);
                   const result = await res.json();
                   if (result.success) {
@@ -58,7 +63,7 @@ const AdminDashboard = () => {
           } 
           else if (activeTab === 'requests') {
               try {
-                  const query = `?page=${filters.page}&limit=${filters.limit}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
+                  const query = `?page=${safePage}&limit=${safeLimit}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
                   const res = await fetch(`/api/admin/subject-requests${query}`);
                   const result = await res.json();
                   if (result.success) {
@@ -70,7 +75,8 @@ const AdminDashboard = () => {
       };
 
       fetchCustomData();
-  }, [activeTab, filters.page, filters.search, filters.status, subjectFilter]);
+  }, [activeTab, filters.page, filters.limit, filters.search, filters.status, subjectFilter]);
+
 
   const handleDeleteClick = (code) => {
       setCourseToDelete(code);
@@ -84,12 +90,16 @@ const AdminDashboard = () => {
           if(res.ok) {
               setToastMessage("Course deleted successfully"); 
               setShowToast(true);
+              // Refresh immediately
               const query = `?page=${filters.page}&limit=${filters.limit}&search=${filters.search}&filter=${subjectFilter}`;
               const refresh = await fetch(`/api/admin/courses${query}`);
               const result = await refresh.json();
-              if(result.success) setCourses(result.data);
+              if(result.success) {
+                  setCourses(result.data);
+                  setCustomPagination(result.pagination);
+              }
           } else {
-              setToastMessage("Failed to delete"); setShowToast(true);
+              setToastMessage("Failed to delete course"); setShowToast(true);
           }
       } catch(e) { console.error(e); }
       setShowDeleteModal(false);
@@ -139,7 +149,7 @@ const AdminDashboard = () => {
         setShowActionModal(false); 
         if (activeTab === 'requests') {
              const query = `?page=${filters.page}&limit=${filters.limit}&status=${filters.status !== 'all' ? filters.status : 'PENDING'}`;
-             fetch(`/api/admin/subject-requests${query}`).then(r=>r.json()).then(d=>{if(d.success) setRequestData(d.data)});
+             fetch(`/api/admin/subject-requests${query}`).then(r=>r.json()).then(d=>{if(d.success){ setRequestData(d.data); setCustomPagination(d.pagination); }});
         }
     }
     else { setToastMessage(res.message || "Action failed"); setShowToast(true); }
@@ -254,10 +264,17 @@ const AdminDashboard = () => {
                 {activeTab === 'requests' && (
                     <div className="admin-table-box">
                         <table className="admin-table">
-                            <thead><tr><th>Requester</th><th>Requested Subject</th><th>Reason</th><th>Date</th><th style={{textAlign: 'right'}}>Actions</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th style={{width: '20%'}}>Requester</th>
+                                    <th style={{width: '25%'}}>Requested Subject</th>
+                                    <th style={{width: '30%'}}>Reason</th>
+                                    <th className="col-actions">Actions</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {requestData.length === 0 ? (
-                                    <tr><td colSpan="5" className="text-center p-4">No requests found.</td></tr>
+                                    <tr><td colSpan="4" className="text-center p-4">No requests found.</td></tr>
                                 ) : (
                                     requestData.map(req => (
                                         <tr key={req.request_id}>
@@ -269,11 +286,10 @@ const AdminDashboard = () => {
                                                 <div className="admin-bold">{req.subject_code || 'N/A'}</div>
                                                 <div className="admin-text-muted">{req.subject_name || 'N/A'}</div>
                                             </td>
-                                            <td><div className="admin-msg-box">{req.description || 'None'}</div></td>
-                                            <td>{req.created_at || 'N/A'}</td>
+                                            <td><div className="admin-msg-box">{req.description || 'None'}</div><div className="admin-date">{req.created_at || 'N/A'}</div></td>
                                             <td>
                                                 <div className="admin-flex-end">
-                                                    <button className="admin-btn-icon" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')} style={{marginRight: '10px'}}><i className="bi bi-eye"></i></button>
+                                                    <button className="admin-btn-icon" title="View Details" onClick={() => openActionModal('REQUEST', req, 'VIEW')}><i className="bi bi-eye"></i></button>
                                                     {req.status === 'PENDING' && (
                                                         <>
                                                             <button className="admin-btn-accept" onClick={() => openActionModal('REQUEST', req, 'APPROVE')}>Accept</button>
@@ -296,10 +312,10 @@ const AdminDashboard = () => {
                         <table className="admin-table">
                             <thead>
                                 <tr>
-                                    <th style={{width: '25%'}}>Code</th>
-                                    <th style={{width: '50%'}}>Course Name</th>
-                                    <th style={{width: '15%'}}>Availability</th>
-                                    <th style={{width: '10%', textAlign: 'right'}}>Actions</th>
+                                    <th style={{width: '20%'}}>Code</th>
+                                    <th style={{width: '45%'}}>Course Name</th>
+                                    <th style={{width: '20%'}}>Availability</th>
+                                    <th className="col-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -331,6 +347,7 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
+                {/* --- OTHER TABS --- */}
                 {activeTab !== 'requests' && activeTab !== 'inventory' && (
                     <div className="admin-card-list">
                         {activeTab === 'applications' && data.map(app => (
