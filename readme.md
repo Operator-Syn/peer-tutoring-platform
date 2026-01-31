@@ -3,7 +3,7 @@
 When you clone this repository for the first time, you’ll notice a few files ending with the `.configure` extension.  
 These are **template configuration files** meant to help you set up your environment correctly.
 
----
+--- 
 
 ## 📁 Files Requiring Configuration
 
