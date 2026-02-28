@@ -177,6 +177,20 @@ function Appointments() {
     setPendingAppId(null);
     setPendingAction(null);
   };
+const to12hour = (time24)=>{
+
+  if(!time24)return "";
+
+  const[hhStr,mmStr] = time24.split(":");
+  const hh = Number(hhStr);
+  const mm = Number (mmStr);
+
+  const hour12 = ((hh+11)%12)+1;
+  const ampm = hh < 12?"AM":"PM";
+  
+  return  `${hour12}:${String(mm).padStart(2, "0")} ${ampm}`;
+
+};
 
 const handleAction = async (appointment_id, action) => {
   if (!tutorId) return;
@@ -291,7 +305,7 @@ const handleAction = async (appointment_id, action) => {
     return byFilter;
   }, [appointments, statusFilter]);
 
-  // ✅ map status -> image url
+
   const getCardImageUrl = (status) => {
     const st = String(status || "").toUpperCase();
     if (st === "BOOKED") return APPROVING_OWL_URL;
@@ -318,7 +332,7 @@ const handleAction = async (appointment_id, action) => {
               alt="Appointment"
               style={{ objectFit: "cover", height: "220px" }}
               onError={(e) => {
-                // fallback if the supabase file name is wrong
+        
                 e.currentTarget.src = CROPPED_WAITING_URL;
               }}
             />
@@ -336,7 +350,7 @@ const handleAction = async (appointment_id, action) => {
                 <div className="card-body text-end">
                   <p className="card-text mb-1">{app.appointment_date}</p>
                   <p className="card-text">
-                    {app.start_time} - {app.end_time}
+                    {to12hour(app.start_time)} - {to12hour(app.end_time)}
                   </p>
                 </div>
               </div>
@@ -546,7 +560,7 @@ const handleAction = async (appointment_id, action) => {
                       <div className="mb-1">
                         <span className="d-block small text-muted">Preferred Time</span>
                         <span className="d-block small fw-semibold">
-                          {row.start_time} - {row.end_time}
+                           {to12hour(row.start_time)} - {to12hour(row.end_time)}
                         </span>
                       </div>
                     </div>
@@ -655,8 +669,8 @@ const handleAction = async (appointment_id, action) => {
                   "N/A"}
               </p>
               <p className="card-text">
-                <strong>Time:</strong> {selectedApp?.start_time || "N/A"} -{" "}
-                {selectedApp?.end_time || "N/A"}
+                <strong>Time:</strong> {selectedApp?.start_time ? to12hour(selectedApp.start_time) : "N/A"} -{" "}
+                {selectedApp?.end_time ? to12hour(selectedApp.end_time) : "N/A"}
               </p>
               <p className="card-text">
                 <strong>Date:</strong> {selectedApp?.appointment_date || "N/A"}
